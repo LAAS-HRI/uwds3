@@ -10,14 +10,14 @@ It also contains differents modules to generate and maintain the scene graph and
 
 Main features:
  * Lightweight CPU perception pipeline that use SSD detectors with kalman+medianflow trackers to let the GPU for the physics engine.
- * Give to the robot physical sense of his body by using the simulation engine at runtime.
+ * Give to the robot physical sense of his body by using the simulation engine at runtime and the `/joint_state` topic published by the robot.
  * Compute the view of the scene graph from any pose in the 3d space to latter process with image-based reasoning.
  * Detect, explain and repairs beliefs divergeance by monitoring the view of the human it interact with (called the perspective).
  * Correct small inconsistencies and infer the position of objects beyond the camera FOV by using physical reasoning.
  * Reason about occlusion, motion and geometry to detect tabletop actions.
 
 
-More information in the [documentation](#).
+More information in the [documentation](https://github.com/LAAS-HRI/uwds3/wiki).
 
 # Quick start
 **Note:** We assume that you have ROS installed, otherwise install it by following the instructions [here](https://wiki.ros.org/ROS/Installation).
