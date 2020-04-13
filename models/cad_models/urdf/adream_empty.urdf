@@ -1,0 +1,163 @@
+<?xml version="0.0" ?>
+<robot name="adream_empty">
+
+  <link name="base_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".0"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.57 0 0" xyz="0 0 0"/>
+      <geometry>
+				<mesh filename="package://uwds3/models/cad_models/obj/walls.obj" scale="1 1 1"/>
+      </geometry>
+       <material name="gray">
+        <color rgba="0.8 0.8 0.8 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <link name="floor">
+  <contact>
+      <lateral_friction value="1"/>
+  </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".0"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 10 -0.0001"/>
+      <geometry>
+				<mesh filename="package://uwds3/models/cad_models/obj/plane.obj" scale="1 1 1"/>
+      </geometry>
+       <material name="gray">
+        <color rgba="0.8 0.8 0.8 1"/>
+      </material>
+    </visual>
+    <collision>
+      <contact_coefficients mu="1000.0" kp="0.00" kd="0.0"/>
+      <origin rpy="0 0 0" xyz="0 10 0.0"/>
+      <geometry>
+	 	   <box size="200 200 0.0001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="glass_wall_h10">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".0"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.57 0 0.636" xyz="-5.101 20.266 1.444"/>
+      <geometry>
+        <mesh filename="package://uwds3/models/cad_models/obj/glass_wall_h10.obj" scale="1 1 1"/>
+      </geometry>
+       <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <link name="glass_wall_h20_1">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".0"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.57 0 0" xyz="11.573 6.037 1.589"/>
+      <geometry>
+        <mesh filename="package://uwds3/models/cad_models/obj/glass_wall_h20_1.obj" scale="1 1 1"/>
+      </geometry>
+       <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <link name="glass_wall_h20_2">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".0"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.57 0 0" xyz="-4.052 8.304 1.426"/>
+      <geometry>
+        <mesh filename="package://uwds3/models/cad_models/obj/glass_wall_h20_2.obj" scale="1 1 1"/>
+      </geometry>
+       <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <link name="window_h20">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".0"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.57 0 0" xyz="-0.064 3.914 1.703"/>
+      <geometry>
+        <mesh filename="package://uwds3/models/cad_models/obj/window_h20.obj" scale="1 1 1"/>
+      </geometry>
+       <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <link name="solar_panels">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".0"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.57 0.349 3.14" xyz="15.248 10.195 1.377"/>
+      <geometry>
+        <mesh filename="package://uwds3/models/cad_models/obj/solar_panels.obj" scale="1 1 1"/>
+      </geometry>
+       <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="base_to_floor" type="fixed">
+    <parent link="base_link"/>
+    <child link="floor"/>
+  </joint>
+
+  <joint name="base_to_solar_panels" type="fixed">
+    <parent link="base_link"/>
+    <child link="solar_panels"/>
+  </joint>
+
+  <joint name="base_to_glass_wall_h10" type="fixed">
+    <parent link="base_link"/>
+    <child link="glass_wall_h10"/>
+  </joint>
+
+  <joint name="base_to_glass_wall_h20_1" type="fixed">
+    <parent link="base_link"/>
+    <child link="glass_wall_h20_1"/>
+  </joint>
+
+  <joint name="base_to_glass_wall_h20_2" type="fixed">
+    <parent link="base_link"/>
+    <child link="glass_wall_h20_2"/>
+  </joint>
+
+  <joint name="base_to_window_h20" type="fixed">
+    <parent link="base_link"/>
+    <child link="window_h20"/>
+  </joint>
+
+</robot>

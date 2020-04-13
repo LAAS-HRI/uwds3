@@ -1,0 +1,13 @@
+numpy>=1.11.0
+scipy>=0.1
+uuid
+pyyaml
+argparse
+scikit-image
+scikit-learn
+matplotlib
+tqdm
+dlib
+opencv-python
+opencv-contrib-python
+pybullet

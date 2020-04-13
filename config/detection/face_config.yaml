@@ -1,0 +1,8 @@
+0:
+  label: "background"
+  activated: False
+  confidence_threshold: 0.0
+1:
+  label: "face"
+  activated: True
+  confidence_threshold: 0.8

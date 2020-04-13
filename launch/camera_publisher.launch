@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <arg name="camera_info_topic" default="kinect2/qhd/camera_info"/>
+  <arg name="rgb_image_topic" default="kinect2/qhd/image_color_rect"/>
+  <arg name="camera_frame_id" default="kinect2_link"/>
+  <arg name="camera_pub_frequency" default="20.0"/>
+
+  <node name="camera_publisher" pkg="uwds3" type="camera_publisher_node.py" args="" output="screen" respawn="false">
+    <rosparam subst_value="true">
+      camera_info_topic: $(arg camera_info_topic)
+      rgb_image_topic: $(arg rgb_image_topic)
+      camera_frame_id: $(arg camera_frame_id)
+      camera_pub_frequency: $(arg camera_pub_frequency)
+    </rosparam>
+  </node>
+
+</launch>

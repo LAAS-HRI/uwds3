@@ -1,0 +1,62 @@
+<?xml version="0.0" ?>
+<robot name="glass_door">
+
+  <link name="base_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".0"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <link name="glass_door_1">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".0"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.57 0 1.57" xyz="0 0.459 1.202"/>
+      <geometry>
+        <mesh filename="package://adream_simulation/models/cad_models/obj/glass_door_1.obj" scale="1 1 1"/>
+      </geometry>
+       <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <link name="glass_door_2">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".0"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.57 0 1.57" xyz="0 -0.459 1.202"/>
+      <geometry>
+        <mesh filename="package://adream_simulation/models/cad_models/obj/glass_door_2.obj" scale="1 1 1"/>
+      </geometry>
+       <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="base_to_door_1" type="revolute">
+    <parent link="base_link"/>
+    <child link="glass_door_1"/>
+    <axis xyz="0 0 -1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0 -0.892 0"/>
+  </joint>
+
+  <joint name="base_to_door_2" type="revolute">
+    <parent link="base_link"/>
+    <child link="glass_door_2"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0 0.892 0"/>
+  </joint>
+
+</robot>

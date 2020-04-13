@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<robot name="table">
+<link name="table">
+    <visual>
+      <geometry>
+        <mesh filename="package://uwds3/models/cad_models/obj/table.obj"/>
+      </geometry>
+      <origin rpy="1.57075 0 0" xyz="0 0 0"/>
+      <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+
+    <collision>
+      <geometry>
+      <box size="1.40 0.90 0.04"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0.355"/>
+       <contact_coefficients mu="1000.0" kp="0.00" kd="0.0"/>
+    </collision>
+
+    <collision>
+      <geometry>
+      <box size="0.025 0.025 0.75"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0.675 0.425 0"/>
+      <contact_coefficients mu="1000.0" kp="0.00" kd="0.0"/>
+    </collision>
+    <collision>
+      <geometry>
+      <box size="0.025 0.025 0.75"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0.675 -0.425 0"/>
+      <contact_coefficients mu="1000.0" kp="0.00" kd="0.0"/>
+    </collision>
+    <collision>
+      <geometry>
+      <box size="0.025 0.025 0.75"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="-0.675 0.425 0"/>
+      <contact_coefficients mu="1000.0" kp="0.00" kd="0.0"/>
+    </collision>
+    <collision>
+      <geometry>
+      <box size="0.025 0.025 0.75"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="-0.675 -0.425 0"/>
+      <contact_coefficients mu="1000.0" kp="0.00" kd="0.0"/>
+    </collision>
+
+    <inertial>
+      <mass value="60.0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+</link>
+
+</robot>

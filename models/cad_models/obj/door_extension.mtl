@@ -1,0 +1,12 @@
+# Blender MTL File: 'glass_door_1.blend'
+# Material Count: 1
+
+newmtl light_wood_mat
+Ns 96.078431
+Ka 1.000000 1.000000 1.000000
+Kd 0.640000 0.427341 0.258378
+Ks 0.201657 0.201657 0.201657
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2

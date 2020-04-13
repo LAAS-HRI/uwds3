@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <!-- Camera parameters -->
+  <arg name="rgb_image_topic" default="kinect2/qhd/image_color_rect"/>
+  <arg name="rgb_camera_info_topic" default="kinect2/qhd/camera_info"/>
+  <arg name="depth_image_topic" default="kinect2/qhd/image_depth_rect"/>
+  <arg name="depth_camera_info_topic" default="kinect2/qhd/camera_info"/>
+
+  <arg name="global_frame_id" default="map"/>
+
+  <!-- Detector model parameters -->
+  <arg name="detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb"/>
+  <arg name="detector_weights_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pbtxt"/>
+  <arg name="detector_config_filename" default="$(find uwds3)/config/detection/mscoco_config.yaml"/>
+
+  <!-- Tracker parameters -->
+  <arg name="n_init" default="4"/>
+  <arg name="n_frame" default="2"/>
+  <arg name="max_iou_distance" default="0.98"/>
+  <arg name="max_color_distance" default="0.3"/>
+  <arg name="max_centroid_distance" default="0.4"/>
+  <arg name="max_disappeared" default="3"/>
+  <arg name="max_age" default="10"/>
+
+  <!-- Other parameters -->
+  <arg name="publish_viz" default="true"/>
+  <arg name="publish_tf" default="true"/>
+  <arg name="use_depth" default="false"/>
+
+  <node name="tabletop_pipeline" pkg="uwds3" type="tabletop_pipeline_node.py" args="" output="screen" respawn="false">
+    <rosparam subst_value="true">
+      rgb_image_topic: $(arg rgb_image_topic)
+      rgb_camera_info_topic: $(arg rgb_camera_info_topic)
+
+      depth_image_topic: $(arg depth_image_topic)
+      depth_camera_info_topic: $(arg depth_camera_info_topic)
+
+      global_frame_id: $(arg global_frame_id)
+
+      detector_model_filename: $(arg detector_model_filename)
+      detector_weights_filename: $(arg detector_weights_filename)
+      detector_config_filename: $(arg detector_config_filename)
+
+      publish_viz: $(arg publish_viz)
+      publish_tf: $(arg publish_tf)
+
+      use_depth: $(arg use_depth)
+
+      n_init: $(arg n_init)
+      max_iou_distance: $(arg max_iou_distance)
+      max_color_distance: $(arg max_color_distance)
+      max_disappeared: $(arg max_disappeared)
+      max_age: $(arg max_age)
+    </rosparam>
+  </node>
+
+</launch>
