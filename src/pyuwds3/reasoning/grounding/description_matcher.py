@@ -10,6 +10,7 @@ class DescriptionMatcher(object):
         self.model = cv2.readNetFromTensorflow(siamese_model, siamese_weight)
         self.word_to_vector = {}
         self.index_to_vector = {}
+        self.word_vector_dim = word_vector_dim
         self.dimensions = (word_vector_dim, 0)
         index = 0
         with open(pre_trained_embedding_file, "r") as file:
@@ -20,12 +21,13 @@ class DescriptionMatcher(object):
                 self.index_to_vector[index] = vector
                 index += 1
 
-    def match(self, description, tracks, events):
+    def match(self, description, tracks, events, max_dist=0.5):
         pass
+
 
     def compute_fast_sentence_vector(self, description):
         word_vector_sequence = []
-        for word in description.split(" "):
+        for word in description.split():
             if word in self.word_to_vector:
                 word_vector_sequence.append(self.word_to_vector[word])
         return np.average(np.array(word_vector_sequence), axis=0)

@@ -3,11 +3,10 @@ from pyuwds3.types.features import Features
 
 
 class SemanticFeaturesEstimator(object):
-    def __init__(self, pre_trained_embedding_file, word_vector_dim):
+    def __init__(self, pre_trained_embedding_file):
         self.name = "semantic"
         self.word_to_vector = {}
         self.index_to_vector = {}
-        self.dimensions = (word_vector_dim, 0)
         index = 0
         with open(pre_trained_embedding_file, "r") as file:
             for line in file:
@@ -16,6 +15,8 @@ class SemanticFeaturesEstimator(object):
                 self.word_to_vector[tokens[0]] = vector
                 self.index_to_vector[index] = vector
                 index += 1
+        vector_dim = len(vector)
+        self.dimensions = (vector_dim, 0)
 
     def estimate(self, tracks):
         word_vector_sequence = []
@@ -26,4 +27,4 @@ class SemanticFeaturesEstimator(object):
                         if word in self.word_to_vector:
                             word_vector_sequence.append(self.word_to_vector[word])
                     sentence_vector = np.average(np.array(word_vector_sequence), axis=0)
-                t.features[self.name] = Features(self.name, self.dimensions, sentence_vector, 1.0)
+                    t.features[self.name] = Features(self.name, self.dimensions, sentence_vector, 1.0)
