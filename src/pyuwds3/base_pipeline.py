@@ -126,13 +126,7 @@ class BasePipeline(object):
             else:
                 self.frame_count %= self.n_frame
 
-                tracks, events = self.perception_pipeline(view_pose, rgb_image, depth_image=depth_image, time=header.stamp)
-
-                myself = self.internal_simulator.get_myself()
-
-                static_nodes = self.internal_simulator.get_static_entities()
-
-                all_nodes = [myself]+static_nodes+tracks
+                all_nodes, events = self.perception_pipeline(view_pose, rgb_image, depth_image=depth_image, time=header.stamp)
 
                 self.publish_changes(all_nodes, events, header)
 

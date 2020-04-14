@@ -105,6 +105,13 @@ class DialoguePipeline(BasePipeline):
     def perception_pipeline(self, view_pose, rgb_image, depth_image=None, time=None):
         """ """
         ######################################################
+        # Simulation
+        ######################################################
+        myself = self.internal_simulator.get_myself()
+
+        static_nodes = self.internal_simulator.get_static_entities()
+
+        ######################################################
         # Detection
         ######################################################
         pipeline_timer = cv2.getTickCount()
@@ -173,11 +180,7 @@ class DialoguePipeline(BasePipeline):
         monitoring_timer = cv2.getTickCount()
         if self.frame_count == 2:
             success, other_image, other_visible_tracks, others_events = self.perspective_monitor.monitor_others(face_tracks)
-            # # else:
-            # other_image, other_visible_tracks, others_events = self.perspective_monitor.monitor_others(face_tracks)
-            #
-            #overlay, robot_visible_tracks, events = self.perspective_monitor.monitor_myself(tracks, view_pose, self.robot_camera)
-            #
+
         monitoring_fps = cv2.getTickFrequency() / (cv2.getTickCount()-monitoring_timer)
         pipeline_fps = cv2.getTickFrequency() / (cv2.getTickCount()-pipeline_timer)
         ########################################################
@@ -189,4 +192,6 @@ class DialoguePipeline(BasePipeline):
                 self.myself_view_publisher.publish(rgb_image, tracks, overlay_image=None, fps=pipeline_fps)
                 if success:
                     self.other_view_publisher.publish(other_image, other_visible_tracks, fps=monitoring_fps)
-        return tracks, []
+
+        all_nodes = [myself]+static_nodes+tracks
+        return all_nodes, []

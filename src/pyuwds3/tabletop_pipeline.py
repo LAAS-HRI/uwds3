@@ -70,6 +70,13 @@ class TabletopPipeline(BasePipeline):
     def perception_pipeline(self, view_matrix, rgb_image, depth_image=None, time=None):
         """ """
         ######################################################
+        # Simulation
+        ######################################################
+        myself = self.internal_simulator.get_myself()
+
+        static_nodes = self.internal_simulator.get_static_entities()
+
+        ######################################################
         # Detection
         ######################################################
 
@@ -170,4 +177,5 @@ class TabletopPipeline(BasePipeline):
 
         events = self.action_monitor.monitor(support_tracks, object_tracks, person_tracks, [])
 
-        return tracks, events
+        all_nodes = [myself]+static_nodes+tracks
+        return all_nodes, events

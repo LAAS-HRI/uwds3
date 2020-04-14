@@ -43,3 +43,6 @@ cd -
 mkdir models/features
 cd models/features
 wget https://storage.cmusatyalab.org/openface-models/nn4.small2.v1.t7
+wget http://nlp.stanford.edu/data/glove.6B.zip
+unzip glove.6B.zip
+rm glove.6B.zip
