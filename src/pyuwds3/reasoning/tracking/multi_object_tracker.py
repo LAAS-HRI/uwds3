@@ -1,6 +1,6 @@
 import numpy as np
 import rospy
-from ...bbox_metrics import iou, overlap, centroid
+from ...utils.bbox_metrics import iou, overlap, centroid
 from ..assignment.linear_assignment import LinearAssignment
 from scipy.spatial.distance import euclidean, cosine
 from ...types.scene_node import SceneNode
