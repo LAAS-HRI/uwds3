@@ -10,8 +10,8 @@ def base_model(pre_trained_embedding_file, max_length, lstm_dim):
     input = Input([max_length])
     embedding = create_embedding_layer(pre_trained_embedding_file)(input)
     dropout = Dropout(0.5)(embedding)
-    lstm = LSTM(lstm_dim)(dropout)
-    model = Model(input, lstm)
+    preds = LSTM(lstm_dim)(dropout)
+    model = Model(input, preds)
     model.summary()
     return model
 
@@ -24,5 +24,5 @@ def siamese_lstm(pre_trained_embedding_file, max_length, lstm_dim):
 
 
 if __name__ == '__main__':
-    glove_embedding_file = "../../models/features/glove/glove.6B.100d.txt"
-    model = siamese_lstm(glove_embedding_file, 20, 256)
+    glove_embedding_file = "../../models/features/glove/glove.6B.300d.txt"
+    model = siamese_lstm(glove_embedding_file, 20, 300)

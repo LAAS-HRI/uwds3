@@ -9,7 +9,7 @@ def load_image_dataset(self,
                        verbose=True,
                        target_size=(128, 128),
                        interpolation=cv2.INTER_AREA):
-    """Load the dataset from given dir
+    """Load the dataset from given directory
     """
     X_data = []
     Y_data = []

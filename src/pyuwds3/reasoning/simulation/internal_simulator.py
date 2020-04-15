@@ -27,7 +27,7 @@ class InternalSimulator(object):
                  global_frame_id,
                  base_frame_id,
                  position_tolerance=0.005,
-                 simulation_step=(1./240),
+                 simulation_step=(1./100.0),
                  load_robot=True):
 
         self.tf_bridge = TfBridge()
@@ -60,6 +60,8 @@ class InternalSimulator(object):
         else:
             self.client_simulator_id = p.connect(p.DIRECT)
 
+        p.setPhysicsEngineParameter(allowedCcdPenetration=0.0)
+
         if cad_models_additional_search_path != "":
             p.setAdditionalSearchPath(cad_models_additional_search_path)
 
@@ -91,7 +93,7 @@ class InternalSimulator(object):
         p.setGravity(0, 0, -10)
         p.setRealTimeSimulation(0)
 
-        self.simulation_timer = rospy.Timer(rospy.Duration(self.simulation_step*2.0), self.step_simulation)
+        self.simulation_timer = rospy.Timer(rospy.Duration(self.simulation_step*3.0), self.step_simulation)
 
         self.robot_loaded = False
         if load_robot is True:
@@ -275,7 +277,7 @@ class InternalSimulator(object):
                                         self.robot_joints_command_indices,
                                         controlMode=p.POSITION_CONTROL,
                                         targetPositions=self.robot_joints_command,
-                                        forces=np.full(len(self.robot_joints_command), 500.0),
+                                        forces=np.full(len(self.robot_joints_command), 10000.0),
                                         physicsClientId=self.client_simulator_id)
         p.stepSimulation()
 
