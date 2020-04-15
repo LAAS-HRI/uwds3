@@ -1,5 +1,3 @@
-rm -rf models
-
 mkdir -p models/detection
 cd models/detection
 
