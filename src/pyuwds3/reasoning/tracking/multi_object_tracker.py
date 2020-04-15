@@ -1,9 +1,9 @@
 import numpy as np
 import rospy
-from pyuwds3.bbox_metrics import iou, overlap, centroid
+from ...bbox_metrics import iou, overlap, centroid
 from ..assignment.linear_assignment import LinearAssignment
 from scipy.spatial.distance import euclidean, cosine
-from pyuwds3.types.scene_node import SceneNode
+from ...types.scene_node import SceneNode
 
 
 def iou_cost(detection, track):

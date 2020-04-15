@@ -3,17 +3,17 @@ import cv2
 import pybullet as p
 import numpy as np
 from sensor_msgs.msg import JointState
-from pyuwds3.types.scene_node import SceneNode, SceneNodeType
+from ...types.scene_node import SceneNode, SceneNodeType
 # from uwds3_msgs.msg import SceneChangesStamped, PrimitiveShape
 # from visualization_msgs.msg import MarkerArray, Marker
 from tf.transformations import translation_matrix, quaternion_matrix, quaternion_from_matrix, translation_from_matrix
-from pyuwds3.utils.tf_bridge import TfBridge
-from pyuwds3.types.vector.vector6d import Vector6D
-from pyuwds3.types.shape.box import Box
-from pyuwds3.types.shape.cylinder import Cylinder
-from pyuwds3.types.shape.sphere import Sphere
-from pyuwds3.types.shape.mesh import Mesh
-from pyuwds3.types.detection import Detection
+from ...utils.tf_bridge import TfBridge
+from ...types.vector.vector6d import Vector6D
+from ...types.shape.box import Box
+from ...types.shape.cylinder import Cylinder
+from ...types.shape.sphere import Sphere
+from ...types.shape.mesh import Mesh
+from ...types.detection import Detection
 import yaml
 
 
