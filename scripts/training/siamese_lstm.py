@@ -1,4 +1,4 @@
-from word_embedding import create_embedding_layer
+from word_embeddings import create_embedding_layer
 from siamese import siamese_network
 from keras.models import Model
 from keras.layers import Input, LSTM, Dropout
@@ -12,6 +12,7 @@ def base_model(pre_trained_embedding_file, max_length, lstm_dim):
     dropout = Dropout(0.5)(embedding)
     preds = LSTM(lstm_dim)(dropout)
     model = Model(input, preds)
+    print "Sentence features extractor:"
     model.summary()
     return model
 
