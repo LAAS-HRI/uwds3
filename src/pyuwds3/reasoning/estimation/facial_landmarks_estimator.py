@@ -3,9 +3,9 @@ import numpy as np
 import rospy
 import math
 import dlib
-from pyuwds3.bbox_metrics import iou
-from pyuwds3.types.bbox import BoundingBox
-from pyuwds3.types.landmarks import FacialLandmarks
+from ...bbox_metrics import iou
+from ...types.bbox import BoundingBox
+from ...types.landmarks import FacialLandmarks
 
 IOU_CONSITENCY_CHECK = 0.5
 
