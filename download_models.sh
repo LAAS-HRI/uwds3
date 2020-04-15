@@ -1,3 +1,7 @@
+rm -rf models/detection
+rm -rf models/features
+rm -rf models/estimation
+
 mkdir -p models/detection
 cd models/detection
 

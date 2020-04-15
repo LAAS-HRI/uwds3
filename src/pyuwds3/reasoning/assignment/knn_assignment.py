@@ -65,28 +65,31 @@ class KNearestNeighborsAssignment(object):
         label = self.Y[indice]
         return True, label, distance
 
-    def __del__(self):
+    def save(self, data_file_path):
         """
         """
-        pass
-        # TODO: save data
-    def save(self,file):
-        file = open(file,'w')
-        pickle.dump(self.knn,file)
+        file = open(file, 'w')
+        pickle.dump(self.knn, file)
         file.close()
-    def load(self,file):
-        file = open(file,'r')
+
+    def load(self, data_file_path):
+        """
+        """
+        file = open(file, 'r')
         self.knn = pickle.load(file)
         file.close()
 
+
 class KNNLoader(object):
-    def load(self,file):
-        file = open(file,'r')
+    def load(self, data_file_path):
+        file = open(file, 'r')
         knn = pickle.load(file)
         file.close()
         return knn
+
+
 if __name__ == '__main__':
-    knn = KNearestNeighborsAssignement("test_face", 0.53)
+    knn = KNearestNeighborsAssignment("test_face", 0.53)
     print("Add samples to KNN")
     knn.update([0.0, 0.0, 0.0], "bob")
     knn.update([0.0, 0.5, 0.0], "alice")

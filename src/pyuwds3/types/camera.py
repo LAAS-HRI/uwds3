@@ -6,36 +6,34 @@ from .vector.vector2d import Vector2D
 class Camera(object):
     """Represents a camera sensor (real or virtual)"""
 
-    def __init__(self):
+    def __init__(self,
+                 fov=60.0,
+                 width=480,
+                 height=360,
+                 clipnear=0.1,
+                 clipfar=1e+3):
         """Camera constructor"""
-        self.fov = 60.0
-        self.width = 480
-        self.height = 360
-        self.clipnear = 0.3
-        self.clipfar = 1e+3
+        self.fov = fov
+        self.width = width
+        self.height = height
+        self.clipnear = clipnear
+        self.clipfar = clipfar
         self.dist_coeffs = np.zeros((4, 1))
 
     def center(self):
         """Returns the camera's center"""
         return Vector2D(self.width/2, self.height/2)
 
-    def focal_length(self):
-        """Returns the camera's focal length"""
-        return self.height
-
     def camera_matrix(self):
         """Returns the camera matrix"""
         center = self.center()
-        return np.array([[self.focal_length(), 0, center.y],
-                        [0, self.focal_length(), center.x],
+        return np.array([[self.width, 0, center.x],
+                        [0, self.height, center.y],
                         [0, 0, 1]], dtype="double")
 
-    def projection_matrix(self):
+    def projection_matrix(self, view_pose):
         """Returns the projection matrix"""
-        center = self.center()
-        return np.array([[self.focal_length(), 0, center.y, 0],
-                        [0, self.focal_length(), center.x, 0],
-                        [0, 0, 1, 0]], dtype="double")
+        return np.dot(view_pose.transform(), self.camera_matrix())
 
     def from_msg(self, msg, fov=60.0, clipnear=0.3, clipfar=1e+3):
         """ """
@@ -58,7 +56,7 @@ class Camera(object):
         camera.info.distortion_model = "blob"
         camera.info.D = list(self.dist_coeffs.flatten())
         camera.info.K = list(self.camera_matrix().flatten())
-        camera.info.P = list(self.projection_matrix().flatten())
+        camera.info.P = list(self.camera_matrix().flatten())
         return camera
 
     def __str__(self):

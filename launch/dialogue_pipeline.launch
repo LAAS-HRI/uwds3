@@ -2,7 +2,7 @@
 <launch>
 
   <!-- Camera parameters -->
-  <arg name="rgb_image_topic" default="kinect2/qhd/image_color_rect"/>
+  <arg name="rgb_image_topic" default="kinect2/qhd/image_color"/>
   <arg name="rgb_camera_info_topic" default="kinect2/qhd/camera_info"/>
   <arg name="depth_image_topic" default="kinect2/qhd/image_depth_rect"/>
   <arg name="depth_camera_info_topic" default="kinect2/qhd/camera_info"/>
@@ -35,8 +35,8 @@
   <arg name="max_color_distance" default="0.3"/>
   <arg name="max_face_distance" default="0.3"/>
   <arg name="max_centroid_distance" default="0.4"/>
-  <arg name="max_lost" default="4"/>
-  <arg name="max_age" default="20"/>
+  <arg name="max_lost" default="10"/>
+  <arg name="max_age" default="60"/>
 
   <!-- Simulation parameters -->
   <arg name="use_simulation_gui" default="True"/>

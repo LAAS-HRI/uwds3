@@ -10,7 +10,7 @@ from .reasoning.estimation.facial_landmarks_estimator import FacialLandmarksEsti
 from .reasoning.estimation.facial_features_estimator import FacialFeaturesEstimator
 from .reasoning.estimation.color_features_estimator import ColorFeaturesEstimator
 from .reasoning.monitoring.perspective_monitor import PerspectiveMonitor
-from pyuwds3.utils.view_publisher import ViewPublisher
+from .utils.view_publisher import ViewPublisher
 
 
 class DialoguePipeline(BasePipeline):
@@ -107,6 +107,7 @@ class DialoguePipeline(BasePipeline):
         ######################################################
         # Simulation
         ######################################################
+        pipeline_timer = cv2.getTickCount()
         myself = self.internal_simulator.get_myself()
 
         static_nodes = self.internal_simulator.get_static_entities()
@@ -114,7 +115,6 @@ class DialoguePipeline(BasePipeline):
         ######################################################
         # Detection
         ######################################################
-        pipeline_timer = cv2.getTickCount()
         detection_timer = cv2.getTickCount()
 
         detections = []

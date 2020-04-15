@@ -1,6 +1,6 @@
 import cv2
 import math
-from pyuwds3.types.detection import Detection
+from ...types.detection import Detection
 
 
 class MedianFlowTracker(object):

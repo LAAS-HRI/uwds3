@@ -4,8 +4,6 @@ import pybullet as p
 import numpy as np
 from sensor_msgs.msg import JointState
 from ...types.scene_node import SceneNode, SceneNodeType
-# from uwds3_msgs.msg import SceneChangesStamped, PrimitiveShape
-# from visualization_msgs.msg import MarkerArray, Marker
 from tf.transformations import translation_matrix, quaternion_matrix, quaternion_from_matrix, translation_from_matrix
 from ...utils.tf_bridge import TfBridge
 from ...types.vector.vector6d import Vector6D
@@ -281,7 +279,7 @@ class InternalSimulator(object):
                                         physicsClientId=self.client_simulator_id)
         p.stepSimulation()
 
-    def get_camera_view(self, camera_pose, camera, prior_tracks=[], target_position=None, occlusion_threshold=0.01, rendering_ratio=1.0):
+    def get_camera_view(self, camera_pose, camera, target_position=None, occlusion_threshold=0.01, rendering_ratio=1.0):
         visible_tracks = []
         rot = quaternion_matrix(camera_pose.quaternion())
         trans = translation_matrix(camera_pose.position().to_array().flatten())

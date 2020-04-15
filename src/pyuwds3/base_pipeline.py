@@ -113,7 +113,7 @@ class BasePipeline(object):
             bgr_image = self.bridge.imgmsg_to_cv2(bgr_image_msg, "bgr8")
             rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
             if depth_image_msg is not None:
-                depth_image = self.bridge.imgmsg_to_cv2(depth_image_msg, "mono8")
+                depth_image = self.bridge.imgmsg_to_cv2(depth_image_msg)
             else:
                 depth_image = None
 

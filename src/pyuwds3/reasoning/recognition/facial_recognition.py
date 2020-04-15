@@ -6,8 +6,9 @@ from scipy.spatial.distance import euclidean
 from uwds3_perception.detection.opencv_dnn_detector import OpenCVDNNDetector
 from uwds3_perception.estimation.facial_features_estimator import FacialFeaturesEstimator
 from uwds3_perception.recognition.knn_assignement import KNearestNeighborsAssignement
-from uwds3_perception.recognition.knn_assignement import KNNLoader
+from .knn_assignment.knn_assignment import KNNLoader
 import numpy.random as rng
+from random import shuffle
 
 
 class FacialRecognition(object):
@@ -160,7 +161,7 @@ class FacialRecognitionDataLoader(object):
         return X[true_person][ex1], support_set, targets
 
     def knn_init(self, feature_name, max_distance, data_directory="", n_neighbors=1, algorithm="ball_tree", weights="distance"):
-        self.knn = KNearestNeighborsAssignement(feature_name, max_distance,data_directory, n_neighbors, algorithm, weights )
+        self.knn = KNearestNeighborsAssignement(feature_name, max_distance, data_directory, n_neighbors, algorithm, weights )
 
     def knn_update(self, model):
         X = self.X_train.copy()
@@ -186,7 +187,7 @@ class FacialRecognitionDataLoader(object):
             image_feature = model.extract(image).to_array()
             bool, value, distance = self.knn.predict(image_feature)
             if value == persons_list[person_id[0]]:
-                count +=1
+                count += 1
         accuracy = count / (1.0 * len(X))
         print("The accuracy is "+str(accuracy))
         return accuracy

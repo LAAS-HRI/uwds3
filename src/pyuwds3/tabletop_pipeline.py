@@ -1,23 +1,26 @@
 import rospy
+import cv2
 import math
 from .base_pipeline import BasePipeline
 from .reasoning.detection.ssd_detector import SSDDetector
 from .reasoning.detection.foreground_detector import ForegroundDetector
 from .reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, color_cost
-from .reasoning.tracking.track import Track
+from .types.scene_node import SceneNode
 from .reasoning.estimation.object_pose_estimator import ObjectPoseEstimator
 from .reasoning.estimation.shape_estimator import ShapeEstimator
 from .reasoning.estimation.color_features_estimator import ColorFeaturesEstimator
 from .reasoning.monitoring.tabletop_action_monitor import TabletopActionMonitor
 from pyuwds3.types.vector.vector6d import Vector6D
 from pyuwds3.types.detection import Detection
+from .utils.view_publisher import ViewPublisher
+from .types.shape.box import Box
 
 
 class TabletopPipeline(BasePipeline):
     def __init__(self):
         super(TabletopPipeline, self).__init__()
 
-    def initialize_pipeline(self):
+    def initialize_pipeline(self, internal_simulator, beliefs_base):
         """ """
         detector_model_filename = rospy.get_param("~detector_model_filename", "")
         detector_weights_filename = rospy.get_param("~detector_weights_filename", "")
@@ -46,16 +49,16 @@ class TabletopPipeline(BasePipeline):
                                                  self.n_init,
                                                  40,
                                                  self.max_age,
-                                                 use_appearance_tracker=True)
+                                                 use_tracker=True)
 
         self.person_tracker = MultiObjectTracker(iou_cost,
                                                  color_cost,
-                                                 self.max_iou_distance,
+                                                 0.98,
                                                  self.max_color_distance,
                                                  5,
                                                  self.max_disappeared,
                                                  self.max_age,
-                                                 use_appearance_tracker=True)
+                                                 use_tracker=True)
 
         self.table_track = None
         self.table_depth = None
@@ -66,12 +69,19 @@ class TabletopPipeline(BasePipeline):
         self.object_pose_estimator = ObjectPoseEstimator()
 
         self.action_monitor = TabletopActionMonitor()
+        ########################################################
+        # Visualization
+        ########################################################
 
-    def perception_pipeline(self, view_matrix, rgb_image, depth_image=None, time=None):
+        self.other_view_publisher = ViewPublisher("other_view")
+        self.myself_view_publisher = ViewPublisher("myself_view")
+
+    def perception_pipeline(self, view_pose, rgb_image, depth_image=None, time=None):
         """ """
         ######################################################
         # Simulation
         ######################################################
+        pipeline_timer = cv2.getTickCount()
         myself = self.internal_simulator.get_myself()
 
         static_nodes = self.internal_simulator.get_static_entities()
@@ -95,7 +105,6 @@ class TabletopPipeline(BasePipeline):
             table_depth = None
         table_detection = Detection(0, int(image_height/2.0), int(image_width), image_height, "table", 1.0, table_depth)
 
-        view_pose = Vector6D().from_transform(view_matrix)
         if depth_image is not None:
             if self.table_shape is None:
                 fx = self.camera_matrix[0][0]
@@ -154,9 +163,9 @@ class TabletopPipeline(BasePipeline):
             person_tracks = self.person_tracker.update(rgb_image, [], depth_image=depth_image)
 
         if self.table_track is None:
-            self.table_track = Track(table_detection, 1, 4, 20)
+            self.table_track = SceneNode(detection=table_detection, is_static=True)
         else:
-            self.table_track.update(table_detection)
+            self.table_track.update_bbox(table_detection, detected=True)
         if self.table_shape is not None:
             self.table_track.shapes = [self.table_shape]
         support_tracks = [self.table_track]
@@ -167,15 +176,20 @@ class TabletopPipeline(BasePipeline):
         # Pose & Shape estimation
         ########################################################
 
-        self.object_pose_estimator.estimate(object_tracks + person_tracks + support_tracks, view_matrix, self.camera_matrix, self.dist_coeffs)
+        self.object_pose_estimator.estimate(object_tracks + person_tracks + support_tracks, view_pose, self.robot_camera)
 
-        self.shape_estimator.estimate(rgb_image, tracks, self.camera_matrix, self.dist_coeffs)
+        self.shape_estimator.estimate(rgb_image, tracks, self.robot_camera)
 
         ########################################################
         # Monitoring
         ########################################################
 
         events = self.action_monitor.monitor(support_tracks, object_tracks, person_tracks, [])
+        pipeline_fps = cv2.getTickFrequency() / (cv2.getTickCount()-pipeline_timer)
+        ########################################################
+        # Visualization
+        ########################################################
+        self.myself_view_publisher.publish(rgb_image, tracks, overlay_image=None, fps=pipeline_fps)
 
-        all_nodes = [myself]+static_nodes+tracks
+        all_nodes = [myself]+static_nodes+support_tracks+tracks
         return all_nodes, events
