@@ -41,4 +41,3 @@ class FacialLandmarksEstimator(object):
             cv2.fillConvexPoly(mask, f.features[self.name].face_contours(), 255)
             mask = mask[int(f.bbox.ymin):int(f.bbox.ymax), int(f.bbox.xmin):int(f.bbox.xmax)]
             f.mask = mask.astype("uint8")
-            

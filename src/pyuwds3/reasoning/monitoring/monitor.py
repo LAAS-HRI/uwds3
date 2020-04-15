@@ -1,4 +1,4 @@
-from pyuwds3.types.temporal_situation import TemporalSituation, Event
+from ...types.temporal_situation import TemporalSituation, Event
 
 
 class Monitor(object):

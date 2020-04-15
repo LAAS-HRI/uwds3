@@ -1,5 +1,5 @@
 import numpy as np
-from pyuwds3.types.features import Features
+from ...types.features import Features
 
 
 class SemanticFeaturesEstimator(object):

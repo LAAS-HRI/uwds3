@@ -10,7 +10,7 @@
     <visual>
       <origin rpy="1.57 0 0" xyz="0 0 1.103"/>
       <geometry>
-				<mesh filename="package://adream_simulation/models/cad_models/obj/stairs_1.obj" scale="1 1 1"/>
+				<mesh filename="package://uwds3/models/cad_models/obj/stairs_1.obj" scale="1 1 1"/>
       </geometry>
        <material name="wood">
         <color rgba="0.572 0.427 0.152 1.0"/>

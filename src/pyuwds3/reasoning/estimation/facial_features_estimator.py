@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from pyuwds3.types.features import Features
+from ...types.features import Features
 from .face_frontalizer_estimator import FaceFrontalizerEstimator
 
 

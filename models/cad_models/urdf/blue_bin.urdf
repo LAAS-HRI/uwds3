@@ -3,7 +3,7 @@
 <link name="blue_bin">
     <visual>
       <geometry>
-        <mesh filename="package://adream_simulation/models/cad_models/obj/blue_bin.obj"/>
+        <mesh filename="package://uwds3/models/cad_models/obj/blue_bin.obj"/>
       </geometry>
       <origin rpy="1.57075 0 0" xyz="0 0 0"/>
       <material name="blue">

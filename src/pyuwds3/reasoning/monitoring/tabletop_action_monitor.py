@@ -1,7 +1,6 @@
 import numpy as np
 from ..assignment.linear_assignment import LinearAssignment
 from ...bbox_metrics import overlap, centroid
-from ...types.temporal_relation import TemporalRelation, Event
 from .monitor import Monitor
 
 OCCLUSION_TRESHOLD = 0.2

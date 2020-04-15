@@ -1,6 +1,6 @@
 import numpy as np
-from pyuwds3.types.vector.vector6d import Vector6D
-from pyuwds3.types.vector.vector3d import Vector3D
+from ...types.vector.vector6d import Vector6D
+from ...types.vector.vector3d import Vector3D
 
 
 class ObjectPoseEstimator(object):
