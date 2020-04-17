@@ -10,8 +10,8 @@ from .reasoning.estimation.object_pose_estimator import ObjectPoseEstimator
 from .reasoning.estimation.shape_estimator import ShapeEstimator
 from .reasoning.estimation.color_features_estimator import ColorFeaturesEstimator
 from .reasoning.monitoring.tabletop_action_monitor import TabletopActionMonitor
-from pyuwds3.types.vector.vector6d import Vector6D
-from pyuwds3.types.detection import Detection
+from .types.vector.vector6d import Vector6D
+from .types.detection import Detection
 from .utils.view_publisher import ViewPublisher
 from .types.shape.box import Box
 

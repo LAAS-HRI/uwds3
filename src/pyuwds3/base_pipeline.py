@@ -7,11 +7,10 @@ import message_filters
 from uwds3_msgs.msg import SceneChangesStamped
 from cv_bridge import CvBridge
 from .utils.tf_bridge import TfBridge
-from pyuwds3.types.vector.vector6d import Vector6D
 from .reasoning.simulation.internal_simulator import InternalSimulator
-from pyuwds3.utils.view_publisher import ViewPublisher
-from pyuwds3.utils.marker_publisher import MarkerPublisher
-from pyuwds3.types.camera import Camera
+from .utils.view_publisher import ViewPublisher
+from .utils.marker_publisher import MarkerPublisher
+from .types.camera import Camera
 from .reasoning.knowledge.beliefs_base import BeliefsBase
 
 
@@ -66,7 +65,6 @@ class BasePipeline(object):
 
         self.internal_simulator = InternalSimulator(use_simulation_gui,
                                                     cad_models_additional_search_path,
-                                                    static_env_urdf_file_path,
                                                     static_entities_config_filename,
                                                     robot_urdf_file_path,
                                                     self.global_frame_id,

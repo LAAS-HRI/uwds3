@@ -31,9 +31,12 @@ class Camera(object):
                         [0, self.height, center.y],
                         [0, 0, 1]], dtype="double")
 
-    def projection_matrix(self, view_pose):
+    def projection_matrix(self):
         """Returns the projection matrix"""
-        return np.dot(view_pose.transform(), self.camera_matrix())
+        center = self.center()
+        return np.array([[self.width, 0, center.x, 0],
+                        [0, self.height, center.y, 0],
+                        [0, 0, 1, 1]], dtype="double")
 
     def from_msg(self, msg, fov=60.0, clipnear=0.3, clipfar=1e+3):
         """ """
@@ -56,7 +59,7 @@ class Camera(object):
         camera.info.distortion_model = "blob"
         camera.info.D = list(self.dist_coeffs.flatten())
         camera.info.K = list(self.camera_matrix().flatten())
-        camera.info.P = list(self.camera_matrix().flatten())
+        camera.info.P = list(self.projection_matrix().flatten())
         return camera
 
     def __str__(self):

@@ -16,6 +16,12 @@
         <color rgba="0.8 0.8 0.8 1"/>
       </material>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+      <geometry>
+       <mesh filename="package://uwds3/models/cad_models/obj/walls.obj" scale="1 1 1"/>
+      </geometry>
+    </collision>
   </link>
 
   <link name="floor">

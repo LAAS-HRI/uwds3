@@ -19,7 +19,6 @@ class InternalSimulator(object):
     def __init__(self,
                  use_gui,
                  cad_models_additional_search_path,
-                 env_urdf_file_path,
                  static_entities_config_filename,
                  robot_urdf_file_path,
                  global_frame_id,
@@ -361,61 +360,21 @@ class InternalSimulator(object):
                     track.description = scene_node.description
                     visible_tracks.append(track)
 
-        # prior_tracks_cleaned = [t for t in prior_tracks if t.has_mask() is True and t.is_confirmed() is True and t.is_located() is True]
-        # if len(prior_tracks) > 0:
-        #     refined_visible_tracks = prior_tracks
-        #     tracks = visible_tracks + prior_tracks_cleaned
-        #     tracks = sorted(tracks, key=lambda x: x.bbox.depth, reverse=False)
-        #     foreground = np.full((rendered_height, rendered_width), 0)
-        #     for idx, trk in enumerate(tracks):
-        #         if trk.id in self.entity_id_map:
-        #             sim_id = self.entity_id_map[trk.id]
-        #             cv_mask = cv2.bitwise_and(np.array(mask_image.copy()), 255-foreground)
-        #             cv_mask[cv_mask != sim_id] = 0
-        #             cv_mask[cv_mask == sim_id] = 255
-        #             xmin, ymin, w, h = cv2.boundingRect(cv_mask.astype(np.uint8))
-        #             mask = cv_mask[ymin:ymin+h, xmin:xmin+w]
-        #             visible_area = w*h+1
-        #             screen_area = rendered_width*rendered_height+1
-        #             if screen_area-visible_area == 0:
-        #                 confidence = 1.0
-        #             else:
-        #                 confidence = visible_area/float(screen_area-visible_area)
-        #             #TODO compute occlusion score as a ratio between visible 2d bbox and projected 2d bbox areas
-        #             if confidence > occlusion_threshold:
-        #
-        #                 depth = real_depth_image[int(ymin+h/2.0)][int(xmin+w/2.0)]
-        #                 xmin = int(xmin/rendering_ratio)
-        #                 ymin = int(ymin/rendering_ratio)
-        #                 w = int(w/rendering_ratio)
-        #                 h = int(h/rendering_ratio)
-        #
-        #                 id = self.reverse_entity_id_map[sim_id]
-        #                 scene_node = self.get_entity(id)
-        #
-        #                 det = Detection(int(xmin), int(ymin), int(xmin+w), int(ymin+h), id, confidence, depth=depth, mask=mask)
-        #                 track = SceneNode(detection=det)
-        #                 track.static = scene_node.static
-        #                 track.id = id
-        #                 track.mask = det.mask
-        #                 track.shapes = scene_node.shapes
-        #                 track.pose = scene_node.pose
-        #                 track.label = scene_node.label
-        #                 track.description = scene_node.description
-        #                 refined_visible_tracks.append(track)
-        #         track_full_mask = np.full((rendered_height, rendered_width), 0)
-        #         xmin = int(trk.bbox.xmin*rendering_ratio)
-        #         ymin = int(trk.bbox.ymin*rendering_ratio)
-        #         w = int(trk.bbox.width()*rendering_ratio)
-        #         h = int(trk.bbox.height()*rendering_ratio)
-        #         try:
-        #             track_mask = cv2.resize(trk.mask, (w, h))
-        #             track_full_mask[ymin:ymin+h, xmin:xmin+w] = (track_mask)
-        #         except Exception:
-        #             pass
-        #         foreground = cv2.bitwise_or(foreground, track_full_mask)
-            # visible_tracks = refined_visible_tracks
         return rgb_image, real_depth_image, mask_image_resized, visible_tracks
+
+    def test_aabb_collision(self, xmin, ymin, zmin, xmax, ymax, zmax):
+        contacts = p.getOverlappingObjects([xmin, ymin, zmin], [xmax, ymax, zmax])
+        if contacts is not None:
+            if len(contacts) > 0:
+                return True
+        return False
+
+    def get_aabb(self, id):
+        sim_id = self.entity_id_map[id]
+        aabb_min, aabb_max = p.getAABB(sim_id, 2)
+        xmin, ymin, zmin = aabb_min
+        xmax, ymax, zmax = aabb_max
+        return xmin, ymin, zmin, xmax, ymax, zmax
 
     def update_entity_pose(self, id, pose):
         if id not in self.entity_id_map:

@@ -32,14 +32,14 @@ class CameraPublisher(object):
 
         height, width, _ = frame.shape
 
-        focal_length = height
         center = (height/2, width/2)
-        camera_matrix = np.array([[focal_length, 0, center[0]],
-                                 [0, focal_length, center[1]],
+        
+        camera_matrix = np.array([[width, 0, center[0]],
+                                 [0, height, center[1]],
                                  [0, 0, 1]], dtype="double")
-        P_matrix = np.array([[focal_length, 0, center[0], 0],
-                            [0, focal_length, center[1], 0],
-                            [0, 0, 1, 0]], dtype="double")
+        P_matrix = np.array([[width, 0, center[0], 0],
+                            [0, height, center[1], 0],
+                            [0, 0, 1, 1]], dtype="double")
 
         dist_coeffs = np.zeros((4, 1))
         self.camera_info.D = list(dist_coeffs)
