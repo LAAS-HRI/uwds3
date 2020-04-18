@@ -1,7 +1,8 @@
 import cv2
-import uwds3_msgs.msg
-from pyuwds3.types.shape.sphere import Sphere
-from pyuwds3.types.shape.box import Box
+import rospy
+from ...types.shape.sphere import Sphere
+from ...types.shape.box import Box
+from ...types.shape.cylinder import Cylinder
 from sklearn.cluster import KMeans
 from collections import Counter
 import numpy as np
@@ -13,34 +14,28 @@ class ShapeEstimator(object):
     """ """
     def estimate(self, rgb_image, objects_tracks, camera):
         """ """
-        camera_matrix = camera.camera_matrix()
-        dist_coeffs = camera.dist_coeffs
         for o in objects_tracks:
             try:
                 if o.is_confirmed() and o.bbox.height() > 0:
                     if o.bbox.depth is not None:
                         if o.label != "person":
                             if not o.has_shape():
-                                shape = o.bbox.cylinder(camera_matrix, dist_coeffs)
-                                if o.label == "face":
-                                    shape = Sphere(shape.width()*2.0)
-                                if o.label == "hand":
-                                    shape = Sphere(shape.width())
-                                if o.label == "table":
-                                    shape = Box(shape.height(), shape.width(), .01)
+                                shape = self.compute_cylinder_from_bbox(o.bbox, camera)
+                                if o.label == "face" or o.label == "hand":
+                                    shape = self.compute_sphere_from_bbox(o.bbox, camera)
                                 shape.pose.pos.x = .0
                                 shape.pose.pos.y = .0
                                 shape.pose.pos.z = .0
                                 shape.color = self.compute_dominant_color(rgb_image, o.bbox)
                                 o.shapes.append(shape)
                         else:
-                            shape = o.bbox.cylinder(camera_matrix, dist_coeffs)
+                            shape = self.compute_cylinder_from_bbox(o.bbox, camera)
                             z = o.pose.pos.z
                             shape.pose.pos.x = .0
                             shape.pose.pos.y = .0
                             shape.pose.pos.z = -(z - shape.h/2.0)/2.0
                             if not o.has_shape():
-                                shape.color = self.compute_dominant_color(rgb_image, o.bbox)
+                                shape.color = [0, 200, 0, 1]
                                 shape.w = 0.50
                                 shape.h = z + shape.h/2.0
                                 o.shapes.append(shape)
@@ -49,7 +44,7 @@ class ShapeEstimator(object):
                                 shape.h = z + shape.h/2.0
                                 o.shapes[0].h = shape.h
             except Exception as e:
-                pass
+                rospy.logwarn(e)
 
     def compute_dominant_color(self, rgb_image, bbox):
         xmin = int(bbox.xmin)
@@ -68,4 +63,28 @@ class ShapeEstimator(object):
         color[0] = dominant_color[0]
         color[1] = dominant_color[1]
         color[2] = dominant_color[2]
+        color[3] = 1.0
         return color
+
+    def compute_cylinder_from_bbox(self, bbox, camera):
+        camera_matrix = camera.camera_matrix()
+        z = bbox.depth
+        fx = camera_matrix[0][0]
+        fy = camera_matrix[1][1]
+        w = bbox.width()
+        h = bbox.height()
+        w = w * z / fx
+        h = h * z / fy
+        return Cylinder(w, h)
+
+    def compute_sphere_from_bbox(self, bbox, camera):
+        camera_matrix = camera.camera_matrix()
+        z = self.depth
+        fx = camera_matrix[0][0]
+        fy = camera_matrix[1][1]
+        w = self.width()
+        h = self.height()
+        w = w * z / fx
+        h = h * z / fy
+        d = max(w, h)
+        return Sphere(d)

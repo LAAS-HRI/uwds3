@@ -67,6 +67,8 @@ class MarkerPublisher(object):
                         marker.color.g = shape.color[1]
                         marker.color.b = shape.color[2]
                         marker.color.a = self.alpha
+                        if track.label == "person":
+                            marker.color.a = 0.2
                         marker.lifetime = rospy.Duration(1.0)
                         markers_msg.markers.append(marker)
         self.publisher.publish(markers_msg)

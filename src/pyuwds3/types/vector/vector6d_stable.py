@@ -13,20 +13,21 @@ class Vector6DStable(Vector6D):
                  vrx=.0, vry=.0, vrz=.0,
                  ax=.0, ay=.0, az=.0,
                  arx=.0, ary=.0, arz=.0,
-                 p_cov=0.25, m_cov=0.0085,
+                 p_cov_p=0.001, m_cov_p=0.0001,
+                 p_cov_r=0.25, m_cov_r=0.0085,
                  time=None):
         """ """
         self.pos = Vector3DStable(x=x, y=y, z=z,
                                   vx=vx, vy=vy, vz=vz,
                                   ax=ax, ay=ay, az=az,
-                                  p_cov=p_cov, m_cov=m_cov,
+                                  p_cov=p_cov_p, m_cov=m_cov_p,
                                   use_accel=False,
                                   time=time)
 
         self.rot = Vector3DStable(x=rx, y=ry, z=rz,
                                   vx=vrx, vy=vry, vz=vrz,
                                   ax=arx, ay=ary, az=arz,
-                                  p_cov=p_cov, m_cov=m_cov,
+                                  p_cov=p_cov_r, m_cov=m_cov_r,
                                   use_accel=False, modulo=2*math.pi,
                                   time=time)
 

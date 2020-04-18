@@ -39,23 +39,10 @@ class BoundingBox(object):
 
     def area(self):
         """Returns the bbox's area in pixels"""
-        return (self.width()+1)*(self.height()+1)
+        return (self.width()*self.height()+1)
 
-    def cylinder(self, camera_matrix, dist_coeffs):
-        """ """
-        assert self.depth is not None
-        z = self.depth
-        fx = camera_matrix[0][0]
-        fy = camera_matrix[1][1]
-        cx = camera_matrix[0][2]
-        cy = camera_matrix[1][2]
-        w = self.width()
-        h = self.height()
-        x = (self.center().x - cx) * z / fx
-        y = (self.center().y - cy) * z / fy
-        d = w * z / fx
-        h = h * z / fy
-        return Cylinder(d, h, x=x, y=y, z=z)
+    def has_depth(self):
+        return self.depth is not None
 
     def draw(self, frame, color, thickness):
         """Draws the bbox"""
@@ -64,12 +51,12 @@ class BoundingBox(object):
     def from_array(self, array):
         """ """
         assert array.shape == (5, 1) or array.shape == (6, 1)
-        self.xmin = array[0]
-        self.ymin = array[1]
-        self.xmax = array[2]
-        self.ymax = array[3]
+        self.xmin = array[0][0]
+        self.ymin = array[1][0]
+        self.xmax = array[2][0]
+        self.ymax = array[3][0]
         if array.shape == (6, 1):
-            self.depth = array[4]
+            self.depth = array[4][0]
 
     def to_array(self):
         """ """
@@ -86,8 +73,8 @@ class BoundingBox(object):
         """ """
         self.xmin = int(xmin)
         self.ymin = int(ymin)
-        self.xmax = int(x + w)
-        self.ymax = int(y + h)
+        self.xmax = int(xmin + w)
+        self.ymax = int(ymin + h)
         return self
 
     def to_mxywh(self):

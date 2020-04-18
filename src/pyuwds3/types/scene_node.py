@@ -93,8 +93,6 @@ class SceneNode(object):
         else:
             self.pose = None
 
-        self.features = {}
-
         self.shapes = []
 
         self.tracker = None

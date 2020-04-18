@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <arg name="camera_frame_id" default="kinect2_link"/>
+  <arg name="global_frame_id" default="map"/>
+  <arg name="base_frame_id" default="base_footprint"/>
+
+  <param name="robot_description" textfile="$(find uwds3)/models/cad_models/urdf/pr2.urdf"/>
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" args="_use_gui:=true"/>
+
+  <node name="camera_frame_publisher" pkg="tf2_ros" type="static_transform_publisher" args="0 0 0 0 0 0 wide_stereo_optical_frame $(arg camera_frame_id)"/>
+  <node name="odom2base_publisher" pkg="tf2_ros" type="static_transform_publisher" args="0 0 0.0 0 0 0 odom $(arg base_frame_id)"/>
+  <node name="map2odom_publisher" pkg="tf2_ros" type="static_transform_publisher" args="0 0 0 1.57 0 0 $(arg global_frame_id) odom"/>
+
+</launch>

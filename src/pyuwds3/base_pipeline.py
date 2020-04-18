@@ -51,7 +51,6 @@ class BasePipeline(object):
 
         use_simulation_gui = rospy.get_param("~use_simulation_gui", True)
         cad_models_additional_search_path = rospy.get_param("~cad_models_additional_search_path", "")
-        static_env_urdf_file_path = rospy.get_param("~static_env_urdf_file_path", "")
         static_entities_config_filename = rospy.get_param("~static_entities_config_filename", "")
         robot_urdf_file_path = rospy.get_param("~robot_urdf_file_path", "")
 

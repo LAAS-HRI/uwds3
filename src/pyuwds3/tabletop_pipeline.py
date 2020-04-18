@@ -55,7 +55,7 @@ class TabletopPipeline(BasePipeline):
                                                  color_cost,
                                                  0.98,
                                                  self.max_color_distance,
-                                                 5,
+                                                 1,
                                                  self.max_disappeared,
                                                  self.max_age,
                                                  use_tracker=True)
@@ -125,8 +125,8 @@ class TabletopPipeline(BasePipeline):
                         x = (x - cx) * z / fx
                         y = (y - cy) * z / fy
                         table_center = Vector6D(x=x, y=y, z=z)
-                        table_length = (image_width - cx) * z / fx
-                        table_width = 2.0*math.sqrt(pow(table_border.pos.x-table_center.pos.x, 2)+pow(table_border.pos.y-table_center.pos.y, 2)+pow(table_border.pos.z-table_center.pos.z, 2))
+                        table_width = (image_width - cx) * z / fx
+                        table_length = 2.0*math.sqrt(pow(table_border.pos.x-table_center.pos.x, 2)+pow(table_border.pos.y-table_center.pos.y, 2)+pow(table_border.pos.z-table_center.pos.z, 2))
                         center_in_world = view_pose+table_center
                         real_z = center_in_world.position().z
                         print center_in_world.position()
@@ -184,7 +184,8 @@ class TabletopPipeline(BasePipeline):
         # Monitoring
         ########################################################
 
-        events = self.action_monitor.monitor(support_tracks, object_tracks, person_tracks, [])
+        #events = self.action_monitor.monitor(support_tracks, object_tracks, person_tracks, [])
+        events = []
         pipeline_fps = cv2.getTickFrequency() / (cv2.getTickCount()-pipeline_timer)
         ########################################################
         # Visualization

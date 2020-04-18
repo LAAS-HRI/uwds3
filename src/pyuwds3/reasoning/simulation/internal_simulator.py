@@ -14,6 +14,8 @@ from ...types.shape.mesh import Mesh
 from ...types.detection import Detection
 import yaml
 
+INF = 1e+7
+
 
 class InternalSimulator(object):
     def __init__(self,
@@ -24,7 +26,7 @@ class InternalSimulator(object):
                  global_frame_id,
                  base_frame_id,
                  position_tolerance=0.005,
-                 simulation_step=(1./100.0),
+                 simulation_step=(1./240.0),
                  load_robot=True):
 
         self.tf_bridge = TfBridge()
@@ -51,21 +53,23 @@ class InternalSimulator(object):
 
         self.robot_urdf_file_path = robot_urdf_file_path
 
+        self.robot_acting = False
+
+        if not p.isNumpyEnabled():
+            rospy.logwarn("Numpy is not enabled, rendering can be slow")
+
         self.use_gui = use_gui
         if self.use_gui is True:
             self.client_simulator_id = p.connect(p.GUI)
         else:
             self.client_simulator_id = p.connect(p.DIRECT)
 
-        p.setPhysicsEngineParameter(allowedCcdPenetration=0.0)
+        #p.setPhysicsEngineParameter(numSolverIterations=50, maxNumCmdPer1ms=1)
 
         if cad_models_additional_search_path != "":
             p.setAdditionalSearchPath(cad_models_additional_search_path)
 
         self.static_nodes = []
-
-        self.simulation_step = simulation_step
-        p.setTimeStep(self.simulation_step)
 
         if static_entities_config_filename != "":
             with open(static_entities_config_filename, 'r') as stream:
@@ -88,9 +92,7 @@ class InternalSimulator(object):
                         self.static_nodes.append(static_node)
 
         p.setGravity(0, 0, -10)
-        p.setRealTimeSimulation(0)
-
-        self.simulation_timer = rospy.Timer(rospy.Duration(self.simulation_step*3.0), self.step_simulation)
+        p.setRealTimeSimulation(1)
 
         self.robot_loaded = False
         if load_robot is True:
@@ -100,15 +102,17 @@ class InternalSimulator(object):
                   id,
                   filename,
                   start_pose,
-                  remove_friction=False,
                   static=False,
                   label="thing",
-                  description=""):
+                  description="",
+                  robot=False):
         """ """
         try:
             use_fixed_base = 1 if static is True else 0
-            base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base, flags=p.URDF_ENABLE_SLEEPING or p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-
+            flags = p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES or p.URDF_MERGE_FIXED_LINKS
+            if robot is True:
+                flags = flags or p.URDF_ENABLE_SLEEPING
+            base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base, flags=flags)
             self.entity_id_map[id] = base_link_sim_id
             # Create a joint map to ease exploration
             self.reverse_entity_id_map[base_link_sim_id] = id
@@ -118,6 +122,7 @@ class InternalSimulator(object):
                 info = p.getJointInfo(base_link_sim_id, i)
                 self.joint_id_map[base_link_sim_id][info[1]] = info[0]
                 self.reverse_joint_id_map[base_link_sim_id][info[0]] = info[1]
+                p.changeDynamics(base_link_sim_id, info[0], frictionAnchor=1)
             # If file successfully loaded
             if base_link_sim_id < 0:
                 raise RuntimeError("Invalid URDF")
@@ -209,7 +214,6 @@ class InternalSimulator(object):
         node = self.get_entity("myself")
         node.type = SceneNodeType.MYSELF
         node.label = "robot"
-        node.description = "I"
         return node
 
     def get_static_entities(self):
@@ -266,17 +270,6 @@ class InternalSimulator(object):
 
                 scene_node.pose.from_quaternion(orientation[0], orientation[1], orientation[2], orientation[3])
         return self.entity_map[id]
-
-    def step_simulation(self, event):
-        if self.robot_loaded is True:
-            base_link_sim_id = self.entity_id_map["myself"]
-            p.setJointMotorControlArray(base_link_sim_id,
-                                        self.robot_joints_command_indices,
-                                        controlMode=p.POSITION_CONTROL,
-                                        targetPositions=self.robot_joints_command,
-                                        forces=np.full(len(self.robot_joints_command), 10000.0),
-                                        physicsClientId=self.client_simulator_id)
-        p.stepSimulation()
 
     def get_camera_view(self, camera_pose, camera, target_position=None, occlusion_threshold=0.01, rendering_ratio=1.0):
         visible_tracks = []
@@ -337,7 +330,6 @@ class InternalSimulator(object):
                     confidence = 1.0
                 else:
                     confidence = visible_area/float(screen_area-visible_area)
-                #TODO compute occlusion score as a ratio between visible 2d bbox and projected 2d bbox areas
                 if confidence > occlusion_threshold:
 
                     depth = real_depth_image[int(ymin+h/2.0)][int(xmin+w/2.0)]
@@ -371,10 +363,25 @@ class InternalSimulator(object):
 
     def get_aabb(self, id):
         sim_id = self.entity_id_map[id]
-        aabb_min, aabb_max = p.getAABB(sim_id, 2)
+        aabb_min, aabb_max = p.getAABB(sim_id)
         xmin, ymin, zmin = aabb_min
         xmax, ymax, zmax = aabb_max
         return xmin, ymin, zmin, xmax, ymax, zmax
+
+    def update_constraint(self, id, pose):
+        base_link_sim_id = self.entity_id_map[id]
+        if id not in self.constraint_id_map:
+            constraint_id = p.createConstraint(base_link_sim_id, -1, -1, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0, 0, 1])
+            self.constraint_id_map[id] = constraint_id
+        else:
+            constraint_id = self.constraint_id_map[id]
+        t = pose.position().to_array()
+        q = pose.quaternion()
+        p.changeConstraint(constraint_id, jointChildPivot=t, jointChildFrameOrientation=q, maxForce=INF)
+
+    def remove_constraint(self, id):
+        if id in self.constraint_id:
+            p.removeConstraint(self.constraint_id_map[id])
 
     def update_entity_pose(self, id, pose):
         if id not in self.entity_id_map:
@@ -382,23 +389,19 @@ class InternalSimulator(object):
         base_link_sim_id = self.entity_id_map[id]
         t = pose.position().to_array().flatten()
         q = pose.quaternion()
-        t_current, q_current = p.getBasePositionAndOrientation(base_link_sim_id)
-        update_position = not np.allclose(np.array(t_current), t, atol=self.position_tolerance)
-        update_orientation = not np.allclose(np.array(q_current), q, atol=self.position_tolerance)
-        if update_position is True or update_orientation is True:
-            p.resetBasePositionAndOrientation(base_link_sim_id, t, q, physicsClientId=self.client_simulator_id)
+        p.resetBasePositionAndOrientation(base_link_sim_id, t, q, physicsClientId=self.client_simulator_id)
 
     def joint_states_callback(self, joint_states_msg):
         success, pose = self.tf_bridge.get_pose_from_tf(self.global_frame_id, self.base_frame_id)
         if success is True:
             if self.robot_loaded is False:
                 try:
-                    self.load_urdf("myself", self.robot_urdf_file_path, pose)
+                    self.load_urdf("myself", self.robot_urdf_file_path, pose, robot=True)
                     self.robot_loaded = True
                 except Exception as e:
                     rospy.logwarn("[simulation] Exception occured: {}".format(e))
             try:
-                self.update_entity_pose("myself", pose)
+                self.update_constraint("myself", pose)
             except Exception as e:
                 rospy.logwarn("[simulation] Exception occured: {}".format(e))
         if self.robot_loaded is True:
@@ -411,8 +414,13 @@ class InternalSimulator(object):
                 joint_name_sim = info[1]
                 assert(joint_name == joint_name_sim)
                 joint_position = joint_states_msg.position[joint_state_index]
-                joint_indices.append(joint_sim_index)
-                target_positions.append(joint_position)
-
-            self.robot_joints_command = target_positions
-            self.robot_joints_command_indices = joint_indices
+                state = p.getJointState(base_link_sim_id, joint_sim_index)
+                current_position = state[0]
+                if abs(joint_position - current_position) > self.position_tolerance:
+                    joint_indices.append(joint_sim_index)
+                    target_positions.append(joint_position)
+                if len(target_positions) > 0:
+                    p.setJointMotorControlArray(base_link_sim_id,
+                                                joint_indices,
+                                                controlMode=p.POSITION_CONTROL,
+                                                targetPositions=target_positions)

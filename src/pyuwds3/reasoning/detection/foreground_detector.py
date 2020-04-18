@@ -21,7 +21,7 @@ class ForegroundDetector(object):
         self.interactive_mode = interactive_mode
         self.roi_points = []
         self.state = DetectorState.INIT
-        self.background_substraction = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=50, detectShadows=True)
+        self.background_substraction = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=130, detectShadows=True)
 
         if self.interactive_mode is True:
             cv2.namedWindow("select_roi")

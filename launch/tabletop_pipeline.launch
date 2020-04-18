@@ -7,7 +7,7 @@
   <arg name="depth_camera_info_topic" default="kinect2/qhd/camera_info"/>
 
   <arg name="global_frame_id" default="map"/>
-  <arg name="base_frame_id" default="base_link"/>
+  <arg name="base_frame_id" default="base_footprint"/>
 
   <!-- Detector model parameters -->
   <arg name="detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb"/>
@@ -20,20 +20,20 @@
   <arg name="hand_detector_config_filename" default="$(find uwds3)/config/detection/hand_config.yaml"/>
 
   <!-- Tracker parameters -->
-  <arg name="n_init" default="1"/>
-  <arg name="n_frame" default="2"/>
+  <arg name="n_init" default="6"/>
+  <arg name="n_frame" default="3"/>
   <arg name="max_iou_distance" default="0.98"/>
   <arg name="max_color_distance" default="0.3"/>
   <arg name="max_face_distance" default="0.3"/>
   <arg name="max_centroid_distance" default="0.4"/>
-  <arg name="max_lost" default="10"/>
-  <arg name="max_age" default="60"/>
+  <arg name="max_lost" default="5"/>
+  <arg name="max_age" default="15"/>
 
   <!-- Simulation parameters -->
   <arg name="use_simulation_gui" default="True"/>
   <arg name="cad_models_additional_search_path" default="$(find uwds3)/models/cad_models"/>
   <arg name="static_entities_config_filename" default="$(find uwds3)/config/simulation/empty_floor.yaml"/>
-  <arg name="robot_urdf_file_path" default="urdf/kinect2_tripod.urdf"/>
+  <arg name="robot_urdf_file_path" default="urdf/pr2.urdf"/>
 
   <!-- Other parameters -->
   <arg name="publish_viz" default="true"/>
@@ -50,6 +50,7 @@
       depth_camera_info_topic: $(arg depth_camera_info_topic)
 
       global_frame_id: $(arg global_frame_id)
+      base_frame_id: $(arg base_frame_id)
 
       detector_model_filename: $(arg detector_model_filename)
       detector_weights_filename: $(arg detector_weights_filename)

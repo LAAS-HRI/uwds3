@@ -32,6 +32,12 @@ class Grid(object):
         z = self.zmin+(z*self.zstep)
         return Vector3D(x=x, y=y, z=z)
 
+    def random_cell_indices(self):
+        x = int(np.random.random_sample()*self.xdim)
+        y = int(np.random.random_sample()*self.ydim)
+        z = int(np.random.random_sample()*self.zdim)
+        return x, y, z
+
     def cell_random_pose(self, x, y, z):
         """
         """

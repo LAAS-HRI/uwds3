@@ -27,7 +27,7 @@ class Camera(object):
     def camera_matrix(self):
         """Returns the camera matrix"""
         center = self.center()
-        return np.array([[self.width, 0, center.x],
+        return np.array([[self.height, 0, center.x],
                         [0, self.height, center.y],
                         [0, 0, 1]], dtype="double")
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-import cv2
+import numpy as np
 import rospy
 import uuid
 from pyuwds3.reasoning.simulation.internal_simulator import InternalSimulator
@@ -20,6 +20,8 @@ class DataGenerator(object):
         ouput_data_directory = rospy.get_param("~ouput_data_directory", "/tmp/")
         global_frame_id = rospy.get_param("~global_frame_id", "map")
         base_frame_id = rospy.get_param("~global_frame_id", "base_link")
+
+        max_samples = rospy.get_param("~max_samples", 5)
 
         simulator = InternalSimulator(use_simulation_gui,
                                       cad_models_additional_search_path,
@@ -52,24 +54,25 @@ class DataGenerator(object):
         grid = Grid(xmin, ymin, zmin, xmax, ymax, zmax, xdim, ydim, zdim)
 
         nb_samples = 0
-        for x in range(0, xdim):
-            for y in range(0, ydim):
-                for z in range(0, zdim):
-                    if rospy.is_shutdown() is True:
-                        break
-                    pose = grid.cell_random_pose(x, y, z)
-                    xmin_camera = pose.pos.x-0.5
-                    xmax_camera = pose.pos.x+0.5
-                    ymin_camera = pose.pos.y-0.5
-                    ymax_camera = pose.pos.y+0.5
-                    if simulator.test_aabb_collision(xmin_camera, ymin_camera, 0.1, xmax_camera, ymax_camera, zmax):
-                        continue
-                    rgb_image, depth_image, mask_image, tracks = simulator.get_camera_view(pose, camera)
-                    if len(tracks) != 0:
-                        nb_samples += 1
-                        sample_uuid = str(uuid.uuid4()).replace("-", "")
-                        # cv2.imwrite(depth_image.astype("uint8"), "{}{}_depth.jpg".format(ouput_data_directory, sample_uuid))
-
+        while nb_samples < max_samples:
+            if rospy.is_shutdown() is True or nb_samples > max_samples:
+                break
+            x, y, z = grid.random_cell_indices()
+            pose = grid.cell_random_pose(x, y, z)
+            xmin_camera = pose.pos.x-0.5
+            xmax_camera = pose.pos.x+0.5
+            ymin_camera = pose.pos.y-0.5
+            ymax_camera = pose.pos.y+0.5
+            if simulator.test_aabb_collision(xmin_camera, ymin_camera, 0.1, xmax_camera, ymax_camera, zmax):
+                continue
+            rgb_image, depth_image, mask_image, tracks = simulator.get_camera_view(pose, camera)
+            if len(tracks) != 0:
+                nb_samples += 1
+                sample_uuid = str(uuid.uuid4()).replace("-", "")
+                print((nb_samples, sample_uuid))
+                #np.save(sample_uuid+".jpg", depth_image)
+                #scipy.misc.imsave("{}{}_depth.jpg".format(ouput_data_directory, sample_uuid), depth_image)
+                #scipy.misc.imsave("{}{}_rgb.jpg".format(ouput_data_directory, sample_uuid), rgb_image)
 
 if __name__ == "__main__":
     rospy.init_node("data_generator", anonymous=False)
