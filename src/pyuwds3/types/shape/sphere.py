@@ -46,6 +46,7 @@ class Sphere(Shape):
         """ Convert from ROS message
         """
         self.d = msg.dimensions[0]
+        self.name = msg.name
         a = msg.color.a
         r = msg.color.r
         g = msg.color.g
@@ -59,6 +60,7 @@ class Sphere(Shape):
         """
         shape = uwds3_msgs.msg.PrimitiveShape()
         shape.type = self.type
+        shape.name = self.name
         shape.dimensions.append(self.width())
         shape.scale.x = 1.0
         shape.scale.y = 1.0

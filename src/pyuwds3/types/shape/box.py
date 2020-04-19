@@ -54,6 +54,7 @@ class Box(Shape):
         """
         self.w = msg.dimensions[0]
         self.h = msg.dimensions[1]
+        self.name = msg.name
         a = msg.color.a
         r = msg.color.r
         g = msg.color.g
@@ -67,6 +68,7 @@ class Box(Shape):
         """
         shape = uwds3_msgs.msg.PrimitiveShape()
         shape.type = self.type
+        shape.name = self.name
         shape.dimensions.append(self.x)
         shape.dimensions.append(self.y)
         shape.dimensions.append(self.z)

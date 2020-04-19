@@ -26,6 +26,7 @@ class Mesh(Shape):
         """ Convert from ROS message
         """
         self.mesh_resource = msg.mesh_resource
+        self.name = msg.name
         a = msg.color.a
         r = msg.color.r
         g = msg.color.g
@@ -39,6 +40,7 @@ class Mesh(Shape):
         """
         shape = uwds3_msgs.msg.PrimitiveShape()
         shape.type = self.type
+        shape.name = self.name
         shape.mesh_resource = self.mesh_resource
         shape.scale.x = self.scale[0]
         shape.scale.y = self.scale[1]
