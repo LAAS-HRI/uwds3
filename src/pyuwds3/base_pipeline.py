@@ -121,19 +121,22 @@ class BasePipeline(object):
             if success is not True:
                 rospy.logwarn("[perception] The camera sensor is not localized in world space (frame '{}'), please check if the sensor frame is published in /tf".format(self.global_frame_id))
             else:
-                self.frame_count %= self.n_frame - 1
+                if self.internal_simulator.is_robot_loaded():
+                    self.frame_count %= self.n_frame - 1
 
-                all_nodes, events = self.perception_pipeline(view_pose, rgb_image, depth_image=depth_image, time=header.stamp)
+                    all_nodes, events = self.perception_pipeline(view_pose, rgb_image, depth_image=depth_image, time=header.stamp)
 
-                self.publish_changes(all_nodes, events, header)
+                    self.publish_changes(all_nodes, events, header)
 
-                if self.publish_viz is True:
-                    self.marker_publisher.publish(all_nodes, header)
+                    if self.publish_viz is True:
+                        self.marker_publisher.publish(all_nodes, header)
 
-                if self.publish_tf is True:
-                    self.tf_bridge.publish_tf_frames(all_nodes, events, header)
+                    if self.publish_tf is True:
+                        self.tf_bridge.publish_tf_frames(all_nodes, events, header)
 
-                self.frame_count += 1
+                    self.frame_count += 1
+                else:
+                    rospy.logwarn("[perception] Waiting for the robot to be loaded...")
 
     def perception_pipeline(self, view_pose, rgb_image, depth_image=None, time=None):
         raise NotImplementedError("You should implement the perception pipeline.")

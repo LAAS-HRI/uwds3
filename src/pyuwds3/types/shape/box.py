@@ -7,40 +7,51 @@ from ..vector.vector6d import Vector6D
 
 class Box(Shape):
     """Represents a 3D BoundingBox"""
-    def __init__(self, dim_x, dim_y, dim_z,
+    def __init__(self, dim_x, dim_y, dim_z, name="",
                  x=.0, y=.0, z=.0,
-                 rx=.0, ry=.0, rz=.0):
-        """Box constructor"""
-        self.type = ShapeType.BOX
-        self.pose = Vector6D(x=x, y=y, z=z,
-                             rx=rx, ry=ry, rz=rz)
+                 rx=.0, ry=.0, rz=.0,
+                 scale_x=1., scale_y=1., scale_z=1.):
+        """Box constructor
+        """
+        super(Box, self).__init__(ShapeType.BOX,
+                                  name=name,
+                                  x=x, y=y, z=z,
+                                  rx=rx, ry=ry, rz=rz,
+                                  scale_x=scale_x,
+                                  scale_y=scale_y,
+                                  scale_z=scale_z)
         self.x = dim_x
         self.y = dim_y
         self.z = dim_z
-        self.color = np.zeros(4)
-        self.color[3] = 1.0
-
-    def center(self):
-        """Returns the bbox's center in pixels"""
-        return self.position
 
     def radius(self):
-        """Returns the bbox's radius in meters"""
-        return self.width()/2.0
+        """Returns the mesh's radius in meters
+        """
+        return max(self.x/2.0, max(self.y/2.0, self.z/2.0))
 
     def width(self):
-        """Returns the bbox's width in meters"""
-        return max(self.x, self.y)
+        """Returns the bbox's width in meters (x dim)
+        """
+        return self.x
+
+    def lenght(self):
+        """Returns the bbox's lenght in meters (y dim)
+        """
+        return self.y
 
     def height(self):
-        """Returns the bbox's height in meters"""
+        """Returns the bbox's height in meters (z dim)
+        """
         return self.z
 
-    def area(self):
-        """Returns the bbox's area in cube meters"""
-        raise NotImplementedError()
+    def volume(self):
+        """ Returns the bbox volume in cube meters
+        """
+        return(self.x*self.y*self.z)
 
     def from_msg(self, msg):
+        """ Convert from ROS message
+        """
         self.w = msg.dimensions[0]
         self.h = msg.dimensions[1]
         a = msg.color.a
@@ -52,6 +63,8 @@ class Box(Shape):
         return self
 
     def to_msg(self):
+        """ Convert to ROS message
+        """
         shape = uwds3_msgs.msg.PrimitiveShape()
         shape.type = self.type
         shape.dimensions.append(self.x)

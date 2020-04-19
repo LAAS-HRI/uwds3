@@ -21,7 +21,7 @@ class ForegroundDetector(object):
         self.interactive_mode = interactive_mode
         self.roi_points = []
         self.state = DetectorState.INIT
-        self.background_substraction = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=130, detectShadows=True)
+        self.background_substraction = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=150, detectShadows=True)
 
         if self.interactive_mode is True:
             cv2.namedWindow("select_roi")
@@ -40,6 +40,8 @@ class ForegroundDetector(object):
         foreground_mask = np.zeros((h, w), dtype=np.uint8)
 
         bgr_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
+        #bgr_image_resized = cv2.resize(bgr_image, (w/2.0, h/2.0))
+
         foreground_mask[int(h/2.0):h, 0:int(w)] = self.background_substraction.apply(bgr_image[int(h/2.0):h, 0:int(w)], learningRate=10e-7)
         foreground_mask[foreground_mask != 255] = 0 # shadows suppression
 
@@ -56,9 +58,8 @@ class ForegroundDetector(object):
             h = h + 5 if h + 5 < rgb_image.shape[0] else h
             foreground_mask[y:y+h, x:x+w] = 0
         # remove the noise of the mask
-        kernel_small = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        kernel_big = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (6, 6))
-        closing = cv2.morphologyEx(foreground_mask, cv2.MORPH_CLOSE, kernel_small)
+        kernel_big = cv2.getStructuringElement(cv2.MORPH_RECT, (8, 8))
+        closing = cv2.morphologyEx(foreground_mask, cv2.MORPH_CLOSE, kernel_big)
         opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel_big)
 
         if len(self.roi_points) == 2:

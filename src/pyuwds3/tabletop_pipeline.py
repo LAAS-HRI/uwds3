@@ -44,8 +44,8 @@ class TabletopPipeline(BasePipeline):
 
         self.object_tracker = MultiObjectTracker(iou_cost,
                                                  color_cost,
-                                                 0.35,
-                                                 0.3,
+                                                 self.max_iou_distance,
+                                                 self.max_color_distance,
                                                  self.n_init,
                                                  40,
                                                  self.max_age,
@@ -68,7 +68,7 @@ class TabletopPipeline(BasePipeline):
 
         self.object_pose_estimator = ObjectPoseEstimator()
 
-        self.action_monitor = TabletopActionMonitor()
+        self.action_monitor = TabletopActionMonitor(internal_simulator)
         ########################################################
         # Visualization
         ########################################################
@@ -89,7 +89,7 @@ class TabletopPipeline(BasePipeline):
         ######################################################
         # Detection
         ######################################################
-
+        detection_timer = cv2.getTickCount()
         detections = []
 
         image_height, image_width, _ = rgb_image.shape
@@ -142,6 +142,9 @@ class TabletopPipeline(BasePipeline):
             detections = object_detections
         else:
             detections = []
+
+        detection_fps = cv2.getTickFrequency() / (cv2.getTickCount()-detection_timer)
+        print "detection: {:.2}hz".format(detection_fps)
         ####################################################################
         # Features estimation
         ####################################################################
@@ -184,13 +187,13 @@ class TabletopPipeline(BasePipeline):
         # Monitoring
         ########################################################
 
-        #events = self.action_monitor.monitor(support_tracks, object_tracks, person_tracks, [])
-        events = []
+        events = self.action_monitor.monitor(support_tracks, object_tracks, person_tracks, [])
+        #events = []
         pipeline_fps = cv2.getTickFrequency() / (cv2.getTickCount()-pipeline_timer)
         ########################################################
         # Visualization
         ########################################################
-        self.myself_view_publisher.publish(rgb_image, tracks, overlay_image=None, fps=pipeline_fps)
+        self.myself_view_publisher.publish(rgb_image, tracks, events=events, overlay_image=None, fps=pipeline_fps)
 
         all_nodes = [myself]+static_nodes+support_tracks+tracks
         return all_nodes, events

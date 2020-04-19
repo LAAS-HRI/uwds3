@@ -2,6 +2,7 @@ import rospy
 import cv2
 import pybullet as p
 import numpy as np
+import copy
 from sensor_msgs.msg import JointState
 from ...types.scene_node import SceneNode, SceneNodeType
 from tf.transformations import translation_matrix, quaternion_matrix, quaternion_from_matrix, translation_from_matrix
@@ -16,6 +17,8 @@ import yaml
 
 INF = 1e+7
 
+DEFAULT_DENSITY = 998.57
+
 
 class InternalSimulator(object):
     def __init__(self,
@@ -26,8 +29,10 @@ class InternalSimulator(object):
                  global_frame_id,
                  base_frame_id,
                  position_tolerance=0.005,
-                 load_robot=True):
-
+                 load_robot=True,
+                 end_effectors=[]):
+        """
+        """
         self.tf_bridge = TfBridge()
 
         self.entity_map = {}
@@ -53,6 +58,8 @@ class InternalSimulator(object):
         self.robot_urdf_file_path = robot_urdf_file_path
 
         self.robot_acting = False
+
+        self.end_effectors = end_effectors
 
         if not p.isNumpyEnabled():
             rospy.logwarn("Numpy is not enabled, rendering can be slow")
@@ -102,10 +109,13 @@ class InternalSimulator(object):
                   static=False,
                   label="thing",
                   description=""):
-        """ """
+        """ Load an URDF file in the simulator
+        """
         try:
             use_fixed_base = 1 if static is True else 0
             flags = p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES or p.URDF_MERGE_FIXED_LINKS
+            if label != "myself":
+                flags = flags or p.URDF_ENABLE_SLEEPING
             base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base, flags=flags)
             self.entity_id_map[id] = base_link_sim_id
             # Create a joint map to ease exploration
@@ -124,6 +134,9 @@ class InternalSimulator(object):
             scene_node.id = id
             scene_node.label = label
             scene_node.description = description
+            if label == "myself":
+                scene_node.type = SceneNodeType.MYSELF
+                scene_node.label = "robot"
             sim_id = self.entity_id_map[id]
             visual_shapes = p.getVisualShapeData(sim_id)
             for shape in visual_shapes:
@@ -203,21 +216,124 @@ class InternalSimulator(object):
         except Exception as e:
             rospy.logwarn("[simulation] Error loading URDF '{}': {}".format(filename, e))
             return False, None
-    #
-    # def load_node(self, scene_node):
-    #     if scene_node.is_located():
-    #         pose = scene_node.pose
+
+    def load_node(self, scene_node):
+        """ Load a scene node in the simulator
+        """
+        if scene_node.is_located():
+            base_pose = scene_node.pose
+            if scene_node.has_shape():
+                visual_shape_ids = []
+                collision_shape_ids = []
+                shape_masses = []
+
+                for shape in scene_node.shapes:
+                    shape_pose = shape.pose
+                    t = shape_pose.position().to_array()
+                    q = shape_pose.quaternion()
+                    if shape.is_cylinder():
+                        shape_type = p.GEOM_CYLINDER
+                        radius = shape.radius()
+                        height = shape.height()
+                        collision_shape_id = p.createCollisionShape(shape_type, radius=radius,
+                                                                    height=height,
+                                                                    collisionFramePosition=t,
+                                                                    collisionFrameOrientation=q)
+                        visual_shape_id = p.createVisualShape(shape_type, radius=radius,
+                                                              length=height,
+                                                              visualFramePosition=t,
+                                                              visualFrameOrientation=q,
+                                                              rgbaColor=shape.color)
+                        if visual_shape_id >= 0 and collision_shape_id >= 0:
+                            mass = DEFAULT_DENSITY * shape.volume()
+                            shape_masses.append(mass)
+                            collision_shape_ids.append(collision_shape_id)
+                            visual_shape_ids.append(visual_shape_id)
+
+                    elif shape.is_sphere():
+                        shape_type = p.GEOM_SPHERE
+                        radius = shape.radius()
+                        collision_shape_id = p.createCollisionShape(shape_type, radius=radius,
+                                                                    collisionFramePosition=t,
+                                                                    collisionFrameOrientation=q)
+                        visual_shape_id = p.createVisualShape(shape_type, radius=radius,
+                                                              visualFramePosition=t,
+                                                              visualFrameOrientation=q,
+                                                              rgbaColor=shape.color)
+                        if visual_shape_id >= 0 and collision_shape_id >= 0:
+                            mass = DEFAULT_DENSITY * shape.volume()
+                            shape_masses.append(mass)
+                            collision_shape_ids.append(collision_shape_id)
+                            visual_shape_ids.append(visual_shape_id)
+
+                    elif shape.is_box():
+                        shape_type = p.GEOM_BOX
+                        dim = [shape.x/2.0, shape.y/2.0, shape.z/2.0]
+                        collision_shape_id = p.createCollisionShape(shape_type, halfExtents=dim,
+                                                                    collisionFramePosition=t,
+                                                                    collisionFrameOrientation=q)
+                        visual_shape_id = p.createVisualShape(shape_type, halfExtents=dim,
+                                                              visualFramePosition=t,
+                                                              visualFrameOrientation=q,
+                                                              rgbaColor=shape.color)
+                        if visual_shape_id >= 0 and collision_shape_id >= 0:
+                            mass = DEFAULT_DENSITY * shape.volume()
+                            shape_masses.append(mass)
+                            collision_shape_ids.append(collision_shape_id)
+                            visual_shape_ids.append(visual_shape_id)
+
+                    elif shape.is_mesh():
+                        shape_type = p.GEOM_MESH
+                        mesh_resource = shape.mesh_resource
+                        scale = [shape.scale_x, shape.scale_y, shape.scale_z]
+                        rospy.logwarn("[simulation] Collision shape not supported for Mesh primitives")
+                        visual_shape_id = p.createVisualShape(shape_type,
+                                                              meshScale=scale,
+                                                              fileName=mesh_resource,
+                                                              visualFramePosition=t,
+                                                              visualFrameOrientation=q,
+                                                              rgbaColor=shape.color)
+                        if visual_shape_id >= 0:
+                            mass = 0.0
+                            shape_masses.append(mass)
+                            visual_shape_ids.append(visual_shape_id)
+                    else:
+                        pass
+                assert len(shape_masses) == max(len(collision_shape_ids), len(visual_shape_ids))
+                if len(scene_node.shapes) == 1 and len(shape_masses) > 0:
+                    t = base_pose.position().to_array()
+                    q = base_pose.quaternion()
+                    c_id = collision_shape_ids[0] if len(collision_shape_ids) == 1 else -1
+                    sim_id = p.createMultiBody(baseMass=shape_masses[0],
+                                               basePosition=t,
+                                               baseOrientation=q,
+                                               baseCollisionShapeIndex=c_id,
+                                               baseVisualShapeIndex=visual_shape_ids[0])
+                    p.changeDynamics(sim_id, -1, frictionAnchor=1)
+                    self.entity_id_map[scene_node.id] = sim_id
+                    self.entity_map[scene_node.id] = copy.deepcopy(scene_node)
+                    return True
+                else:
+                    print scene_node.id
+                    print len(shape_masses)
+                    print len(scene_node.shapes)
+                    rospy.logwarn("[simulation] Multibody shape not supported, consider using load URDF")
+        return False
 
     def get_myself(self):
+        """ Fetch the robot scene node
+        """
         node = self.get_entity("myself")
-        node.type = SceneNodeType.MYSELF
-        node.label = "robot"
         return node
 
     def get_static_entities(self):
+        """ Fetch the static scene nodes given by the config file at start
+        """
         return self.static_nodes
 
     def get_entity(self, id):
+        """ Fetch an entity in the simulator and perform a lazzy update of the corresponding scene node
+        """
         if id not in self.entity_map:
             raise ValueError("Invalid id provided : '{}'".format(id))
         scene_node = self.entity_map[id]
@@ -270,7 +386,9 @@ class InternalSimulator(object):
         return self.entity_map[id]
 
     def get_camera_view(self, camera_pose, camera, target_position=None, occlusion_threshold=0.01, rendering_ratio=1.0):
-        visible_tracks = []
+        """ Render the rgb, depth and mask images from any point or view and compute the corresponding visible nodes
+        """
+        visible_nodes = []
         rot = quaternion_matrix(camera_pose.quaternion())
         trans = translation_matrix(camera_pose.position().to_array().flatten())
         if target_position is None:
@@ -348,25 +466,44 @@ class InternalSimulator(object):
                     track.pose = scene_node.pose
                     track.label = scene_node.label
                     track.description = scene_node.description
-                    visible_tracks.append(track)
+                    visible_nodes.append(track)
 
-        return rgb_image, real_depth_image, mask_image_resized, visible_tracks
+        return rgb_image, real_depth_image, mask_image_resized, visible_nodes
 
     def test_aabb_collision(self, xmin, ymin, zmin, xmax, ymax, zmax):
+        """ Return True if the aabb is in contact with an other object
+        """
         contacts = p.getOverlappingObjects([xmin, ymin, zmin], [xmax, ymax, zmax])
         if contacts is not None:
             if len(contacts) > 0:
                 return True
         return False
+    #
+    # def compute_raycast_batch(self, poses):
+    #     """
+    #     """
+    #     pass
 
-    def get_aabb(self, id):
-        sim_id = self.entity_id_map[id]
-        aabb_min, aabb_max = p.getAABB(sim_id)
-        xmin, ymin, zmin = aabb_min
-        xmax, ymax, zmax = aabb_max
-        return xmin, ymin, zmin, xmax, ymax, zmax
+    # def is_reachable(self, position):
+    #     """ Return True if the position if reachable from the robot
+    #     """
+    #     base_link_sim_id = self.entity_id_map["myself"]
+    #     #self.joint_id_map[base_link_sim_id][]
+    #     p.calculateInverseKinematics(base_link_sim_id)
+    #     pass
+    #
+    # def get_aabb(self, id):
+    #     """
+    #     """
+    #     sim_id = self.entity_id_map[id]
+    #     aabb_min, aabb_max = p.getAABB(sim_id)
+    #     xmin, ymin, zmin = aabb_min
+    #     xmax, ymax, zmax = aabb_max
+    #     return xmin, ymin, zmin, xmax, ymax, zmax
 
     def update_constraint(self, id, pose):
+        """ Update a constraint
+        """
         base_link_sim_id = self.entity_id_map[id]
         if id not in self.constraint_id_map:
             constraint_id = p.createConstraint(base_link_sim_id, -1, -1, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0, 0, 1])
@@ -378,16 +515,28 @@ class InternalSimulator(object):
         p.changeConstraint(constraint_id, jointChildPivot=t, jointChildFrameOrientation=q, maxForce=INF)
 
     def remove_constraint(self, id):
+        """ Remove a constraint
+        """
         if id in self.constraint_id:
             p.removeConstraint(self.constraint_id_map[id])
 
-    def update_entity_pose(self, id, pose):
-        if id not in self.entity_id_map:
-            raise ValueError("Entity <{}> is not loaded into the simulator".format(id))
-        base_link_sim_id = self.entity_id_map[id]
-        t = pose.position().to_array().flatten()
-        q = pose.quaternion()
-        p.resetBasePositionAndOrientation(base_link_sim_id, t, q, physicsClientId=self.client_simulator_id)
+    # def update_entity_pose(self, id, pose):
+    #     if id not in self.entity_id_map:
+    #         raise ValueError("Entity <{}> is not loaded into the simulator".format(id))
+    #     base_link_sim_id = self.entity_id_map[id]
+    #     t = pose.position().to_array().flatten()
+    #     q = pose.quaternion()
+    #     p.resetBasePositionAndOrientation(base_link_sim_id, t, q, physicsClientId=self.client_simulator_id)
+
+    def is_entity_loaded(self, id):
+        """ Returns True if the entity is loaded
+        """
+        return id in self.entity_id_map
+
+    def is_robot_loaded(self):
+        """ Returns True if the robot is robot_loaded
+        """
+        return self.robot_loaded
 
     def joint_states_callback(self, joint_states_msg):
         success, pose = self.tf_bridge.get_pose_from_tf(self.global_frame_id, self.base_frame_id)

@@ -20,14 +20,12 @@
   <arg name="hand_detector_config_filename" default="$(find uwds3)/config/detection/hand_config.yaml"/>
 
   <!-- Tracker parameters -->
-  <arg name="n_init" default="6"/>
-  <arg name="n_frame" default="4"/>
-  <arg name="max_iou_distance" default="0.98"/>
-  <arg name="max_color_distance" default="0.3"/>
-  <arg name="max_face_distance" default="0.3"/>
-  <arg name="max_centroid_distance" default="0.4"/>
-  <arg name="max_lost" default="5"/>
-  <arg name="max_age" default="15"/>
+  <arg name="n_init" default="7"/>
+  <arg name="n_frame" default="5"/>
+  <arg name="max_iou_distance" default="0.6"/>
+  <arg name="max_color_distance" default="0.7"/>
+  <arg name="max_lost" default="15"/>
+  <arg name="max_age" default="20"/>
 
   <!-- Simulation parameters -->
   <arg name="use_simulation_gui" default="True"/>
@@ -73,7 +71,6 @@
       n_init: $(arg n_init)
       max_iou_distance: $(arg max_iou_distance)
       max_color_distance: $(arg max_color_distance)
-      max_face_distance: $(arg max_face_distance)
       max_lost: $(arg max_lost)
       max_age: $(arg max_age)
     </rosparam>

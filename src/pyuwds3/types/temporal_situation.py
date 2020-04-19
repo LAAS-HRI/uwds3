@@ -4,57 +4,115 @@ import uwds3_msgs.msg
 
 
 class TemporalSituationType(object):
+    """ TemporalSituation types
+    """
     PREDICATE = uwds3_msgs.msg.TemporalSituation.PREDICATE
     CAPTION = uwds3_msgs.msg.TemporalSituation.CAPTION
 
 
 class TemporalSituation(object):
-    def __init__(self, subject, description,
+    """ Represent a temporal situation with a description
+    """
+    def __init__(self,
+                 type,
+                 subject,
+                 description,
+                 predicate="",
                  object="",
                  confidence=1.0,
                  expiration=2.0,
                  point=None):
+        self.type = type
         self.description = description
+        self.predicate = predicate
         self.subject = subject
         self.object = object
         self.confidence = confidence
         self.start = None
         self.end = None
-        self.last_update = rospy.Time.now()
         self.expiration_duration = rospy.Duration(expiration)
-        self.default_value = 0.0
         self.point = point
 
+    def is_predicate(self):
+        """ Returns True if is a predicate
+        """
+        return self.type == TemporalSituationType.PREDICATE
+
+    def is_caption(self):
+        """ Returns True if is a caption
+        """
+        return self.type == TemporalSituationType.CAPTION
+
+    def is_event(self):
+        """ Returns True if is an event
+        """
+        return self.end == self.start
+
+    def is_finished(self):
+        """ Returns True if finished
+        """
+        return self.end is not None
+
     def start(self, time=None):
+        """ Start the temporal predicate
+        """
         if time is None:
             self.start = rospy.Time.now()
         else:
             self.start = time
 
-    def update(self, time=None):
-        if time is None:
-            self.last_update = rospy.Time.now()
-        else:
-            self.last_update = time
-
     def end(self, time=None):
+        """ End the temporal predicate
+        """
         if time is None:
             self.end = rospy.Time.now()
         else:
             self.end = time
 
     def is_located(self):
+        """ Returns True if is located
+        """
         return self.point is not None
 
     def to_delete(self):
-        return self.last_update + self.expiration_duration < rospy.Time.now()
+        """ Returns True is to delete
+        """
+        if self.end is not None:
+            return self.end + self.expiration_duration < rospy.Time.now()
+        else:
+            return False
+
+    def from_msg(self, msg):
+        """ Convert from ROS message
+        """
+        self.type = msg.type
+        self.description = msg.description
+        self.subject = msg.subject_id
+        self.object = msg.object_id
+        self.confidence = msg.confidence
+        if msg.start == rospy.Time(0):
+            self.start = None
+        else:
+            self.start = msg.start
+        if msg.end == rospy.Time(0):
+            self.end = None
+        else:
+            self.end = msg.end
+        if msg.is_located is True:
+            self.point = msg.point
+        else:
+            self.point = None
+        self.expiration_duration = msg.expiration_duration.to_sec()
+        return self
 
     def to_msg(self, header):
+        """ Convert to ROS message
+        """
         msg = uwds3_msgs.msg.TemporalSituation()
         msg.type = self.type
         msg.description = self.description
-        msg.subject = self.subject
-        msg.object = self.object
+        msg.subject_id = self.subject
+        msg.object_id = self.object
         msg.confidence = self.confidence
         if self.start is not None:
             msg.start = self.start
@@ -63,24 +121,58 @@ class TemporalSituation(object):
         if self.is_located():
             msg.point.header = header
             msg.point = self.point.to_msg()
-        msg.last_update = self.last_update
         msg.expiration_duration = self.expiration_duration
-        msg.default_value = self.default_value
         return msg
 
+    def __eq__(self, other):
+        return other.description == self.description
 
-class Event(TemporalSituation):
-    def __init__(self, subject, description,
+
+class TemporalPredicate(TemporalSituation):
+    def __init__(self,
+                 subject,
+                 description,
+                 predicate="",
                  object="",
                  confidence=1.0,
                  expiration=2.0,
+                 point=None,
                  time=None):
-        self.description = description
-        self.subject = subject
-        self.object = object
-        self.confidence = confidence
-        self.start = rospy.Time.now()
-        self.end = rospy.Time.now()
-        self.last_update = rospy.Time.now()
+        super(TemporalPredicate, self).__init__(TemporalSituationType.PREDICATE,
+                                                subject,
+                                                description,
+                                                object=object,
+                                                predicate=predicate,
+                                                confidence=confidence,
+                                                expiration=expiration,
+                                                point=point)
+        if time is not None:
+            self.start(time=time)
+
+
+class Event(TemporalSituation):
+    def __init__(self,
+                 subject,
+                 description,
+                 predicate="",
+                 object="",
+                 confidence=1.0,
+                 expiration=2.0,
+                 point=None,
+                 time=None):
+        super(Event, self).__init__(TemporalSituationType.PREDICATE,
+                                    subject,
+                                    description,
+                                    object=object,
+                                    predicate=predicate,
+                                    confidence=confidence,
+                                    expiration=expiration,
+                                    point=point)
+        if time is None:
+            self.start = rospy.Time.now()
+            self.end = rospy.Time.now()
+        else:
+            self.start = time
+            self.end = time
         self.expiration_duration = rospy.Duration(expiration)
-        self.default_value = 0.0
+        self.point = point

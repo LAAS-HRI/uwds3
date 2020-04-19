@@ -43,7 +43,8 @@ class SceneNode(object):
                  ax=0., ay=0., az=0.,
                  arx=0., ary=0., arz=0.,
                  time=None):
-        """ """
+        """ Scene node constructor
+        """
         self.id = str(uuid.uuid4()).replace("-", "")
 
         self.features = {}
@@ -83,6 +84,8 @@ class SceneNode(object):
         self.parent = ""
         self.type = type
         self.description = ""
+        self.perceived = False
+
         if pose is not None:
             self.pose = Vector6DStable(x=pose.pos.x, y=pose.pos.y, z=pose.pos.z,
                                        rx=pose.rot.x, ry=pose.rot.y, rz=pose.rot.z,
@@ -106,6 +109,8 @@ class SceneNode(object):
         self.expiration_duration = 1.0
 
     def update_bbox(self, detection, detected=True, time=None):
+        """ Update the 2D bbox corresponding to the scene node
+        """
         if self.bbox is None or self.state == SceneNodeState.LOST:
             self.bbox = BoundingBoxStable(detection.bbox.xmin,
                                           detection.bbox.ymin,
@@ -140,11 +145,13 @@ class SceneNode(object):
             self.state = SceneNodeState.CONFIRMED
 
     def predict_bbox(self, time=None):
-        """Predict the bbox location based on motion model (kalman tracker)"""
+        """ Predict the 2D bbox location based on motion model (kalman)
+        """
         self.bbox.predict(time=time)
 
     def update_pose(self, position, rotation=None, time=None):
-        """ """
+        """ Update the 3D pose in global frame
+        """
         if self.pose is None:
             if rotation is None:
                 self.pose = Vector6DStable(x=position.x,
@@ -165,20 +172,25 @@ class SceneNode(object):
                 self.pose.rot.update(rotation.x, rotation.y, rotation.z, time=time)
 
     def predict_pose(self, time=None):
-        """Predict the pose location based on motion model (kalman tracker)"""
+        """ Predict the 3D pose in global frame based on motion model (kalman)"""
         self.pose.predict(time=time)
 
     def start_tracker(self):
+        """ Initialize the medianflow 2D tracker
+        """
         self.tracker = MedianFlowTracker(self)
 
     def stop_tracker(self):
+        """ Stop the 2D tracker
+        """
         self.traker = None
 
     def mark_missed(self):
-        """Mark the track missed"""
+        """ Mark missed
+        """
         self.age += 1
         if self.state == SceneNodeState.TENTATIVE:
-            if self.age > self.max_lost:
+            if self.age > self.n_init:
                 self.state = SceneNodeState.DELETED
         if self.state == SceneNodeState.CONFIRMED:
             if self.age > self.max_lost:
@@ -188,38 +200,64 @@ class SceneNode(object):
                 self.state = SceneNodeState.DELETED
 
     def mark_occluded(self):
+        """ Mark occluded
+        """
         if self.state == SceneNodeState.LOST:
             self.state = SceneNodeState.OCCLUDED
 
     def is_static(self):
+        """ Return True if is static
+        """
         return self.static
 
+    def is_perceived(self):
+        """ Return True if is perceived by a camera (real of virtual)
+        """
+        return self.perceived
+
     def is_confirmed(self):
+        """ Return True if is confirmed
+        """
         return self.state == SceneNodeState.CONFIRMED
 
     def is_lost(self):
+        """ Return True if is lost
+        """
         return self.state == SceneNodeState.LOST
 
     def is_occluded(self):
+        """ Return True if is occluded
+        """
         return self.state == SceneNodeState.OCCLUDED
 
     def to_delete(self):
+        """ Return True is to delete
+        """
         return self.state == SceneNodeState.DELETED
 
     def is_located(self):
+        """ Returns True if is located in 3D space
+        """
         return self.pose is not None
 
     def has_shape(self):
+        """ Returns True if has at least one shape
+        """
         return len(self.shapes) > 0
 
     def has_camera(self):
+        """ Return true if has camera
+        """
         return self.camera is not None
 
     def has_mask(self):
+        """ Return True if has a mask
+        """
         return self.mask is not None
 
     def from_msg(self, msg):
-        """ """
+        """ Convert from ROS message
+        """
         self.id = msg.id
         self.label = msg.label
         self.parent = msg.parent
@@ -274,7 +312,7 @@ class SceneNode(object):
         return self
 
     def to_msg(self, header):
-        """
+        """ Convert to ROS message
         """
         msg = uwds3_msgs.msg.SceneNode()
         msg.id = self.id
@@ -328,7 +366,8 @@ class SceneNode(object):
         return msg
 
     def draw(self, image, color, thickness=1, view_pose=None, camera=None):
-        """Draws the track"""
+        """Draws the track
+        """
 
         if self.is_confirmed() or self.is_occluded():
             track_color = (0, 200, 0)
@@ -404,7 +443,10 @@ class SceneNode(object):
 
             if "facial_landmarks" in self.features:
                 self.features["facial_landmarks"].draw(image,
-                                                   track_color,
-                                                   thickness)
+                                                       track_color,
+                                                       thickness)
         else:
             self.bbox.draw(image, track_color, 1)
+
+    def __eq__(self, other):
+        return other.id == self.id

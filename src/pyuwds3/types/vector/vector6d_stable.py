@@ -13,8 +13,8 @@ class Vector6DStable(Vector6D):
                  vrx=.0, vry=.0, vrz=.0,
                  ax=.0, ay=.0, az=.0,
                  arx=.0, ary=.0, arz=.0,
-                 p_cov_p=0.001, m_cov_p=0.0001,
-                 p_cov_r=0.25, m_cov_r=0.0085,
+                 p_cov_p=0.1, m_cov_p=0.01,
+                 p_cov_r=0.85, m_cov_r=0.0085,
                  time=None):
         """ """
         self.pos = Vector3DStable(x=x, y=y, z=z,

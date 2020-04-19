@@ -6,40 +6,47 @@ from ..vector.vector6d import Vector6D
 
 
 class Cylinder(Shape):
-    """Represents a 2D BoundingBox + depth in the world space (e.g. cylinder)"""
-    def __init__(self, w, h,
+    """ Represents a 2D BoundingBox + depth in the world space (e.g. cylinder)
+    """
+    def __init__(self, w, h, name="",
                  x=.0, y=.0, z=.0,
-                 rx=.0, ry=.0, rz=.0):
-        """Cylinder constructor"""
-        self.type = ShapeType.CYLINDER
-        self.pose = Vector6D(x=x, y=y, z=z,
-                             rx=rx, ry=ry, rz=rz)
+                 rx=.0, ry=.0, rz=.0,
+                 scale_x=1., scale_y=1., scale_z=1.):
+        """ Cylinder constructor
+        """
+        super(Cylinder, self).__init__(ShapeType.CYLINDER,
+                                       name=name,
+                                       x=x, y=y, z=z,
+                                       rx=rx, ry=ry, rz=rz,
+                                       scale_x=scale_x,
+                                       scale_y=scale_y,
+                                       scale_z=scale_z)
         self.w = w
         self.h = h
-        self.color = np.zeros(4)
-        self.color[3] = 1.0
-
-    def center(self):
-        """Returns the bbox's center in pixels"""
-        return self.position
 
     def radius(self):
-        """Returns the cylinder's radius in meters"""
+        """ Returns the cylinder's radius in meters
+        """
         return self.width()/2.0
 
     def width(self):
-        """Returns the cylinder's width in meters"""
+        """ Returns the cylinder's width in meters
+        """
         return self.w
 
     def height(self):
-        """Returns the cylinder's height in meters"""
+        """ Returns the cylinder's height in meters
+        """
         return self.h
 
-    def area(self):
-        """Returns the cylinder's area in cube meters"""
-        return 2.0*pi*self.radius()*self.height()
+    def volume(self):
+        """ Returns the cylinder volume in cube meters
+        """
+        return(pi*pow(self.radius(), 2)*self.h)
 
     def from_msg(self, msg):
+        """ Convert from ROS message
+        """
         self.w = msg.dimensions[0]
         self.h = msg.dimensions[1]
         a = msg.color.a
@@ -51,6 +58,8 @@ class Cylinder(Shape):
         return self
 
     def to_msg(self):
+        """ Convert to ROS message
+        """
         shape = uwds3_msgs.msg.PrimitiveShape()
         shape.type = self.type
         shape.dimensions.append(self.width())

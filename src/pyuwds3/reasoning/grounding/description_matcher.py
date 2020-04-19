@@ -13,7 +13,7 @@ class DescriptionMatcher(object):
         self.word_vector_dim = word_vector_dim
         self.dimensions = (word_vector_dim, 0)
         self.dictionary = set()
-        index = 0
+        index = 1 # keras tokens start at 1
         with open(pre_trained_embedding_file, "r") as file:
             for line in file:
                 tokens = line.split()
@@ -32,12 +32,12 @@ class DescriptionMatcher(object):
                 word_vector_sequence.append(self.word_to_vector[word])
         return np.average(np.array(word_vector_sequence), axis=0)
 
-    def compute_sentence_vector(self, description):
-        pass
-
-    def compute_fast_subword_vector(self, word):
-        subword_vector =
-        fragments = set(word[i:j] for i in range(len(word)) for j in range(i+3, len(word)+1))
-        subwords = self.dictionary.intersection(fragments)
-        #TODO compute subword vector
-        return subword_vector
+    # def compute_sentence_vector(self, description):
+    #     pass
+    #
+    # def compute_fast_subword_vector(self, word):
+    #     subword_vector =
+    #     fragments = set(word[i:j] for i in range(len(word)) for j in range(i+3, len(word)+1))
+    #     subwords = self.dictionary.intersection(fragments)
+    #     #TODO compute subword vector
+    #     return subword_vector

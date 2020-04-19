@@ -52,7 +52,7 @@ class ShapeEstimator(object):
         h = int(bbox.height())
         w = int(bbox.width())
         cropped_image = rgb_image[ymin:ymin+h, xmin:xmin+w].copy()
-        cropped_image = cv2.resize(cropped_image, (68, 68))
+        cropped_image = cv2.resize(cropped_image, (10, 10))
         np_pixels = cropped_image.shape[0] * cropped_image.shape[1]
         cropped_image = cropped_image.reshape((np_pixels, 3))
         clt = KMeans(n_clusters=K)
