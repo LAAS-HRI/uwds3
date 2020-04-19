@@ -79,11 +79,11 @@ class ShapeEstimator(object):
 
     def compute_sphere_from_bbox(self, bbox, camera):
         camera_matrix = camera.camera_matrix()
-        z = self.depth
+        z = bbox.depth
         fx = camera_matrix[0][0]
         fy = camera_matrix[1][1]
-        w = self.width()
-        h = self.height()
+        w = bbox.width()
+        h = bbox.height()
         w = w * z / fx
         h = h * z / fy
         d = max(w, h)

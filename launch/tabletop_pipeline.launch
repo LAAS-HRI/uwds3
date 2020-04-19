@@ -21,7 +21,7 @@
 
   <!-- Tracker parameters -->
   <arg name="n_init" default="6"/>
-  <arg name="n_frame" default="3"/>
+  <arg name="n_frame" default="4"/>
   <arg name="max_iou_distance" default="0.98"/>
   <arg name="max_color_distance" default="0.3"/>
   <arg name="max_face_distance" default="0.3"/>

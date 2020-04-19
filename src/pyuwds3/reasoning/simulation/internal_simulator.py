@@ -26,7 +26,6 @@ class InternalSimulator(object):
                  global_frame_id,
                  base_frame_id,
                  position_tolerance=0.005,
-                 simulation_step=(1./240.0),
                  load_robot=True):
 
         self.tf_bridge = TfBridge()
@@ -63,8 +62,6 @@ class InternalSimulator(object):
             self.client_simulator_id = p.connect(p.GUI)
         else:
             self.client_simulator_id = p.connect(p.DIRECT)
-
-        #p.setPhysicsEngineParameter(numSolverIterations=50, maxNumCmdPer1ms=1)
 
         if cad_models_additional_search_path != "":
             p.setAdditionalSearchPath(cad_models_additional_search_path)
@@ -104,14 +101,11 @@ class InternalSimulator(object):
                   start_pose,
                   static=False,
                   label="thing",
-                  description="",
-                  robot=False):
+                  description=""):
         """ """
         try:
             use_fixed_base = 1 if static is True else 0
             flags = p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES or p.URDF_MERGE_FIXED_LINKS
-            if robot is True:
-                flags = flags or p.URDF_ENABLE_SLEEPING
             base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base, flags=flags)
             self.entity_id_map[id] = base_link_sim_id
             # Create a joint map to ease exploration
@@ -209,6 +203,10 @@ class InternalSimulator(object):
         except Exception as e:
             rospy.logwarn("[simulation] Error loading URDF '{}': {}".format(filename, e))
             return False, None
+    #
+    # def load_node(self, scene_node):
+    #     if scene_node.is_located():
+    #         pose = scene_node.pose
 
     def get_myself(self):
         node = self.get_entity("myself")
@@ -396,7 +394,7 @@ class InternalSimulator(object):
         if success is True:
             if self.robot_loaded is False:
                 try:
-                    self.load_urdf("myself", self.robot_urdf_file_path, pose, robot=True)
+                    self.load_urdf("myself", self.robot_urdf_file_path, pose)
                     self.robot_loaded = True
                 except Exception as e:
                     rospy.logwarn("[simulation] Exception occured: {}".format(e))
