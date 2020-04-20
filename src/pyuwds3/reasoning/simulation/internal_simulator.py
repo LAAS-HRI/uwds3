@@ -113,9 +113,7 @@ class InternalSimulator(object):
         """
         try:
             use_fixed_base = 1 if static is True else 0
-            flags = p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES or p.URDF_MERGE_FIXED_LINKS
-            if label != "myself":
-                flags = flags or p.URDF_ENABLE_SLEEPING
+            flags = p.URDF_ENABLE_SLEEPING or p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES or p.URDF_MERGE_FIXED_LINKS
             base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base, flags=flags)
             self.entity_id_map[id] = base_link_sim_id
             # Create a joint map to ease exploration
@@ -309,7 +307,7 @@ class InternalSimulator(object):
                                                baseOrientation=q,
                                                baseCollisionShapeIndex=c_id,
                                                baseVisualShapeIndex=visual_shape_ids[0])
-                    p.changeDynamics(sim_id, -1, frictionAnchor=1)
+                    p.changeDynamics(sim_id, -1, frictionAnchor=1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
                     self.entity_id_map[scene_node.id] = sim_id
                     self.entity_map[scene_node.id] = copy.deepcopy(scene_node)
                     return True
@@ -567,7 +565,10 @@ class InternalSimulator(object):
                     joint_indices.append(joint_sim_index)
                     target_positions.append(joint_position)
                 if len(target_positions) > 0:
+                    p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_DISABLE_SLEEPING)
                     p.setJointMotorControlArray(base_link_sim_id,
                                                 joint_indices,
                                                 controlMode=p.POSITION_CONTROL,
                                                 targetPositions=target_positions)
+                else:
+                    p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)

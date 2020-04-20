@@ -23,7 +23,7 @@ def overlap_cost(track_a, track_b):
 
 
 class TabletopActionMonitor(Monitor):
-    def __init__(self, internal_simulator=None, beliefs_base=None, moving_velocity_tolerance=0.0001):
+    def __init__(self, internal_simulator=None, beliefs_base=None, moving_velocity_tolerance=0.001):
         """
         """
         super(TabletopActionMonitor, self).__init__(internal_simulator=internal_simulator, beliefs_base=beliefs_base)
