@@ -34,10 +34,10 @@ class TabletopActionMonitor(Monitor):
     def monitor(self, support_tracks, object_tracks, person_tracks, hand_tracks, time=None):
         """
         """
-        moving_objects = []
         lost_objects = []
         moving_objects = []
         not_moving_objects = []
+        occluded_objects = []
 
         for support in support_tracks:
             if support.is_located() and support.has_shape():
@@ -59,8 +59,12 @@ class TabletopActionMonitor(Monitor):
                         moving_objects.append(object)
                     else:
                         not_moving_objects.append(object)
-            if object.is_lost():
-                lost_objects.append(object)
+                        if object.is_lost():
+                            lost_objects.append(object)
+                        elif object.is_occluded():
+                            occluded_objects.append()
+                        else:
+                            pass
 
         if len(moving_objects) > 0:
             matches, unmatched_objects, unmatched_person = self.centroid_assignement.match(person_tracks, moving_objects)
@@ -75,74 +79,13 @@ class TabletopActionMonitor(Monitor):
         if len(lost_objects) > 0:
             matches, unmatched_objects, unmatched_person = self.centroid_assignement.match(person_tracks, lost_objects)
             for object_indice, person_indice in matches:
-                self.mark_picked(object_tracks[object_indice], person_tracks[person_indice], support, time=time)
-        #
-        # cleaned_relations = []
-        # cleaned_index = {}
-        # for relation in self.relations:
-        #     if not relation.to_delete():
-        #         cleaned_relations.append(relation)
-        #         if relation.object is not None:
-        #             cleaned_index[relation.subject.id+str(relation)+relation.object.id] = len(cleaned_relations) - 1
-        #         else:
-        #             cleaned_index[relation.subject.id+str(relation)] = len(cleaned_relations) - 1
-        #
-        # self.relations = cleaned_relations
-        # self.relations_index = cleaned_index
-        #
-        # for object in object_tracks:
-        #     if self.simulator.is_entity_loaded(object.id) is False:
-        #         self.simulator.load_node(object)
-        #     if object.is_confirmed():
-        #         if object.is_located():
-        #             if np.allclose(object.pose.linear_velocity().to_array(), np.zeros(3), atol=self.moving_velocity_tolerance) is False:
-        #                 moving_objects.append(object)
-        #         else:
-        #             if np.allclose(object.bbox.center_filter.velocity().to_array(), np.zeros(2), atol=self.moving_velocity_tolerance) is False:
-        #                 moving_objects.append(object)
-        #     elif object.is_occluded():
-        #         disappeared_objects.append(object)
-        #
-        # if len(moving_objects) > 0 and len(person_tracks) > 0:
-        #     matches, unmatched_objects, unmatched_person = self.centroid_assignement.match(person_tracks, moving_objects)
-        #
-        #     for moving_object_indice, person_indice in matches:
-        #         object = moving_objects[moving_object_indice]
-        #         person = person_tracks[person_indice]
-        #         if object.is_located():
-        #             if object.pose.linear_velocity().z > self.moving_velocity_tolerance:
-        #                 self.mark_picked(object, person, support)
-        #             else:
-        #                 self.mark_pushed(object, person, support)
-        #         else:
-        #             if object.bbox.center_filter.velocity().x < - self.moving_velocity_tolerance:
-        #                 self.mark_picked(object, person, support)
-        #             else:
-        #                 self.mark_pushed(object, person, support)
-        #
-        # if len(disappeared_objects) > 0:
-        #     matches, unmatched_objects, unmatched_person = self.centroid_assignement.match(person_tracks, disappeared_objects)
-        #
-        #     for disappeared_object_indice, person_indice in matches:
-        #         object = moving_objects[disappeared_object_indice]
-        #         person = person_tracks[person_indice]
-        #         ok, object_in_front = self.test_occlusion(object, object_tracks + person_tracks + hand_tracks)
-        #         if ok:
-        #             self.start_predicate(object, "behind", object_in_front)
-        #             # start relation behind
-        #         else:
-        #             # the object is not here anymore, picked ?
-        #             if len(person_tracks) > 0:
-        #                 action_matches, unmatched_objects, unmatched_person = self.centroid_assignement.match(person_tracks, [object])
-        #
-        #                 for object_indice, person_indice in matches:
-        #                     object = moving_objects[moving_object_indice]
-        #                     person = person_tracks[person_indice]
-        #                     self.mark_picked(object, person, support)
-        #             else:
-        #                 # object disapeared by himself
-        #                 self.trigger_event(object, "disapeared")
-        #print len(self.relations)
+                occluded, by = self.test_occlusion(object, object_tracks+person_tracks+hand_tracks)
+                if occluded:
+                    object_tracks[object_indice].mark_occluded()
+                    self.start_predicate(object_tracks[object_indice], "behind", by, time)
+                else:
+                    self.mark_picked(object_tracks[object_indice], person_tracks[person_indice], support, time=time)
+
         self.relations = [r for r in self.relations if not r.to_delete()]
         return self.relations
 

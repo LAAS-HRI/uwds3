@@ -192,9 +192,11 @@ class SceneNode(object):
         if self.state == SceneNodeState.TENTATIVE:
             if self.age > self.n_init:
                 self.state = SceneNodeState.DELETED
-        if self.state == SceneNodeState.CONFIRMED:
+        elif self.state == SceneNodeState.CONFIRMED:
             if self.age > self.max_lost:
                 self.state = SceneNodeState.LOST
+        elif self.state == SceneNodeState.OCCLUDED:
+            self.state = SceneNodeState.LOST
         elif self.state == SceneNodeState.LOST:
             if self.age > self.max_age:
                 self.state = SceneNodeState.DELETED

@@ -144,7 +144,7 @@ class TabletopPipeline(BasePipeline):
             detections = []
 
         detection_fps = cv2.getTickFrequency() / (cv2.getTickCount()-detection_timer)
-        print "detection: {:.2}hz".format(detection_fps)
+        #print "detection: {:.2}hz".format(detection_fps)
         ####################################################################
         # Features estimation
         ####################################################################

@@ -57,9 +57,11 @@ class MultiObjectTracker(object):
     def update(self, rgb_image, detections, depth_image=None, time=None):
         """Updates the tracker"""
 
+        not_occluded_tracks = [t for t in self.tracks if not t.is_occluded()]
+
         # First we try to assign the detections to the tracks by using a geometric assignment (centroid or iou)
         if len(detections) > 0:
-            first_matches, unmatched_detections, unmatched_tracks = self.geometric_assignment.match(self.tracks, detections)
+            first_matches, unmatched_detections, unmatched_tracks = self.geometric_assignment.match(not_occluded_tracks, detections)
 
             # Then we try to assign the detections to the tracks that didn't match based on the features
             if len(unmatched_tracks) > 0 and len(unmatched_detections) > 0:

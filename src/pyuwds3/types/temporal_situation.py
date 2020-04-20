@@ -28,8 +28,8 @@ class TemporalSituation(object):
         self.subject = subject
         self.object = object
         self.confidence = confidence
-        self.start = None
-        self.end = None
+        self.start_time = None
+        self.end_time = None
         self.expiration_duration = rospy.Duration(expiration)
         self.point = point
 
@@ -46,28 +46,30 @@ class TemporalSituation(object):
     def is_event(self):
         """ Returns True if is an event
         """
-        return self.end == self.start
+        return self.end_time == self.start_time
 
     def is_finished(self):
         """ Returns True if finished
         """
-        return self.end is not None
+        return self.end_time is not None
 
     def start(self, time=None):
         """ Start the temporal predicate
         """
         if time is None:
-            self.start = rospy.Time.now()
+            self.start_time = rospy.Time.now()
         else:
-            self.start = time
+            self.start_time = time
+        return self
 
     def end(self, time=None):
         """ End the temporal predicate
         """
         if time is None:
-            self.end = rospy.Time.now()
+            self.end_time = rospy.Time.now()
         else:
-            self.end = time
+            self.end_time = time
+        return self
 
     def is_located(self):
         """ Returns True if is located
@@ -77,8 +79,8 @@ class TemporalSituation(object):
     def to_delete(self):
         """ Returns True is to delete
         """
-        if self.end is not None:
-            return self.end + self.expiration_duration < rospy.Time.now()
+        if self.end_time is not None:
+            return self.end_time + self.expiration_duration < rospy.Time.now()
         else:
             return False
 
@@ -91,13 +93,13 @@ class TemporalSituation(object):
         self.object = msg.object_id
         self.confidence = msg.confidence
         if msg.start == rospy.Time(0):
-            self.start = None
+            self.start_time = None
         else:
-            self.start = msg.start
+            self.start_time = msg.start
         if msg.end == rospy.Time(0):
-            self.end = None
+            self.end_time = None
         else:
-            self.end = msg.end
+            self.end_time = msg.end
         if msg.is_located is True:
             self.point = msg.point
         else:
@@ -114,10 +116,10 @@ class TemporalSituation(object):
         msg.subject_id = self.subject
         msg.object_id = self.object
         msg.confidence = self.confidence
-        if self.start is not None:
-            msg.start = self.start
-        if self.end is not None:
-            msg.end = self.end
+        if self.start_time is not None:
+            msg.start = self.start_time
+        if self.end_time is not None:
+            msg.end = self.end_time
         if self.is_located():
             msg.point.header = header
             msg.point = self.point.to_msg()
@@ -125,7 +127,10 @@ class TemporalSituation(object):
         return msg
 
     def __eq__(self, other):
-        return other.description == self.description
+        if other.subject == self.subject:
+            if other.object == self.object:
+                return other.description == self.description
+        return False
 
 
 class TemporalPredicate(TemporalSituation):
@@ -136,8 +141,7 @@ class TemporalPredicate(TemporalSituation):
                  object="",
                  confidence=1.0,
                  expiration=2.0,
-                 point=None,
-                 time=None):
+                 point=None):
         super(TemporalPredicate, self).__init__(TemporalSituationType.PREDICATE,
                                                 subject,
                                                 description,
@@ -146,11 +150,9 @@ class TemporalPredicate(TemporalSituation):
                                                 confidence=confidence,
                                                 expiration=expiration,
                                                 point=point)
-        if time is not None:
-            self.start(time=time)
 
 
-class Event(TemporalSituation):
+class Event(TemporalPredicate):
     def __init__(self,
                  subject,
                  description,
@@ -160,8 +162,7 @@ class Event(TemporalSituation):
                  expiration=2.0,
                  point=None,
                  time=None):
-        super(Event, self).__init__(TemporalSituationType.PREDICATE,
-                                    subject,
+        super(Event, self).__init__(subject,
                                     description,
                                     object=object,
                                     predicate=predicate,
@@ -170,9 +171,9 @@ class Event(TemporalSituation):
                                     point=point)
         if time is None:
             self.start = rospy.Time.now()
-            self.end = rospy.Time.now()
+            self.end_time = rospy.Time.now()
         else:
             self.start = time
-            self.end = time
+            self.end_time = time
         self.expiration_duration = rospy.Duration(expiration)
         self.point = point
