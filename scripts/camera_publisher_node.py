@@ -7,6 +7,7 @@ import cv2
 import sensor_msgs
 import numpy as np
 from cv_bridge import CvBridge
+from pyuwds3.types.camera import Camera
 
 
 class CameraPublisher(object):
@@ -32,21 +33,9 @@ class CameraPublisher(object):
 
         height, width, _ = frame.shape
 
-        center = (height/2, width/2)
-        
-        camera_matrix = np.array([[width, 0, center[0]],
-                                 [0, height, center[1]],
-                                 [0, 0, 1]], dtype="double")
-        P_matrix = np.array([[width, 0, center[0], 0],
-                            [0, height, center[1], 0],
-                            [0, 0, 1, 1]], dtype="double")
+        self.camera = Camera(height=height, width=width)
 
-        dist_coeffs = np.zeros((4, 1))
-        self.camera_info.D = list(dist_coeffs)
-        self.camera_info.K = list(camera_matrix.flatten())
-        self.camera_info.P = list(P_matrix.flatten())
-        self.camera_info.width = width
-        self.camera_info.height = height
+        self.camera_info = self.camera.to_msg().info
 
         self.timer = rospy.Timer(rospy.Duration(1.0/self.camera_pub_frequency), self.timer_callback)
         rospy.loginfo("Camera publisher ready !")

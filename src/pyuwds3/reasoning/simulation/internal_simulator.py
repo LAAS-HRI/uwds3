@@ -20,6 +20,11 @@ INF = 1e+7
 DEFAULT_DENSITY = 998.57
 
 
+class InternalSimulationMode(object):
+    SIMULATING = 0
+    MONITORING = 1
+
+
 class InternalSimulator(object):
     def __init__(self,
                  use_gui,
@@ -28,7 +33,7 @@ class InternalSimulator(object):
                  robot_urdf_file_path,
                  global_frame_id,
                  base_frame_id,
-                 position_tolerance=0.005,
+                 position_tolerance=0.05,
                  load_robot=True,
                  end_effectors=[]):
         """
@@ -58,6 +63,8 @@ class InternalSimulator(object):
         self.robot_urdf_file_path = robot_urdf_file_path
 
         self.robot_acting = False
+
+        self.mode = InternalSimulationMode.MONITORING
 
         self.end_effectors = end_effectors
 
@@ -561,7 +568,7 @@ class InternalSimulator(object):
                 joint_position = joint_states_msg.position[joint_state_index]
                 state = p.getJointState(base_link_sim_id, joint_sim_index)
                 current_position = state[0]
-                if abs(joint_position - current_position) > self.position_tolerance:
+                if abs(joint_position - current_position) >= self.position_tolerance:
                     joint_indices.append(joint_sim_index)
                     target_positions.append(joint_position)
                 if len(target_positions) > 0:
@@ -569,6 +576,8 @@ class InternalSimulator(object):
                     p.setJointMotorControlArray(base_link_sim_id,
                                                 joint_indices,
                                                 controlMode=p.POSITION_CONTROL,
-                                                targetPositions=target_positions)
+                                                targetPositions=target_positions,
+                                                forces=np.full(len(target_positions), 50000))
+                    #p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
                 else:
                     p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)

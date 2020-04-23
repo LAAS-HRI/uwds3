@@ -60,9 +60,7 @@ class TabletopPipeline(BasePipeline):
                                                  self.max_age,
                                                  use_tracker=True)
 
-        self.table_track = None
-        self.table_depth = None
-        self.table_shape = None
+        self.table = None
 
         self.shape_estimator = ShapeEstimator()
 
@@ -75,6 +73,73 @@ class TabletopPipeline(BasePipeline):
 
         self.other_view_publisher = ViewPublisher("other_view")
         self.myself_view_publisher = ViewPublisher("myself_view")
+
+    def get_point_measure(self, rgb_image, depth_image, x, y, camera):
+        depth_height, depth_width = depth_image.shape
+        camera_matrix = camera.camera_matrix()
+        fx = camera_matrix[0][0]
+        fy = camera_matrix[1][1]
+        cx = camera_matrix[0][2]
+        cy = camera_matrix[1][2]
+        if not math.isnan(depth_image[y, x]):
+            z = depth_image[y, x]/1000.0
+            x = (x - cx) * z / fx
+            y = (y - cy) * z / fy
+            return Vector6D(x=x, y=y, z=z)
+        return None
+
+    def create_table(self, rgb_image, depth_image, view_pose, camera):
+        """
+        """
+        if depth_image is None:
+            return False
+
+        image_height, image_width, _ = rgb_image.shape
+        if depth_image is not None:
+            x = int(image_width*(1/2.0))
+            y = int(image_height*(3/4.0))
+            if not math.isnan(depth_image[y, x]):
+                table_depth = depth_image[y, x]/1000.0
+        else:
+            return False
+        table_detection = Detection(0, int(image_height/2.0), int(image_width), image_height, "table", 1.0, table_depth)
+
+        x = int(image_width*(1/2.0))
+        y = int(image_height*(3/4.0))
+        table_center = self.get_point_measure(rgb_image, depth_image, x, y, camera)
+        if table_center is None:
+            return False
+        print table_center
+        x = int(image_width*(1/2.0))
+        y = int(image_height*(1/2.0))
+        table_top_border = self.get_point_measure(rgb_image, depth_image, x, y, camera)
+        if table_top_border is None:
+            return False
+        print table_top_border
+        x = int(image_width*(1/2.0))
+        y = int(image_height-15)
+        table_bottom_border = self.get_point_measure(rgb_image, depth_image, x, y, camera)
+        if table_bottom_border is None:
+            return False
+        print table_bottom_border
+
+        center_to_top = math.sqrt(pow(table_top_border.pos.x-table_center.pos.x, 2) +
+                                  pow(table_top_border.pos.y-table_center.pos.y, 2) +
+                                  pow(table_top_border.pos.z-table_center.pos.z, 2))
+        table_length = math.sqrt(pow(table_top_border.pos.x-table_bottom_border.pos.x, 2) +
+                                 pow(table_top_border.pos.y-table_bottom_border.pos.y, 2) +
+                                 pow(table_top_border.pos.z-table_bottom_border.pos.z, 2))
+
+        table_width = table_length*((1+math.sqrt(5))/2.0) # assumuse a perfect rectangle
+        center_in_world = view_pose+table_center
+        real_z = center_in_world.position().z
+
+        table_shape = Box(table_width, table_length, real_z, z=-real_z/2.0, y=center_to_top-table_length/2.0)
+        self.table = SceneNode(detection=table_detection, is_static=True)
+        self.table.shapes = [table_shape]
+        self.table.update_pose(center_in_world.position())
+
+        return True
 
     def perception_pipeline(self, view_pose, rgb_image, depth_image=None, time=None):
         """ """
@@ -95,44 +160,8 @@ class TabletopPipeline(BasePipeline):
         image_height, image_width, _ = rgb_image.shape
 
         if depth_image is not None:
-            if self.table_depth is None:
-                x = int(image_width*(1/2.0))
-                y = int(image_height*(3/4.0))
-                if not math.isnan(depth_image[y, x]):
-                    self.table_depth = depth_image[y, x]/1000.0
-            table_depth = self.table_depth
-        else:
-            table_depth = None
-        table_detection = Detection(0, int(image_height/2.0), int(image_width), image_height, "table", 1.0, table_depth)
-
-        if depth_image is not None:
-            if self.table_shape is None:
-                fx = self.camera_matrix[0][0]
-                fy = self.camera_matrix[1][1]
-                cx = self.camera_matrix[0][2]
-                cy = self.camera_matrix[1][2]
-                x = int(image_width*(1/2.0))
-                y = int(image_height*(3/4.0))
-                if not math.isnan(depth_image[y, x]):
-                    z = depth_image[y, x]/1000.0
-                    x = (x - cx) * z / fx
-                    y = (y - cy) * z / fy
-                    table_border = Vector6D(x=x, y=y, z=z)
-                    x = int(image_width*(1/2.0))
-                    y = int(image_height*(1/2.0))
-                    if not math.isnan(depth_image[y, x]):
-                        z = depth_image[y, x]/1000.0
-                        x = (x - cx) * z / fx
-                        y = (y - cy) * z / fy
-                        table_center = Vector6D(x=x, y=y, z=z)
-                        table_width = (image_width - cx) * z / fx
-                        table_length = 2.0*math.sqrt(pow(table_border.pos.x-table_center.pos.x, 2)+pow(table_border.pos.y-table_center.pos.y, 2)+pow(table_border.pos.z-table_center.pos.z, 2))
-                        center_in_world = view_pose+table_center
-                        real_z = center_in_world.position().z
-                        print center_in_world.position()
-                        self.table_shape = Box(table_width, table_length, real_z)
-                        self.table_shape.pose.pos.z = -real_z/2.0
-                        self.table_shape.color = self.shape_estimator.compute_dominant_color(rgb_image, table_detection.bbox)
+            if self.table is None:
+                self.create_table(rgb_image, depth_image, view_pose, self.robot_camera)
 
         if self.frame_count == 0:
             person_detections = self.person_detector.detect(rgb_image, depth_image=depth_image)
@@ -165,13 +194,10 @@ class TabletopPipeline(BasePipeline):
             object_tracks = self.object_tracker.update(rgb_image, [], depth_image=depth_image)
             person_tracks = self.person_tracker.update(rgb_image, [], depth_image=depth_image)
 
-        if self.table_track is None:
-            self.table_track = SceneNode(detection=table_detection, is_static=True)
+        if self.table is not None:
+            support_tracks = [self.table]
         else:
-            self.table_track.update_bbox(table_detection, detected=True)
-        if self.table_shape is not None:
-            self.table_track.shapes = [self.table_shape]
-        support_tracks = [self.table_track]
+            support_tracks = []
 
         tracks = object_tracks + person_tracks + support_tracks
 
@@ -188,7 +214,7 @@ class TabletopPipeline(BasePipeline):
         ########################################################
 
         events = self.action_monitor.monitor(support_tracks, object_tracks, person_tracks, [])
-        #events = []
+
         pipeline_fps = cv2.getTickFrequency() / (cv2.getTickCount()-pipeline_timer)
         ########################################################
         # Visualization

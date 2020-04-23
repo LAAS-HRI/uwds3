@@ -3,7 +3,7 @@ from ..assignment.linear_assignment import LinearAssignment
 from ...utils.bbox_metrics import overlap, centroid
 from .monitor import Monitor
 
-OCCLUSION_TRESHOLD = 0.2
+OCCLUSION_TRESHOLD = 0.8
 
 
 class ActionStates(object):
@@ -34,6 +34,15 @@ class TabletopActionMonitor(Monitor):
     def monitor(self, support_tracks, object_tracks, person_tracks, hand_tracks, time=None):
         """
         """
+        to_keep = []
+        for r in self.relations:
+            if r.to_delete():
+                del self.relations_index[r.subject+r.predicate+r.object]
+            else:
+                to_keep.append(r)
+        self.relations = to_keep
+
+
         lost_objects = []
         moving_objects = []
         not_moving_objects = []
@@ -43,6 +52,7 @@ class TabletopActionMonitor(Monitor):
             if support.is_located() and support.has_shape():
                 if self.simulator.is_entity_loaded(support.id) is False:
                     self.simulator.load_node(support)
+                    # TODO add object in the beliefs base
                 else:
                     self.simulator.update_constraint(support.id, support.pose)
         support = support_tracks[0]
@@ -62,7 +72,7 @@ class TabletopActionMonitor(Monitor):
                         if object.is_lost():
                             lost_objects.append(object)
                         elif object.is_occluded():
-                            occluded_objects.append()
+                            occluded_objects.append(object)
                         else:
                             pass
 
@@ -86,7 +96,6 @@ class TabletopActionMonitor(Monitor):
                 else:
                     self.mark_picked(object_tracks[object_indice], person_tracks[person_indice], support, time=time)
 
-        self.relations = [r for r in self.relations if not r.to_delete()]
         return self.relations
 
     def test_occlusion(self, object, tracks):

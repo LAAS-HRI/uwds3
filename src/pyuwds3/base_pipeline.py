@@ -14,6 +14,9 @@ from .types.camera import Camera
 from .reasoning.knowledge.beliefs_base import BeliefsBase
 
 
+DEFAULT_SENSOR_QUEUE_SIZE = 30
+
+
 class BasePipeline(object):
     """ Base class to implement perception pipelines """
     def __init__(self):
@@ -54,7 +57,6 @@ class BasePipeline(object):
         static_entities_config_filename = rospy.get_param("~static_entities_config_filename", "")
         robot_urdf_file_path = rospy.get_param("~robot_urdf_file_path", "")
 
-        self.robot_camera_fov = rospy.get_param("~robot_camera_fov", 60.0)
         self.robot_camera_clipnear = rospy.get_param("~robot_camera_clipnear", 0.1)
         self.robot_camera_clipfar = rospy.get_param("~robot_camera_clipfar", 1000.0)
 
@@ -80,11 +82,11 @@ class BasePipeline(object):
             rospy.loginfo("[perception] Subscribing to '/{}' topic...".format(self.depth_image_topic))
             self.depth_image_sub = message_filters.Subscriber(self.depth_image_topic, Image)
 
-            self.sync = message_filters.ApproximateTimeSynchronizer([self.rgb_image_sub, self.depth_image_sub], 10, 0.1, allow_headerless=True)
+            self.sync = message_filters.ApproximateTimeSynchronizer([self.rgb_image_sub, self.depth_image_sub], DEFAULT_SENSOR_QUEUE_SIZE, 0.1, allow_headerless=True)
             self.sync.registerCallback(self.observation_callback)
         else:
             rospy.loginfo("[perception] Subscribing to '/{}' topic...".format(self.rgb_image_topic))
-            self.rgb_image_sub = rospy.Subscriber(self.rgb_image_topic, Image, self.observation_callback, queue_size=1)
+            self.rgb_image_sub = rospy.Subscriber(self.rgb_image_topic, Image, self.observation_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
     def camera_info_callback(self, msg):
         """ """
@@ -92,10 +94,7 @@ class BasePipeline(object):
             rospy.loginfo("[perception] Camera info received !")
         self.camera_info = msg
         self.camera_frame_id = msg.header.frame_id
-        self.camera_matrix = np.array(msg.K).reshape((3, 3))
-        self.dist_coeffs = np.array(msg.D)
         self.robot_camera = Camera().from_msg(msg,
-                                              fov=self.robot_camera_fov,
                                               clipnear=self.robot_camera_clipnear,
                                               clipfar=self.robot_camera_clipfar)
 

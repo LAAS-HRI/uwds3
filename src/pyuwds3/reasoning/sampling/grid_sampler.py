@@ -1,14 +1,16 @@
 import math
 import numpy as np
-from .vector.vector3d import Vector3D
-from .vector.vector6d import Vector6D
+from ...types.vector.vector3d import Vector3D
+from ...types.vector.vector6d import Vector6D
+
+np.random.seed(123)
 
 
-class Grid(object):
+class GridSampler(object):
     """
     """
     def __init__(self, xmin, ymin, zmin, xmax, ymax, zmax, xdim, ydim, zdim):
-        """
+        """ Grid sampler constructor
         """
         self.xmin = xmin
         self.ymin = ymin

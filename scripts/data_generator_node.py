@@ -4,8 +4,10 @@ import numpy as np
 import rospy
 import uuid
 from pyuwds3.reasoning.simulation.internal_simulator import InternalSimulator
-from pyuwds3.types.grid import Grid
+from pyuwds3.reasoning.sampling.grid_sampler import GridSampler
 from pyuwds3.types.camera import HumanCamera
+
+np.random.seed(123)
 
 
 class DataGenerator(object):
@@ -21,7 +23,7 @@ class DataGenerator(object):
         global_frame_id = rospy.get_param("~global_frame_id", "map")
         base_frame_id = rospy.get_param("~global_frame_id", "base_link")
 
-        max_samples = rospy.get_param("~max_samples", 5)
+        max_samples = rospy.get_param("~max_samples", 600)
 
         simulator = InternalSimulator(use_simulation_gui,
                                       cad_models_additional_search_path,
@@ -51,7 +53,7 @@ class DataGenerator(object):
         camera.width = width
         camera.height = height
 
-        grid = Grid(xmin, ymin, zmin, xmax, ymax, zmax, xdim, ydim, zdim)
+        grid = GridSampler(xmin, ymin, zmin, xmax, ymax, zmax, xdim, ydim, zdim)
 
         nb_samples = 0
         while nb_samples < max_samples:
@@ -69,10 +71,16 @@ class DataGenerator(object):
             if len(tracks) != 0:
                 nb_samples += 1
                 sample_uuid = str(uuid.uuid4()).replace("-", "")
-                print((nb_samples, sample_uuid))
-                #np.save(sample_uuid+".jpg", depth_image)
-                #scipy.misc.imsave("{}{}_depth.jpg".format(ouput_data_directory, sample_uuid), depth_image)
-                #scipy.misc.imsave("{}{}_rgb.jpg".format(ouput_data_directory, sample_uuid), rgb_image)
+                rospy.loginfo("[data_generator] sample: {} id: {}".format(nb_samples, sample_uuid))
+        rospy.loginfo("[data_generator] Finished !")
+
+    def save_data(seld, image, tracks):
+        """
+        """
+        pass
+        #np.save(sample_uuid+".jpg", depth_image)
+        #scipy.misc.imsave("{}{}_depth.jpg".format(ouput_data_directory, sample_uuid), depth_image)
+        #scipy.misc.imsave("{}{}_rgb.jpg".format(ouput_data_directory, sample_uuid), rgb_image)
 
 if __name__ == "__main__":
     rospy.init_node("data_generator", anonymous=False)

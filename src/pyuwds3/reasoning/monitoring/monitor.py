@@ -11,10 +11,12 @@ class Monitor(object):
     def trigger_event(self, subject, event, object=None, time=None):
         if object is not None:
             description = subject.label+"-"+subject.id[:6]+" "+event+" "+object.label+"-"+object.id[:6]
-            e = Event(subject.id, description, object=object.id, time=time)
+            e = Event(subject.id, description, predicate=event, object=object.id, time=time)
+            self.relations_index[subject.id+str(event)+object.id] = len(self.relations)-1
         else:
             description = subject.label+"-"+subject.id[:6]+" "+event
             e = Event(subject.id, description, time=time)
+            self.relations_index[subject.id+str(event)] = len(self.relations)-1
         print("Evt: "+description)
         self.relations.append(e)
 

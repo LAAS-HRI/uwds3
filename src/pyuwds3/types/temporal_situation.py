@@ -30,7 +30,6 @@ class TemporalSituation(object):
         self.confidence = confidence
         self.start_time = None
         self.end_time = None
-        self.expiration_duration = rospy.Duration(expiration)
         self.point = point
 
     def is_predicate(self):
@@ -79,10 +78,7 @@ class TemporalSituation(object):
     def to_delete(self):
         """ Returns True is to delete
         """
-        if self.end_time is not None:
-            return self.end_time + self.expiration_duration < rospy.Time.now()
-        else:
-            return False
+        return self.is_finished()
 
     def from_msg(self, msg):
         """ Convert from ROS message
@@ -104,7 +100,6 @@ class TemporalSituation(object):
             self.point = msg.point
         else:
             self.point = None
-        self.expiration_duration = msg.expiration_duration.to_sec()
         return self
 
     def to_msg(self, header):
@@ -123,7 +118,6 @@ class TemporalSituation(object):
         if self.is_located():
             msg.point.header = header
             msg.point = self.point.to_msg()
-        msg.expiration_duration = self.expiration_duration
         return msg
 
     def __eq__(self, other):
