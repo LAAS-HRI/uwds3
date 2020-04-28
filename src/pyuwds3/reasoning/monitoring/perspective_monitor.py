@@ -4,18 +4,25 @@ from .monitor import Monitor
 
 
 class PerspectiveMonitor(Monitor):
-    def __init__(self, simulator, rendering_ratio=(1/4.5), max_age=5):
+    """
+    """
+    def __init__(self, simulator, rendering_ratio=(1/4.5)):
+        """
+        """
         Monitor.__init__(self)
         self.simulator = simulator
         self.rendering_ratio = rendering_ratio
         self.other_perspective = None
-        self.age = 0
 
     def monitor_myself(self, tracks, view_pose, camera):
+        """
+        """
         rgb_image, _, _, visible_tracks = self.simulator.get_camera_view(view_pose, camera, prior_tracks=tracks, rendering_ratio=self.rendering_ratio)
         return rgb_image, visible_tracks, self.relations
 
     def monitor_others(self, face_tracks):
+        """
+        """
         visibles_tracks = []
         person_camera = None
         rgb_image = None

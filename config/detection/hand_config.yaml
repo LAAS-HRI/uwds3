@@ -5,4 +5,4 @@
 1:
   label: "hand"
   activated: True
-  confidence_threshold: 0.58
+  confidence_threshold: 0.6

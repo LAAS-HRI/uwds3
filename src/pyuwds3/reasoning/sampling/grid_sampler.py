@@ -3,8 +3,6 @@ import numpy as np
 from ...types.vector.vector3d import Vector3D
 from ...types.vector.vector6d import Vector6D
 
-np.random.seed(123)
-
 
 class GridSampler(object):
     """

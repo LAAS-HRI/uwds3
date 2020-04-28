@@ -5,7 +5,8 @@ import numpy as np
 import copy
 from sensor_msgs.msg import JointState
 from ...types.scene_node import SceneNode, SceneNodeType
-from tf.transformations import translation_matrix, quaternion_matrix, quaternion_from_matrix, translation_from_matrix
+from tf.transformations import translation_matrix, quaternion_matrix
+from tf.transformations import quaternion_from_matrix, translation_from_matrix
 from ...utils.tf_bridge import TfBridge
 from ...types.vector.vector6d import Vector6D
 from ...types.shape.box import Box
@@ -16,28 +17,29 @@ from ...types.detection import Detection
 import yaml
 
 INF = 1e+7
-
 DEFAULT_DENSITY = 998.57
 
 
-class InternalSimulationMode(object):
-    SIMULATING = 0
-    MONITORING = 1
-
-
 class InternalSimulator(object):
+    """
+    """
     def __init__(self,
                  use_gui,
+                 simulation_config_filename,
                  cad_models_additional_search_path,
                  static_entities_config_filename,
                  robot_urdf_file_path,
                  global_frame_id,
                  base_frame_id,
-                 position_tolerance=0.05,
-                 load_robot=True,
-                 end_effectors=[]):
+                 load_robot=True):
+        """ Internal simulator constructor
         """
-        """
+        if simulation_config_filename != "":
+            with open(simulation_config_filename, 'r') as stream:
+                self.simulator_config = yaml.load(stream)
+        else:
+            self.load_robot = False
+
         self.tf_bridge = TfBridge()
 
         self.entity_map = {}
@@ -54,19 +56,14 @@ class InternalSimulator(object):
 
         self.robot_joints_command = []
         self.robot_joints_command_indices = []
-
-        self.position_tolerance = position_tolerance
+        self.position_tolerance = self.simulator_config["base_config"]["position_tolerance"]
 
         self.global_frame_id = global_frame_id
         self.base_frame_id = base_frame_id
 
         self.robot_urdf_file_path = robot_urdf_file_path
 
-        self.robot_acting = False
-
-        self.mode = InternalSimulationMode.MONITORING
-
-        self.end_effectors = end_effectors
+        self.robot_moving = False
 
         if not p.isNumpyEnabled():
             rospy.logwarn("Numpy is not enabled, rendering can be slow")
@@ -106,6 +103,7 @@ class InternalSimulator(object):
         p.setRealTimeSimulation(1)
 
         self.robot_loaded = False
+
         if load_robot is True:
             self.joint_state_subscriber = rospy.Subscriber("/joint_states", JointState, self.joint_states_callback, queue_size=1)
 
@@ -134,7 +132,7 @@ class InternalSimulator(object):
                 p.changeDynamics(base_link_sim_id, info[0], frictionAnchor=1)
             # If file successfully loaded
             if base_link_sim_id < 0:
-                raise RuntimeError("Invalid URDF")
+                raise RuntimeError("Invalid URDF provided: {}".format(filename))
             scene_node = SceneNode(pose=start_pose, is_static=True)
             scene_node.id = id
             scene_node.label = label
@@ -322,7 +320,7 @@ class InternalSimulator(object):
                     print scene_node.id
                     print len(shape_masses)
                     print len(scene_node.shapes)
-                    rospy.logwarn("[simulation] Multibody shape not supported, consider using load URDF")
+                    rospy.logwarn("[simulation] Multibody shape not supported at the moment, consider using load URDF")
         return False
 
     def get_myself(self):
@@ -409,7 +407,7 @@ class InternalSimulator(object):
         rendered_width = int(width*rendering_ratio)
         rendered_height = int(height*rendering_ratio)
 
-        projection_matrix = p.computeProjectionMatrixFOV(camera.fov,
+        projection_matrix = p.computeProjectionMatrixFOV(camera.hfov(),
                                                          float(rendered_width)/rendered_height,
                                                          camera.clipnear,
                                                          camera.clipfar)
@@ -483,28 +481,6 @@ class InternalSimulator(object):
             if len(contacts) > 0:
                 return True
         return False
-    #
-    # def compute_raycast_batch(self, poses):
-    #     """
-    #     """
-    #     pass
-
-    # def is_reachable(self, position):
-    #     """ Return True if the position if reachable from the robot
-    #     """
-    #     base_link_sim_id = self.entity_id_map["myself"]
-    #     #self.joint_id_map[base_link_sim_id][]
-    #     p.calculateInverseKinematics(base_link_sim_id)
-    #     pass
-    #
-    # def get_aabb(self, id):
-    #     """
-    #     """
-    #     sim_id = self.entity_id_map[id]
-    #     aabb_min, aabb_max = p.getAABB(sim_id)
-    #     xmin, ymin, zmin = aabb_min
-    #     xmax, ymax, zmax = aabb_max
-    #     return xmin, ymin, zmin, xmax, ymax, zmax
 
     def update_constraint(self, id, pose):
         """ Update a constraint
@@ -522,16 +498,19 @@ class InternalSimulator(object):
     def remove_constraint(self, id):
         """ Remove a constraint
         """
-        if id in self.constraint_id:
+        if id in self.constraint_id_map:
             p.removeConstraint(self.constraint_id_map[id])
+            del self.constraint_id_map[id]
 
-    # def update_entity_pose(self, id, pose):
-    #     if id not in self.entity_id_map:
-    #         raise ValueError("Entity <{}> is not loaded into the simulator".format(id))
-    #     base_link_sim_id = self.entity_id_map[id]
-    #     t = pose.position().to_array().flatten()
-    #     q = pose.quaternion()
-    #     p.resetBasePositionAndOrientation(base_link_sim_id, t, q, physicsClientId=self.client_simulator_id)
+    def reset_entity_pose(self, id, pose):
+        """ Reset the pose and the simulation for the given entity
+        """
+        if id not in self.entity_id_map:
+            raise ValueError("Entity <{}> is not loaded into the simulator".format(id))
+        base_link_sim_id = self.entity_id_map[id]
+        t = pose.position().to_array().flatten()
+        q = pose.quaternion()
+        p.resetBasePositionAndOrientation(base_link_sim_id, t, q, physicsClientId=self.client_simulator_id)
 
     def is_entity_loaded(self, id):
         """ Returns True if the entity is loaded
@@ -543,7 +522,14 @@ class InternalSimulator(object):
         """
         return self.robot_loaded
 
+    def is_robot_moving(self):
+        """ Returns True if the robot is moving
+        """
+        return self.robot_moving
+
     def joint_states_callback(self, joint_states_msg):
+        """
+        """
         success, pose = self.tf_bridge.get_pose_from_tf(self.global_frame_id, self.base_frame_id)
         if success is True:
             if self.robot_loaded is False:
@@ -572,12 +558,12 @@ class InternalSimulator(object):
                     joint_indices.append(joint_sim_index)
                     target_positions.append(joint_position)
                 if len(target_positions) > 0:
+                    self.robot_moving = True
                     p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_DISABLE_SLEEPING)
                     p.setJointMotorControlArray(base_link_sim_id,
                                                 joint_indices,
                                                 controlMode=p.POSITION_CONTROL,
-                                                targetPositions=target_positions,
-                                                forces=np.full(len(target_positions), 50000))
-                    #p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
+                                                targetPositions=target_positions)
                 else:
+                    self.robot_moving = False
                     p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)

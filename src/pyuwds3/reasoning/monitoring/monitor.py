@@ -3,12 +3,28 @@ from ...types.temporal_situation import TemporalSituationType, TemporalPredicate
 
 class Monitor(object):
     def __init__(self, internal_simulator=None, beliefs_base=None):
+        """ Monitor constructor
+        """
         self.relations = []
         self.relations_index = {}
         self.simulator = internal_simulator
         self.beliefs_base = beliefs_base
 
+    def cleanup_relations(self):
+        """ Cleanup the relations buffer
+        """
+        to_keep = []
+        index = {}
+        for r in self.relations:
+            if not r.to_delete():
+                to_keep.append(r)
+                index[r.subject+r.predicate+r.object] = len(to_keep) - 1
+        self.relations = to_keep
+        self.relations_index = index
+
     def trigger_event(self, subject, event, object=None, time=None):
+        """ Trigger an event like predicate
+        """
         if object is not None:
             description = subject.label+"-"+subject.id[:6]+" "+event+" "+object.label+"-"+object.id[:6]
             e = Event(subject.id, description, predicate=event, object=object.id, time=time)
@@ -20,7 +36,15 @@ class Monitor(object):
         print("Evt: "+description)
         self.relations.append(e)
 
+    def update_relation_prob(self, subject, predicate, object, confidence):
+        """ Update the confidence of a relation in the beliefs base
+        """
+        if self.beliefs_base is not None:
+            pass # TODO
+
     def start_predicate(self, subject, predicate, object=None, time=None):
+        """ Start a temporal predictate
+        """
         if object is not None:
             description = subject.label+"-"+subject.id[:6]+" is "+predicate+" "+object.label+"-"+object.id[:6]
             relation = TemporalPredicate(subject.id, description, predicate=predicate, object=object.id)
@@ -34,8 +58,9 @@ class Monitor(object):
             self.relations_index[subject.id+str(predicate)] = len(self.relations)-1
         print("Str: "+description)
 
-
     def end_predicate(self, subject, predicate, object=None, time=None):
+        """ End a temporal predicate
+        """
         if object is not None:
             if subject.id+str(predicate)+object.id in self.relations_index:
                 relation = self.relations[self.relations_index[subject.id+str(predicate)+object.id]]

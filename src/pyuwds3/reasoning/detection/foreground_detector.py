@@ -7,115 +7,86 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
 
-class DetectorState(object):
-    INIT = 0
-    WAITING = 1
-    READY = 2
-    RUNNING = 3
-
-    state = {0: "INIT", 1: "WAITING", 2: "READY", 3: "RUNNING"}
+LONGTERM_LEARNING_RATE = 10e-7
+SHORTTERM_LEARNING_RATE = 0.018
 
 
 class ForegroundDetector(object):
-    def __init__(self, interactive_mode=True):
-        self.interactive_mode = interactive_mode
-        self.roi_points = []
-        self.state = DetectorState.INIT
-        self.background_substraction = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=150, detectShadows=True)
+    """ Foreground detector for unknown object in interactive tabletop scenario with fixed camera
+    """
+    def __init__(self, max_overlap=0.3):
+        """ Detector constructor
+        """
+        self.initialize()
+        self.max_overlap = max_overlap
+        self.kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 
-        if self.interactive_mode is True:
-            cv2.namedWindow("select_roi")
-            cv2.setMouseCallback("select_roi", self.click_and_select)
-        else:
-            self.state = DetectorState.RUNNING
+    def initialize(self):
+        """ Initialize the detector (reset the background)
+        """
+        self.long_term_detector = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=100, detectShadows=True)
+        self.short_term_detector = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=50, detectShadows=False)
 
-        self.bridge = CvBridge()
-        self.pub = rospy.Publisher("test", Image, queue_size=1)
-
-    def detect(self, rgb_image, depth_image=None, roi_points=[], prior_detections=[]):
+    def detect(self, rgb_image, depth_image=None):
+        """ Detect unknown objects
+        """
         filtered_bbox = []
         output_dets = []
 
         h, w, _ = rgb_image.shape
-        foreground_mask = np.zeros((h, w), dtype=np.uint8)
+        foreground_mask_full = np.zeros((h, w), dtype=np.uint8)
 
         bgr_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
-        #bgr_image_resized = cv2.resize(bgr_image, (w/2.0, h/2.0))
 
-        foreground_mask[int(h/2.0):h, 0:int(w)] = self.background_substraction.apply(bgr_image[int(h/2.0):h, 0:int(w)], learningRate=10e-7)
+        bgr_image_cropped = bgr_image[int(h/2.0):h, 0:int(w)]
+        cropped_height, cropped_width, _ = bgr_image_cropped.shape
+        bgr_image_resized = cv2.resize(bgr_image_cropped, (int(cropped_width/2.0), int(cropped_height/2.0)))
+
+        foreground_mask = self.long_term_detector.apply(bgr_image_resized, learningRate=LONGTERM_LEARNING_RATE)
         foreground_mask[foreground_mask != 255] = 0 # shadows suppression
+        foreground_mask = cv2.morphologyEx(foreground_mask, cv2.MORPH_CLOSE, self.kernel)
+        foreground_mask = cv2.morphologyEx(foreground_mask, cv2.MORPH_OPEN, self.kernel)
 
-        self.pub.publish(self.bridge.cv2_to_imgmsg(foreground_mask))
 
-        for d in prior_detections:
-            x = int(d.bbox.xmin)
-            x = x - 5 if x > 5 else x
-            y = int(d.bbox.ymin)
-            y = y - 5 if y > 5 else y
-            w = int(d.bbox.width())
-            w = w + 5 if w + 5 < rgb_image.shape[1] else w
-            h = int(d.bbox.height())
-            h = h + 5 if h + 5 < rgb_image.shape[0] else h
-            foreground_mask[y:y+h, x:x+w] = 0
-        # remove the noise of the mask
-        kernel_big = cv2.getStructuringElement(cv2.MORPH_RECT, (8, 8))
-        closing = cv2.morphologyEx(foreground_mask, cv2.MORPH_CLOSE, kernel_big)
-        opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel_big)
+        motion_mask = self.short_term_detector.apply(bgr_image_resized, learningRate=SHORTTERM_LEARNING_RATE)
+        motion_mask = cv2.morphologyEx(motion_mask, cv2.MORPH_CLOSE, self.kernel)
+        motion_mask = cv2.morphologyEx(motion_mask, cv2.MORPH_OPEN, self.kernel)
 
-        if len(self.roi_points) == 2:
-            roi_mask = np.full(foreground_mask.shape, 255, dtype="uint8")
-            roi_mask[self.roi_points[0][1]:self.roi_points[1][1], self.roi_points[0][0]:self.roi_points[1][0]] = 0
-            opening -= roi_mask
+        not_moving_mask = cv2.bitwise_not(motion_mask)
+        foreground_mask = cv2.bitwise_and(foreground_mask, not_moving_mask)
 
-        opening[opening != 255] = 0
+        foreground_mask_full[int(h/2.0):h, 0:int(w)] = cv2.resize(foreground_mask, (cropped_width, cropped_height))
+
         # find the contours
-        contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(foreground_mask_full, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         for c in contours:
             peri = cv2.arcLength(c, True)
             approx = cv2.approxPolyDP(c, 10e-3 * peri, True)
             xmin, ymin, w, h = cv2.boundingRect(approx)
-            if w > 10 and h > 10 and w < rgb_image.shape[1] and h < rgb_image.shape[0]:
+            if w > 20 and h > 20 and w < rgb_image.shape[1] and h < rgb_image.shape[0]:
                 filtered_bbox.append(np.array([xmin, ymin, xmin+w, ymin+h]))
 
-        if self.interactive_mode is True:
-            debug_image = cv2.cvtColor(opening.copy(), cv2.COLOR_GRAY2BGR)
-            if len(self.roi_points) == 1:
-                opening = cv2.rectangle(debug_image, self.roi_points[0], self.roi_points[0], (0, 255, 0), 3)
-            elif len(self.roi_points) == 2:
-                opening = cv2.rectangle(debug_image, self.roi_points[0], self.roi_points[1], (0, 255, 0), 3)
-            cv2.rectangle(debug_image, (0, 0), (300, 40), (200, 200, 200), -1)
-            cv2.putText(debug_image, "Detector state : {}".format(DetectorState.state[self.state]), (15, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
-            cv2.putText(debug_image, "Select ROI & press 'r' to start", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
-            cv2.imshow("select_roi", debug_image)
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord('r'):
-                self.background_substraction = cv2.createBackgroundSubtractorMOG2(history=500, varThreshold=50, detectShadows=True)
-                self.state = DetectorState.RUNNING
+        filtered_bbox = self.non_max_suppression(np.array(filtered_bbox), self.max_overlap)
 
-        if self.state == DetectorState.RUNNING:
-            filtered_bbox = self.non_max_suppression(np.array(filtered_bbox), 0.5)
-
-            for bbox in filtered_bbox:
-                xmin, ymin, xmax, ymax = bbox
-                w = int(xmax - xmin)
-                h = int(ymax - ymin)
-                x = int(xmin + w/2.0)
-                y = int(ymin + h/2.0)
-                if depth_image is not None:
-                    x = depth_image.shape[1]-1 if x > depth_image.shape[1] else x
-                    y = depth_image.shape[0]-1 if y > depth_image.shape[0] else y
-                    depth = depth_image[int(y)][int(x)]/1000.0
-                    if math.isnan(depth) or depth == 0.0:
-                        depth = None
-                else:
+        for bbox in filtered_bbox:
+            xmin, ymin, xmax, ymax = bbox
+            w = int(xmax - xmin)
+            h = int(ymax - ymin)
+            x = int(xmin + w/2.0)
+            y = int(ymin + h/2.0)
+            if depth_image is not None:
+                x = depth_image.shape[1]-1 if x > depth_image.shape[1] else x
+                y = depth_image.shape[0]-1 if y > depth_image.shape[0] else y
+                depth = depth_image[int(y)][int(x)]/1000.0
+                if math.isnan(depth) or depth == 0.0:
                     depth = None
-                mask = opening[int(ymin):int(ymax), int(xmin):int(xmax)]
-                output_dets.append(Detection(int(xmin), int(ymin), int(xmax), int(ymax), "thing", 0.4, mask=mask, depth=depth))
+            else:
+                depth = None
+            mask = foreground_mask_full[int(ymin):int(ymax), int(xmin):int(xmax)]
+            output_dets.append(Detection(int(xmin), int(ymin), int(xmax), int(ymax), "thing", 1.0, mask=mask, depth=depth))
 
-            return output_dets
-        else:
-            return []
+        return output_dets
 
     def non_max_suppression(self, boxes, max_bbox_overlap):
         """ Perform non maximum suppression
@@ -156,35 +127,3 @@ class ForegroundDetector(object):
                     ([last], np.where(overlap > max_bbox_overlap)[0])))
 
         return boxes[pick]
-
-    def click_and_select(self, event, x, y, flags, param):
-        if event == cv2.EVENT_LBUTTONDOWN:
-            self.roi_points = [(x, y)]
-            self.state = DetectorState.WAITING
-        elif event == cv2.EVENT_LBUTTONUP:
-            self.roi_points.append((x, y))
-            self.state = DetectorState.READY
-
-
-if __name__ == '__main__':
-    from uwds3_perception.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, color_cost
-    from uwds3_perception.estimation.color_features_estimator import ColorFeaturesEstimator
-    capture = cv2.VideoCapture(0)
-    detector = ForegroundDetector()
-    color_extractor = ColorFeaturesEstimator()
-    tracker = MultiObjectTracker(iou_cost, color_cost, 0.1, 0.2, 15, 2, 3, use_appearance_tracker=False)
-    tracks = []
-    while True:
-        ok, frame = capture.read()
-        if ok:
-            rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            #confirmed_tracks = [t for t in tracks if t.is_confirmed()]
-            detections = detector.detect(frame)#, prior_detections=confirmed_tracks)
-            color_extractor.estimate(rgb_image, detections=detections)
-            tracks = tracker.update(rgb_image, detections)
-            for t in tracks:
-                if t.is_confirmed():
-                    t.draw(frame, (36, 255, 12))
-            cv2.imshow("result", frame)
-            cv2.waitKey(1)
-    capture.release()

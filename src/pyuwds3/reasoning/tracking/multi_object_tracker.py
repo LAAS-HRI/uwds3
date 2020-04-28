@@ -17,8 +17,11 @@ def overlap_cost(detection, track):
 
 
 def centroid_cost(detection, track):
-    """Returns the centroid cost"""
-    return centroid(detection.bbox, track.bbox)
+    if not detection.is_located() or not track.is_located():
+        return 10e+7
+    else:
+        return euclidean(detection.pose.position().to_array(),
+                         track.pose.position().to_array())
 
 
 def color_cost(detection, track):

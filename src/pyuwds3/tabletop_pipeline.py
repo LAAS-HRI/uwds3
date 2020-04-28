@@ -4,7 +4,7 @@ import math
 from .base_pipeline import BasePipeline
 from .reasoning.detection.ssd_detector import SSDDetector
 from .reasoning.detection.foreground_detector import ForegroundDetector
-from .reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, color_cost
+from .reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, color_cost, centroid_cost
 from .types.scene_node import SceneNode
 from .reasoning.estimation.object_pose_estimator import ObjectPoseEstimator
 from .reasoning.estimation.shape_estimator import ShapeEstimator
@@ -26,12 +26,24 @@ class TabletopPipeline(BasePipeline):
         detector_weights_filename = rospy.get_param("~detector_weights_filename", "")
         detector_config_filename = rospy.get_param("~detector_config_filename", "")
 
+        hand_detector_model_filename = rospy.get_param("~hand_detector_model_filename", "")
+        hand_detector_weights_filename = rospy.get_param("~hand_detector_weights_filename", "")
+        hand_detector_config_filename = rospy.get_param("~hand_detector_config_filename", "")
+
         self.person_detector = SSDDetector(detector_model_filename,
                                            detector_weights_filename,
                                            detector_config_filename,
                                            300)
 
-        self.foreground_detector = ForegroundDetector(interactive_mode=False)
+        self.track_hands = rospy.get_param("~track_hands", False)
+
+        if self.track_hands is True:
+            self.hand_detector = SSDDetector(hand_detector_model_filename,
+                                             hand_detector_weights_filename,
+                                             hand_detector_config_filename,
+                                             300)
+
+        self.foreground_detector = ForegroundDetector()
 
         self.color_features_estimator = ColorFeaturesEstimator()
 
@@ -43,13 +55,23 @@ class TabletopPipeline(BasePipeline):
         self.max_age = rospy.get_param("~max_age", 10)
 
         self.object_tracker = MultiObjectTracker(iou_cost,
-                                                 color_cost,
+                                                 centroid_cost,
                                                  self.max_iou_distance,
-                                                 self.max_color_distance,
+                                                 None,
                                                  self.n_init,
-                                                 40,
-                                                 self.max_age,
+                                                 60,
+                                                 120,
                                                  use_tracker=True)
+
+        if self.track_hands is True:
+            self.hand_tracker = MultiObjectTracker(iou_cost,
+                                                   color_cost,
+                                                   0.98,
+                                                   self.max_color_distance,
+                                                   1,
+                                                   self.max_disappeared,
+                                                   self.max_age,
+                                                   use_tracker=True)
 
         self.person_tracker = MultiObjectTracker(iou_cost,
                                                  color_cost,
@@ -109,19 +131,16 @@ class TabletopPipeline(BasePipeline):
         table_center = self.get_point_measure(rgb_image, depth_image, x, y, camera)
         if table_center is None:
             return False
-        print table_center
         x = int(image_width*(1/2.0))
         y = int(image_height*(1/2.0))
         table_top_border = self.get_point_measure(rgb_image, depth_image, x, y, camera)
         if table_top_border is None:
             return False
-        print table_top_border
         x = int(image_width*(1/2.0))
         y = int(image_height-15)
         table_bottom_border = self.get_point_measure(rgb_image, depth_image, x, y, camera)
         if table_bottom_border is None:
             return False
-        print table_bottom_border
 
         center_to_top = math.sqrt(pow(table_top_border.pos.x-table_center.pos.x, 2) +
                                   pow(table_top_border.pos.y-table_center.pos.y, 2) +
@@ -130,7 +149,7 @@ class TabletopPipeline(BasePipeline):
                                  pow(table_top_border.pos.y-table_bottom_border.pos.y, 2) +
                                  pow(table_top_border.pos.z-table_bottom_border.pos.z, 2))
 
-        table_width = table_length*((1+math.sqrt(5))/2.0) # assumuse a perfect rectangle
+        table_width = table_length*((1+math.sqrt(5))/2.0) # assume a perfect rectangle
         center_in_world = view_pose+table_center
         real_z = center_in_world.position().z
 
@@ -169,6 +188,12 @@ class TabletopPipeline(BasePipeline):
         elif self.frame_count == 1:
             object_detections = self.foreground_detector.detect(rgb_image, depth_image=depth_image)
             detections = object_detections
+        elif self.frame_count == 2:
+            if self.track_hands is True:
+                hand_detections = self.hand_detector.detect(rgb_image, depth_image=depth_image)
+                detections = hand_detections
+            else:
+                detections = []
         else:
             detections = []
 
@@ -177,44 +202,58 @@ class TabletopPipeline(BasePipeline):
         ####################################################################
         # Features estimation
         ####################################################################
-
         self.color_features_estimator.estimate(rgb_image, detections)
-
         ######################################################
         # Tracking
         ######################################################
 
         if self.frame_count == 0:
-            object_tracks = self.object_tracker.update(rgb_image, [], depth_image=depth_image)
-            person_tracks = self.person_tracker.update(rgb_image, person_detections, depth_image=depth_image)
+            self.object_tracks = self.object_tracker.update(rgb_image, [], depth_image=depth_image)
+            self.person_tracks = self.person_tracker.update(rgb_image, person_detections, depth_image=depth_image)
+            if self.track_hands is True:
+                self.hand_tracks = self.hand_tracker.update(rgb_image, [], depth_image=depth_image)
         elif self.frame_count == 1:
-            object_tracks = self.object_tracker.update(rgb_image, object_detections, depth_image=depth_image)
-            person_tracks = self.person_tracker.update(rgb_image, [], depth_image=depth_image)
+            self.object_tracks = self.object_tracker.update(rgb_image, object_detections, depth_image=depth_image)
+            self.person_tracks = self.person_tracker.update(rgb_image, [], depth_image=depth_image)
+            if self.track_hands is True:
+                self.hand_tracks = self.hand_tracker.update(rgb_image, [], depth_image=depth_image)
+        elif self.frame_count == 2:
+            self.object_tracks = self.object_tracker.update(rgb_image, [], depth_image=depth_image)
+            self.person_tracks = self.person_tracker.update(rgb_image, [], depth_image=depth_image)
+            if self.track_hands is True:
+                self.hand_tracks = self.hand_tracker.update(rgb_image, hand_detections, depth_image=depth_image)
         else:
-            object_tracks = self.object_tracker.update(rgb_image, [], depth_image=depth_image)
-            person_tracks = self.person_tracker.update(rgb_image, [], depth_image=depth_image)
+            self.object_tracks = self.object_tracker.update(rgb_image, [], depth_image=depth_image)
+            self.person_tracks = self.person_tracker.update(rgb_image, [], depth_image=depth_image)
+            if self.track_hands is True:
+                self.hand_tracks = self.hand_tracker.update(rgb_image, [], depth_image=depth_image)
 
         if self.table is not None:
             support_tracks = [self.table]
         else:
             support_tracks = []
 
-        tracks = object_tracks + person_tracks + support_tracks
+        if self.track_hands is True:
+            tracks = self.object_tracks + self.person_tracks + self.hand_tracks + support_tracks
+        else:
+            tracks = self.object_tracks + self.person_tracks + support_tracks
 
         ########################################################
         # Pose & Shape estimation
         ########################################################
 
-        self.object_pose_estimator.estimate(object_tracks + person_tracks + support_tracks, view_pose, self.robot_camera)
+        self.object_pose_estimator.estimate(self.object_tracks + self.person_tracks , view_pose, self.robot_camera)
 
         self.shape_estimator.estimate(rgb_image, tracks, self.robot_camera)
 
         ########################################################
         # Monitoring
         ########################################################
-
-        events = self.action_monitor.monitor(support_tracks, object_tracks, person_tracks, [])
-
+        # if self.track_hands is True:
+        #     events = self.action_monitor.monitor(support_tracks, self.object_tracks, self.person_tracks, self.hand_tracks)
+        # else:
+        #     events = self.action_monitor.monitor(support_tracks, self.object_tracks, self.person_tracks, [])
+        events = []
         pipeline_fps = cv2.getTickFrequency() / (cv2.getTickCount()-pipeline_timer)
         ########################################################
         # Visualization

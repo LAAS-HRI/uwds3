@@ -1,5 +1,5 @@
 import math
-import uwds3_msgs
+import uwds3_msgs.msg
 import numpy as np
 from .vector.vector2d import Vector2D
 
@@ -22,13 +22,13 @@ class Camera(object):
         self.focal_length = Vector2D(self.width, self.height)
 
     def hfov(self):
-        return math.degrees(2.0*math.atan2(self.width, 2*self.focal_length().x))
+        return math.degrees(2.0*math.atan2(self.width, 2*self.focal_length.x))
 
     def center(self):
         """Returns the camera's center"""
         return self.center
 
-    def local_length(self):
+    def get_local_length(self):
         return self.focal_length
 
     def camera_matrix(self):
@@ -77,9 +77,7 @@ class Camera(object):
                                                                          self.clipnear,
                                                                          self.clipfar)
 
-
 class HumanVisualModel(object):
-    FOV = 90.0 # human field of view
     WIDTH = 480 # image width resolution for rendering
     HEIGHT = 360  # image height resolution for rendering
     CLIPNEAR = 0.1 # clipnear
@@ -88,7 +86,7 @@ class HumanVisualModel(object):
 
 class HumanCamera(Camera):
     def __init__(self):
-        self.fov = HumanVisualModel.FOV
+        super(HumanCamera, self).__init__()
         self.width = HumanVisualModel.WIDTH
         self.height = HumanVisualModel.HEIGHT
         self.clipnear = HumanVisualModel.CLIPNEAR

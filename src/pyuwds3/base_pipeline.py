@@ -53,6 +53,7 @@ class BasePipeline(object):
         self.marker_publisher = MarkerPublisher("tracks_markers")
 
         use_simulation_gui = rospy.get_param("~use_simulation_gui", True)
+        simulation_config_filename = rospy.get_param("~simulation_config_filename", "")
         cad_models_additional_search_path = rospy.get_param("~cad_models_additional_search_path", "")
         static_entities_config_filename = rospy.get_param("~static_entities_config_filename", "")
         robot_urdf_file_path = rospy.get_param("~robot_urdf_file_path", "")
@@ -65,6 +66,7 @@ class BasePipeline(object):
         self.beliefs_base = BeliefsBase()
 
         self.internal_simulator = InternalSimulator(use_simulation_gui,
+                                                    simulation_config_filename,
                                                     cad_models_additional_search_path,
                                                     static_entities_config_filename,
                                                     robot_urdf_file_path,

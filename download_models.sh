@@ -40,6 +40,9 @@ cd models/estimation
 wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
 bzip2 -d shape_predictor_68_face_landmarks.dat.bz2
 rm shape_predictor_68_face_landmarks.dat.bz2
+wget https://raw.githubusercontent.com/surajpaib/dense-depth-body-parts/master/caffe_models/deploy.prototxt
+mv deploy.prototxt dense_pose_model.prototxt
+wget https://github.com/surajpaib/dense-depth-body-parts/blob/master/caffe_models/hardpose_69k.caffemodel
 
 cd -
 mkdir models/features
