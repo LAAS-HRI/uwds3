@@ -14,12 +14,6 @@ class HandGestureType(object):
 
     names = {TEST1: "test1", TEST2: "test2", TEST3: "test3", TEST4: "test4", TEST5: "test5"}
 
-    features = {TEST1: np.array([1, 0, 0, 0, 0]),
-                TEST2: np.array([0, 1, 0, 0, 0]),
-                TEST3: np.array([0, 0, 1, 0, 0]),
-                TEST4: np.array([0, 0, 0, 1, 0]),
-                TEST5: np.array([0, 0, 0, 0, 1])}
-
 
 class RouteGenerator(object):
     """ """

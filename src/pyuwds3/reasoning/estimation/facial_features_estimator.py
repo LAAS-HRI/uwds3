@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 from ...types.features import Features
-from .face_frontalizer_estimator import FaceFrontalizerEstimator
 
 
 class FacialFeaturesEstimator(object):

@@ -8,6 +8,7 @@ from uwds3_msgs.msg import SceneChangesStamped
 from cv_bridge import CvBridge
 from .utils.tf_bridge import TfBridge
 from .reasoning.simulation.internal_simulator import InternalSimulator
+from .utils.static_word_embeddings import StaticWordEmbeddings
 from .utils.view_publisher import ViewPublisher
 from .utils.marker_publisher import MarkerPublisher
 from .types.camera import Camera
@@ -52,6 +53,9 @@ class BasePipeline(object):
         self.view_publisher = ViewPublisher("tracks_image")
         self.marker_publisher = MarkerPublisher("tracks_markers")
 
+        self.use_word_embeddings = rospy.get_param("~use_word_embeddings", False)
+        static_word_embeddings_filename = rospy.get_param("~static_word_embeddings_filename", "")
+
         use_simulation_gui = rospy.get_param("~use_simulation_gui", True)
         simulation_config_filename = rospy.get_param("~simulation_config_filename", "")
         cad_models_additional_search_path = rospy.get_param("~cad_models_additional_search_path", "")
@@ -64,6 +68,9 @@ class BasePipeline(object):
         self.last_update = rospy.Time().now()
 
         self.beliefs_base = BeliefsBase()
+
+        if self.use_word_embeddings is True:
+            self.word_embeddings = StaticWordEmbeddings(static_word_embeddings_filename)
 
         self.internal_simulator = InternalSimulator(use_simulation_gui,
                                                     simulation_config_filename,

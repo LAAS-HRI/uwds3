@@ -20,15 +20,18 @@
   <arg name="hand_detector_config_filename" default="$(find uwds3)/config/detection/hand_config.yaml"/>
 
   <!-- Tracker parameters -->
-  <arg name="n_init" default="4"/>
+  <arg name="n_init" default="5"/>
   <arg name="n_frame" default="3"/>
   <arg name="max_iou_distance" default="0.98"/>
   <arg name="max_color_distance" default="0.9"/>
-  <arg name="max_lost" default="8"/>
+  <arg name="max_lost" default="6"/>
   <arg name="max_age" default="10"/>
 
+  <arg name="use_word_embeddings" default="False"/>
+  <arg name="static_word_embeddings_filename" default="$(find uwds3)/models/word_embeddings/wiki-news-300d-1M-subword.vec"/>
+
   <!-- Simulation parameters -->
-  <arg name="use_simulation_gui" default="True"/>
+  <arg name="use_simulation_gui" default="False"/>
   <arg name="simulation_config_filename" default="$(find uwds3)/config/simulation/pr2_config.yaml"/>
   <arg name="cad_models_additional_search_path" default="$(find uwds3)/models/cad_models"/>
   <arg name="static_entities_config_filename" default="$(find uwds3)/config/simulation/empty_floor.yaml"/>
@@ -59,6 +62,9 @@
       hand_detector_model_filename: $(arg hand_detector_model_filename)
       hand_detector_weights_filename: $(arg hand_detector_weights_filename)
       hand_detector_config_filename: $(arg hand_detector_config_filename)
+
+      use_word_embeddings: $(arg use_word_embeddings)
+      static_word_embeddings_filename: $(arg static_word_embeddings_filename)
 
       use_simulation_gui: $(arg use_simulation_gui)
       simulation_config_filename: $(arg simulation_config_filename)

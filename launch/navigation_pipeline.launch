@@ -24,8 +24,11 @@
   <arg name="max_lost" default="5"/>
   <arg name="max_age" default="15"/>
 
+  <arg name="use_word_embeddings" default="False"/>
+  <arg name="static_word_embeddings_filename" default="$(find uwds3)/models/word_embeddings/wiki-news-300d-1M-subword.vec"/>
+
   <!-- Simulation parameters -->
-  <arg name="use_simulation_gui" default="True"/>
+  <arg name="use_simulation_gui" default="False"/>
   <arg name="simulation_config_filename" default="$(find uwds3)/config/simulation/pr2_config.yaml"/>
   <arg name="cad_models_additional_search_path" default="$(find uwds3)/models/cad_models"/>
   <arg name="static_entities_config_filename" default="$(find uwds3)/config/simulation/empty_floor.yaml"/>
@@ -51,6 +54,9 @@
       detector_model_filename: $(arg detector_model_filename)
       detector_weights_filename: $(arg detector_weights_filename)
       detector_config_filename: $(arg detector_config_filename)
+
+      use_word_embeddings: $(arg use_word_embeddings)
+      static_word_embeddings_filename: $(arg static_word_embeddings_filename)
 
       use_simulation_gui: $(arg use_simulation_gui)
       simulation_config_filename: $(arg simulation_config_filename)

@@ -38,8 +38,11 @@
   <arg name="max_lost" default="10"/>
   <arg name="max_age" default="60"/>
 
+  <arg name="use_word_embeddings" default="True"/>
+  <arg name="static_word_embeddings_filename" default="$(find uwds3)/models/word_embeddings/wiki-news-300d-1M-subword.bin"/>
+
   <!-- Simulation parameters -->
-  <arg name="use_simulation_gui" default="True"/>
+  <arg name="use_simulation_gui" default="False"/>
   <arg name="simulation_config_filename" default="$(find uwds3)/config/simulation/r2d2_config.yaml"/>
   <arg name="cad_models_additional_search_path" default="$(find uwds3)/models/cad_models"/>
   <arg name="static_entities_config_filename" default="$(find uwds3)/config/simulation/adream_static_entities.yaml"/>
@@ -74,6 +77,9 @@
       face_3d_model_filename: $(arg face_3d_model_filename)
 
       facial_features_model_filename: $(arg facial_features_model_filename)
+
+      use_word_embeddings: $(arg use_word_embeddings)
+      static_word_embeddings_filename: $(arg static_word_embeddings_filename)
 
       use_simulation_gui: $(arg use_simulation_gui)
       simulation_config_filename: $(arg simulation_config_filename)

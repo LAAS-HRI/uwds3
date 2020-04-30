@@ -9,6 +9,7 @@ from .reasoning.estimation.shape_estimator import ShapeEstimator
 from .reasoning.estimation.facial_landmarks_estimator import FacialLandmarksEstimator
 from .reasoning.estimation.facial_features_estimator import FacialFeaturesEstimator
 from .reasoning.estimation.color_features_estimator import ColorFeaturesEstimator
+from .reasoning.estimation.semantic_features_estimator import SemanticFeaturesEstimator
 from .reasoning.monitoring.perspective_monitor import PerspectiveMonitor
 from .utils.view_publisher import ViewPublisher
 
@@ -37,6 +38,7 @@ class DialoguePipeline(BasePipeline):
         self.face_detector = SSDDetector(face_detector_model_filename,
                                          face_detector_weights_filename,
                                          face_detector_config_filename)
+
 
         ####################################################################
         # Features estimation
@@ -89,6 +91,9 @@ class DialoguePipeline(BasePipeline):
         self.shape_estimator = ShapeEstimator()
         self.object_pose_estimator = ObjectPoseEstimator()
 
+        if self.use_word_embeddings is True:
+            self.semantic_features_estimator = SemanticFeaturesEstimator(self.word_embeddings)
+
         ########################################################
         # Monitoring
         ########################################################
@@ -132,6 +137,8 @@ class DialoguePipeline(BasePipeline):
         features_timer = cv2.getTickCount()
 
         self.color_features_estimator.estimate(rgb_image, detections)
+        if self.frame_count == 1:
+            self.facial_features_estimator.estimate(rgb_image, detections)
 
         features_fps = cv2.getTickFrequency() / (cv2.getTickCount()-features_timer)
         ######################################################
@@ -141,16 +148,16 @@ class DialoguePipeline(BasePipeline):
 
         if self.frame_count == 0:
             person_detections = [d for d in detections if d.label == "person"]
-            face_tracks = self.face_tracker.update(rgb_image, [], time=time)
-            person_tracks = self.person_tracker.update(rgb_image, person_detections, time=time)
+            self.face_tracks = self.face_tracker.update(rgb_image, [], time=time)
+            self.person_tracks = self.person_tracker.update(rgb_image, person_detections, time=time)
         elif self.frame_count == 1:
-            face_tracks = self.face_tracker.update(rgb_image, detections, time=time)
-            person_tracks = self.person_tracker.update(rgb_image, [], time=time)
+            self.face_tracks = self.face_tracker.update(rgb_image, detections, time=time)
+            self.person_tracks = self.person_tracker.update(rgb_image, [], time=time)
         else:
-            face_tracks = self.face_tracker.update(rgb_image, [], time=time)
-            person_tracks = self.person_tracker.update(rgb_image, [], time=time)
+            self.face_tracks = self.face_tracker.update(rgb_image, [], time=time)
+            self.person_tracks = self.person_tracker.update(rgb_image, [], time=time)
 
-        tracks = face_tracks + person_tracks
+        tracks = self.face_tracks + self.person_tracks
 
         tracking_fps = cv2.getTickFrequency() / (cv2.getTickCount()-tracking_timer)
         ########################################################
@@ -158,10 +165,10 @@ class DialoguePipeline(BasePipeline):
         ########################################################
         pose_timer = cv2.getTickCount()
 
-        self.facial_landmarks_estimator.estimate(rgb_image, face_tracks)
+        self.facial_landmarks_estimator.estimate(rgb_image, self.face_tracks)
 
-        self.head_pose_estimator.estimate(face_tracks, view_pose, self.robot_camera)
-        self.object_pose_estimator.estimate(person_tracks, view_pose, self.robot_camera)
+        self.head_pose_estimator.estimate(self.face_tracks, view_pose, self.robot_camera)
+        self.object_pose_estimator.estimate(self.person_tracks, view_pose, self.robot_camera)
 
         self.shape_estimator.estimate(rgb_image, tracks, self.robot_camera)
 
@@ -171,15 +178,17 @@ class DialoguePipeline(BasePipeline):
         ########################################################
         recognition_timer = cv2.getTickCount()
 
-        self.facial_features_estimator.estimate(rgb_image, face_tracks)
+        self.facial_features_estimator.estimate(rgb_image, self.face_tracks)
 
         recognition_fps = cv2.getTickFrequency() / (cv2.getTickCount()-recognition_timer)
+
+        self.semantic_features_estimator.estimate(tracks+static_nodes)
         ########################################################
         # Monitoring
         ########################################################
         monitoring_timer = cv2.getTickCount()
         if self.frame_count == 2:
-            success, other_image, other_visible_tracks, others_events = self.perspective_monitor.monitor_others(face_tracks)
+            success, other_image, other_visible_tracks, others_events = self.perspective_monitor.monitor_others(self.face_tracks)
 
         monitoring_fps = cv2.getTickFrequency() / (cv2.getTickCount()-monitoring_timer)
         pipeline_fps = cv2.getTickFrequency() / (cv2.getTickCount()-pipeline_timer)

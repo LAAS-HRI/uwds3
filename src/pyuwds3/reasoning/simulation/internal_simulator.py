@@ -103,6 +103,7 @@ class InternalSimulator(object):
         p.setRealTimeSimulation(1)
 
         self.robot_loaded = False
+        self.joint_states_last_update = None
 
         if load_robot is True:
             self.joint_state_subscriber = rospy.Subscriber("/joint_states", JointState, self.joint_states_callback, queue_size=1)
@@ -567,3 +568,14 @@ class InternalSimulator(object):
                 else:
                     self.robot_moving = False
                     p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
+            if self.use_gui is False:
+                if self.joint_states_last_update is None:
+                    p.stepSimulation()
+                    self.joint_states_last_update = cv2.getTickCount()
+                else:
+                    now = cv2.getTickCount()
+                    elapsed_time = (now-self.joint_states_last_update) / cv2.getTickFrequency()
+                    nb_step = int(elapsed_time/(1/240.0))
+                    for i in range(0, nb_step):
+                        p.stepSimulation()
+                    self.joint_states_last_update = now

@@ -1,6 +1,7 @@
 models/detection/
 models/features/
 models/estimation/
+models/word_embeddings
 
 devel/
 logs/

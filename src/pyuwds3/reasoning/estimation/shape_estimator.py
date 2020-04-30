@@ -1,7 +1,6 @@
 import cv2
 import rospy
 from ...types.shape.sphere import Sphere
-from ...types.shape.box import Box
 from ...types.shape.cylinder import Cylinder
 from sklearn.cluster import KMeans
 from collections import Counter

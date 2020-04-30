@@ -7,8 +7,8 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
 
-LONGTERM_LEARNING_RATE = 10e-7
-SHORTTERM_LEARNING_RATE = 0.018
+LONGTERM_LEARNING_RATE = 1e-7
+SHORTTERM_LEARNING_RATE = 0.02
 
 
 class ForegroundDetector(object):
@@ -20,11 +20,13 @@ class ForegroundDetector(object):
         self.initialize()
         self.max_overlap = max_overlap
         self.kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        self.bridge = CvBridge()
+        self.pub = rospy.Publisher("foreground_mask", Image, queue_size=1)
 
     def initialize(self):
         """ Initialize the detector (reset the background)
         """
-        self.long_term_detector = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=100, detectShadows=True)
+        self.long_term_detector = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=130, detectShadows=True)
         self.short_term_detector = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=50, detectShadows=False)
 
     def detect(self, rgb_image, depth_image=None):
@@ -40,22 +42,22 @@ class ForegroundDetector(object):
 
         bgr_image_cropped = bgr_image[int(h/2.0):h, 0:int(w)]
         cropped_height, cropped_width, _ = bgr_image_cropped.shape
-        bgr_image_resized = cv2.resize(bgr_image_cropped, (int(cropped_width/2.0), int(cropped_height/2.0)))
 
-        foreground_mask = self.long_term_detector.apply(bgr_image_resized, learningRate=LONGTERM_LEARNING_RATE)
+        foreground_mask = self.long_term_detector.apply(bgr_image_cropped, learningRate=LONGTERM_LEARNING_RATE)
         foreground_mask[foreground_mask != 255] = 0 # shadows suppression
         foreground_mask = cv2.morphologyEx(foreground_mask, cv2.MORPH_CLOSE, self.kernel)
         foreground_mask = cv2.morphologyEx(foreground_mask, cv2.MORPH_OPEN, self.kernel)
 
-
-        motion_mask = self.short_term_detector.apply(bgr_image_resized, learningRate=SHORTTERM_LEARNING_RATE)
+        motion_mask = self.short_term_detector.apply(bgr_image_cropped, learningRate=SHORTTERM_LEARNING_RATE)
         motion_mask = cv2.morphologyEx(motion_mask, cv2.MORPH_CLOSE, self.kernel)
         motion_mask = cv2.morphologyEx(motion_mask, cv2.MORPH_OPEN, self.kernel)
+        motion_mask = cv2.dilate(motion_mask, self.kernel)
 
         not_moving_mask = cv2.bitwise_not(motion_mask)
         foreground_mask = cv2.bitwise_and(foreground_mask, not_moving_mask)
+        foreground_mask_full[int(h/2.0):h, 0:int(w)] = foreground_mask
 
-        foreground_mask_full[int(h/2.0):h, 0:int(w)] = cv2.resize(foreground_mask, (cropped_width, cropped_height))
+        self.pub.publish(self.bridge.cv2_to_imgmsg(foreground_mask))
 
         # find the contours
         contours, hierarchy = cv2.findContours(foreground_mask_full, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)

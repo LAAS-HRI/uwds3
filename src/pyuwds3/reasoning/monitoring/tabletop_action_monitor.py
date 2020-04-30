@@ -50,7 +50,6 @@ class TabletopActionMonitor(Monitor):
                 if support.is_located() and support.has_shape():
                     if self.simulator.is_entity_loaded(support.id) is False:
                         self.simulator.load_node(support)
-                        # TODO add object in the beliefs base
                     else:
                         self.simulator.update_constraint(support.id, support.pose)
             support = support_tracks[0]

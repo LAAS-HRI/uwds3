@@ -1,9 +1,8 @@
 import cv2
 from math import pi
 import numpy as np
-from tf.transformations import euler_matrix, euler_from_matrix, is_same_transform
+from tf.transformations import euler_matrix, euler_from_matrix
 from ...types.vector.vector6d import Vector6D
-from ...types.vector.vector3d import Vector3D
 
 
 MAX_DIST = 2.5
