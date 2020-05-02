@@ -408,7 +408,7 @@ class InternalSimulator(object):
         rendered_width = int(width*rendering_ratio)
         rendered_height = int(height*rendering_ratio)
 
-        projection_matrix = p.computeProjectionMatrixFOV(camera.hfov(),
+        projection_matrix = p.computeProjectionMatrixFOV(camera.fov(),
                                                          float(rendered_width)/rendered_height,
                                                          camera.clipnear,
                                                          camera.clipfar)

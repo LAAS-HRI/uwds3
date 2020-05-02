@@ -21,30 +21,37 @@ class Camera(object):
         self.center = Vector2D(self.width/2.0, self.height/2.0)
         self.focal_length = Vector2D(self.width, self.height)
 
-    def hfov(self):
-        return math.degrees(2.0*math.atan2(self.width, 2*self.focal_length.x))
+    def fov(self):
+        """ Returns the diagonal field of view (used in openGL)
+        """
+        d = math.sqrt(pow(self.width, 2) + pow(self.height, 2))
+        return math.degrees(2 * math.atan2(d/2.0, self.width))
 
     def center(self):
-        """Returns the camera's center"""
+        """ Returns the camera's center
+        """
         return self.center
 
-    def get_local_length(self):
+    def get_focal_length(self):
+        """ Returns the focal length
+        """
         return self.focal_length
 
     def camera_matrix(self):
         """Returns the camera matrix"""
         return np.array([[self.focal_length.x, 0, self.center.x],
-                        [0, self.focal_length.y, self.center.y],
+                        [0, self.focal_length.x, self.center.y],
                         [0, 0, 1]], dtype="double")
 
     def projection_matrix(self):
         """Returns the projection matrix"""
         return np.array([[self.focal_length.x, 0, self.center.x, 0],
-                        [0, self.focal_length.y, self.center.y, 0],
+                        [0, self.focal_length.x, self.center.y, 0],
                         [0, 0, 1, 0]], dtype="double")
 
     def from_msg(self, msg, clipnear=0.1, clipfar=1e+3):
-        """ """
+        """
+        """
         self.clipnear = clipnear
         self.clipfar = clipfar
         self.width = msg.width
@@ -59,7 +66,7 @@ class Camera(object):
     def to_msg(self):
         """Converts into a ROS message"""
         msg = uwds3_msgs.msg.Camera()
-        msg.fov = self.hfov()
+        msg.fov = self.fov()
         msg.clipnear = self.clipnear
         msg.clipfar = self.clipfar
         msg.info.width = self.width
@@ -70,14 +77,21 @@ class Camera(object):
         msg.info.P = list(self.projection_matrix().flatten())
         return msg
 
+    def __repr__(self):
+        return str(self)
+
     def __str__(self):
-        return "hfov:{} width:{} height:{} clipnear:{} clipfar:{}".format(self.fov,
-                                                                         self.width,
-                                                                         self.height,
-                                                                         self.clipnear,
-                                                                         self.clipfar)
+        return "[fov:{:.3}\n\r".format(self.fov()) \
+                + "width:{}\n\r".format(self.width) \
+                + "height:{}\n\r".format(self.height) \
+                + "clipnear:{}\n\r".format(self.clipnear) \
+                + "clipfar:{}]".format(self.clipfar) \
+
+
 
 class HumanVisualModel(object):
+    """
+    """
     WIDTH = 480 # image width resolution for rendering
     HEIGHT = 360  # image height resolution for rendering
     CLIPNEAR = 0.1 # clipnear

@@ -4,11 +4,14 @@ from ...types.vector.vector3d import Vector3D
 
 
 class ObjectPoseEstimator(object):
-    def estimate(self, objects, view_pose, camera):
-        """ """
+    """ Allow to compute the 6D pose in global frame
+    """
+    def estimate(self, tracks, view_pose, camera):
+        """ Estimate the 6D pose in global frame from bbox (assume same orientation than map)
+        """
         view_matrix = view_pose.transform()
         camera_matrix = camera.camera_matrix()
-        for o in objects:
+        for o in tracks:
             if o.bbox.depth is not None:
                 fx = camera_matrix[0][0]
                 fy = camera_matrix[1][1]

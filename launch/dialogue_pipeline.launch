@@ -10,7 +10,9 @@
   <arg name="global_frame_id" default="map"/>
   <arg name="base_frame_id" default="base_link"/>
 
-    <node name="map_server" pkg="map_server" type="map_server" args="$(find uwds3)/models/maps/adream_RDC_complet.yaml"/>
+  <node name="map2odom_publisher" pkg="tf2_ros" type="static_transform_publisher" args="-5 16 0 1.57 0 0 $(arg global_frame_id) odom"/>
+
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find uwds3)/models/maps/adream_RDC_complet.yaml"/>
 
   <!-- Detector model parameters -->
   <arg name="detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb"/>
@@ -38,7 +40,7 @@
   <arg name="max_lost" default="10"/>
   <arg name="max_age" default="60"/>
 
-  <arg name="use_word_embeddings" default="True"/>
+  <arg name="use_word_embeddings" default="False"/>
   <arg name="static_word_embeddings_filename" default="$(find uwds3)/models/word_embeddings/wiki-news-300d-1M-subword.bin"/>
 
   <!-- Simulation parameters -->
@@ -52,7 +54,6 @@
   <arg name="publish_viz" default="true"/>
   <arg name="publish_tf" default="true"/>
   <arg name="use_depth" default="false"/>
-
 
   <node name="dialogue_pipeline" pkg="uwds3" type="dialogue_pipeline_node.py" args="" output="screen" respawn="false">
     <rosparam subst_value="true">

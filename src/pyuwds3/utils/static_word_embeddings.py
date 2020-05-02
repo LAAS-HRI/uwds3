@@ -11,10 +11,15 @@ class StaticWordEmbeddings(object):
         """
         self.model = fasttext.load_model(pretrained_embeddings_file)
 
+    def compute_word_vector(self, word):
+        """ Compute a word vector (even for unknown words as it use subwords)
+        """
+        return self.model.get_word_vector(word)
+
     def compute_sentence_vector(self, sentence):
         """ Compute fast sentence vector
         """
-        return np.average(np.array([self.model.get_word_vector(w) for w in sentence.split()]), axis=0)
+        return np.average(np.array([self.compute_word_vector(w) for w in sentence.split()]), axis=0)
 
     def get_similar_words(self, word):
         """ Return the most similar words

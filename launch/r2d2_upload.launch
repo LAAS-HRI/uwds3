@@ -12,6 +12,5 @@
 
   <node name="camera_frame_publisher" pkg="tf2_ros" type="static_transform_publisher" args="0 0 0 -1.57 0 -1.57 camera_link $(arg camera_frame_id)"/>
   <node name="odom2base_publisher" pkg="tf2_ros" type="static_transform_publisher" args="0 0 0.47 0 0 0 odom $(arg base_frame_id)"/>
-  <node name="map2odom_publisher" pkg="tf2_ros" type="static_transform_publisher" args="-5 16 0 1.57 0 0 $(arg global_frame_id) odom"/>
 
 </launch>

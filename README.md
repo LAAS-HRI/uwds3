@@ -3,10 +3,10 @@
 A framework for physical, spatial and semantic reasoning for Human-Robot interactions.
 
 This software is composed by two data-structures:
-  1. A scene graph composed by scene nodes that contains the geometric information.
+  1. A scene graph composed by scene nodes that contains the geometric and visual information.
   2. A timeline of temporal situations that contains temporal predicates and captions.
 
-It also contains differents modules to generate and maintain the scene graph and the timeline from the robot camera image by integrating a CPU based perception pipeline alongwith a real-time physics engine and a tensor based probabilistic knowledge base.
+It also contains differents modules to generate and maintain the scene graph and the timeline from the robot camera image by integrating a CPU based perception pipeline alongwith a real-time physics engine and a probabilistic triplet store.
 
 Main features:
  - [x] Lightweight CPU perception pipeline that use SSD detectors with kalman+medianflow trackers to let the GPU for the physics engine.
@@ -45,6 +45,8 @@ roslaunch uwds3 camera_publisher.launch # use the laptop/usb camera to fake the 
 roslaunch uwds3 dialogue_pipeline.launch # launch the demo pipeline
 ```
 
+**IMPORTANT**: To be able to load the robot meshes in bullet you need to have the description package in the in the `catkin_ws/src` folder.
+
 Open Rviz in another shell with the command `rviz`, and then add three display:
 * Image display (topic : `myself_view`)
 * Image display (topic : `other_view`)
@@ -62,3 +64,9 @@ Please fill an issue with the error log and an example of code to reproduce the 
 ### How to contribute
 
 To contribute to the project, fork the repo and make a pull request
+
+TODO :
+
+- [ ] Add Mask-RCNN detector with opencv+CUDA
+- [ ] Add Openpose detector with lucas kanade trackers
+- [ ] Add JSON serialization for base types

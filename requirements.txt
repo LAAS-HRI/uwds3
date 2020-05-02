@@ -10,4 +10,5 @@ tqdm
 dlib
 opencv-python
 opencv-contrib-python
+fasttext
 pybullet

@@ -16,10 +16,13 @@ from .utils.view_publisher import ViewPublisher
 
 class DialoguePipeline(BasePipeline):
     def __init__(self):
+        """
+        """
         super(DialoguePipeline, self).__init__()
 
     def initialize_pipeline(self, internal_simulator, beliefs_base):
-        """ """
+        """
+        """
         ######################################################
         # Detection
         ######################################################
@@ -45,9 +48,10 @@ class DialoguePipeline(BasePipeline):
         ####################################################################
 
         facial_features_model_filename = rospy.get_param("~facial_features_model_filename", "")
-
+        shape_predictor_config_filename = rospy.get_param("~shape_predictor_config_filename", "")
         face_3d_model_filename = rospy.get_param("~face_3d_model_filename", "")
-        self.facial_features_estimator = FacialFeaturesEstimator(facial_features_model_filename)
+
+        self.facial_features_estimator = FacialFeaturesEstimator(shape_predictor_config_filename, facial_features_model_filename)
 
         self.color_features_estimator = ColorFeaturesEstimator()
 
@@ -83,7 +87,6 @@ class DialoguePipeline(BasePipeline):
         # Pose & Shape estimation
         ########################################################
 
-        shape_predictor_config_filename = rospy.get_param("~shape_predictor_config_filename", "")
         self.facial_landmarks_estimator = FacialLandmarksEstimator(shape_predictor_config_filename)
         face_3d_model_filename = rospy.get_param("~face_3d_model_filename", "")
         self.head_pose_estimator = HeadPoseEstimator(face_3d_model_filename)
@@ -108,7 +111,8 @@ class DialoguePipeline(BasePipeline):
         self.myself_view_publisher = ViewPublisher("myself_view")
 
     def perception_pipeline(self, view_pose, rgb_image, depth_image=None, time=None):
-        """ """
+        """
+        """
         ######################################################
         # Simulation
         ######################################################
@@ -137,8 +141,6 @@ class DialoguePipeline(BasePipeline):
         features_timer = cv2.getTickCount()
 
         self.color_features_estimator.estimate(rgb_image, detections)
-        if self.frame_count == 1:
-            self.facial_features_estimator.estimate(rgb_image, detections)
 
         features_fps = cv2.getTickFrequency() / (cv2.getTickCount()-features_timer)
         ######################################################
@@ -166,7 +168,6 @@ class DialoguePipeline(BasePipeline):
         pose_timer = cv2.getTickCount()
 
         self.facial_landmarks_estimator.estimate(rgb_image, self.face_tracks)
-
         self.head_pose_estimator.estimate(self.face_tracks, view_pose, self.robot_camera)
         self.object_pose_estimator.estimate(self.person_tracks, view_pose, self.robot_camera)
 
@@ -182,7 +183,8 @@ class DialoguePipeline(BasePipeline):
 
         recognition_fps = cv2.getTickFrequency() / (cv2.getTickCount()-recognition_timer)
 
-        self.semantic_features_estimator.estimate(tracks+static_nodes)
+        if self.use_word_embeddings is True:
+            self.semantic_features_estimator.estimate(tracks+static_nodes)
         ########################################################
         # Monitoring
         ########################################################

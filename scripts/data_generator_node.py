@@ -22,10 +22,12 @@ class DataGenerator(object):
         ouput_data_directory = rospy.get_param("~ouput_data_directory", "/tmp/")
         global_frame_id = rospy.get_param("~global_frame_id", "map")
         base_frame_id = rospy.get_param("~global_frame_id", "base_link")
+        simulation_config_filename = rospy.get_param("~simulation_config_filename", "")
 
         max_samples = rospy.get_param("~max_samples", 600)
 
         simulator = InternalSimulator(use_simulation_gui,
+                                      simulation_config_filename,
                                       cad_models_additional_search_path,
                                       static_entities_config_filename,
                                       "",
@@ -50,8 +52,8 @@ class DataGenerator(object):
         height = rospy.get_param("~height", 128)
 
         camera = HumanCamera()
-        camera.width = width
-        camera.height = height
+        camera.width = int(width/2.0)
+        camera.height = int(height/2.0)
 
         grid = GridSampler(xmin, ymin, zmin, xmax, ymax, zmax, xdim, ydim, zdim)
 
