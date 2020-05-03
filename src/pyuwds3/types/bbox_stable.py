@@ -7,7 +7,9 @@ from .bbox import BoundingBox
 class BoundingBoxStable(BoundingBox):
     """ """
     def __init__(self, xmin, ymin, xmax, ymax, depth=None,
-                 p_cov=0.85, m_cov=0.003, time=None):
+                 p_cov_c=0.85, m_cov_c=0.003,
+                 p_cov_a=0.5, m_cov_a=1e-7,
+                 p_cov_h=0.5, m_cov_h=1e-7, time=None):
         self.xmin = int(xmin)
         self.ymin = int(ymin)
         self.xmax = int(xmax)
@@ -18,11 +20,9 @@ class BoundingBoxStable(BoundingBox):
         x = center.x
         y = center.y
         a = w/float(h)
-        self.m_cov = m_cov
-        self.p_cov = p_cov
-        self.center_filter = Vector2DStable(x=x, y=y, p_cov=p_cov, m_cov=m_cov, time=time)
-        self.aspect_filter = ScalarStable(x=a, p_cov=p_cov, m_cov=m_cov, time=time)
-        self.height_filter = ScalarStable(x=h, p_cov=p_cov, m_cov=m_cov, time=time)
+        self.center_filter = Vector2DStable(x=x, y=y, p_cov=p_cov_c, m_cov=m_cov_c, time=time)
+        self.aspect_filter = ScalarStable(x=a, p_cov=p_cov_a, m_cov=m_cov_a, time=time)
+        self.height_filter = ScalarStable(x=h, p_cov=p_cov_h, m_cov=m_cov_h, time=time)
         if depth is not None:
             self.depth = float(depth)
         else:
