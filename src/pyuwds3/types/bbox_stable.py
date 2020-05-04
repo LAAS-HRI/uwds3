@@ -8,8 +8,8 @@ class BoundingBoxStable(BoundingBox):
     """ """
     def __init__(self, xmin, ymin, xmax, ymax, depth=None,
                  p_cov_c=0.85, m_cov_c=0.003,
-                 p_cov_a=0.5, m_cov_a=1e-7,
-                 p_cov_h=0.5, m_cov_h=1e-7, time=None):
+                 p_cov_a=0.5, m_cov_a=1e-9,
+                 p_cov_h=0.5, m_cov_h=1e-9, time=None):
         self.xmin = int(xmin)
         self.ymin = int(ymin)
         self.xmax = int(xmax)

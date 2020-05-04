@@ -13,7 +13,10 @@ class Detection(object):
         self.mask = None
         if mask is not None:
             if mask.shape[0] != self.bbox.height() or mask.shape[1] != self.bbox.width():
-                self.mask = cv2.resize(mask.astype("uint8"), (self.bbox.width(), self.bbox.height()))
+                try:
+                    self.mask = cv2.resize(mask.astype("uint8"), (self.bbox.width(), self.bbox.height()))
+                except Exception:
+                    self.mask = None
             else:
                 self.mask = mask
         self.features = {}
