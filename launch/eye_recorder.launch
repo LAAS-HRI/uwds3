@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <!-- Camera parameters -->
+  <arg name="rgb_image_topic" default="kinect2/qhd/image_color_rect"/>
+  <arg name="rgb_camera_info_topic" default="kinect2/qhd/camera_info"/>
+
+  <!-- Face detector model parameters -->
+  <arg name="face_detector_model_filename" default="$(find uwds3)/models/detection/opencv_face_detector_uint8.pb"/>
+  <arg name="face_detector_weights_filename" default="$(find uwds3)/models/detection/opencv_face_detector.pbtxt"/>
+  <arg name="face_detector_config_filename" default="$(find uwds3)/config/detection/face_config.yaml"/>
+
+  <arg name="shape_predictor_config_filename" default="$(find uwds3)/models/estimation/shape_predictor_68_face_landmarks.dat"/>
+
+  <node name="eye_recorder" pkg="uwds3" type="eye_recorder_node.py" args="" output="screen" respawn="false">
+    <rosparam subst_value="true">
+      rgb_image_topic: $(arg rgb_image_topic)
+
+      face_detector_model_filename: $(arg face_detector_model_filename)
+      face_detector_weights_filename: $(arg face_detector_weights_filename)
+      face_detector_config_filename: $(arg face_detector_config_filename)
+
+      shape_predictor_config_filename: $(arg shape_predictor_config_filename)
+
+    </rosparam>
+  </node>
+
+</launch>
