@@ -23,10 +23,10 @@ class FacialLandmarks(Features):
     """Represents a 68 2D point facial landmarks"""
     def __init__(self, landmarks, image_width, image_height):
         """FacialLandmarks constructor"""
-        self.data = landmarks
-        self.name = "facial_landmarks"
-        self.confidence = 1.
-        self.dimensions = (68, 2)
+        super(FacialLandmarks, self).__init__("facial_landmarks",
+                                              (68, 2),
+                                              landmarks,
+                                              1.)
         self.image_width = image_width
         self.image_height = image_height
 

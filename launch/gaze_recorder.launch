@@ -3,7 +3,8 @@
 
   <!-- Camera parameters -->
   <arg name="rgb_image_topic" default="kinect2/qhd/image_color_rect"/>
-  <arg name="rgb_camera_info_topic" default="kinect2/qhd/camera_info"/>
+
+  <arg name="output_data_directory" default="$(find uwds3)/data/eye-contact"/>
 
   <!-- Face detector model parameters -->
   <arg name="face_detector_model_filename" default="$(find uwds3)/models/detection/opencv_face_detector_uint8.pb"/>
@@ -12,9 +13,12 @@
 
   <arg name="shape_predictor_config_filename" default="$(find uwds3)/models/estimation/shape_predictor_68_face_landmarks.dat"/>
 
-  <node name="eye_recorder" pkg="uwds3" type="eye_recorder_node.py" args="" output="screen" respawn="false">
+  <node name="gaze_recorder" pkg="uwds3" type="gaze_recorder_node.py" args="" output="screen" respawn="false">
     <rosparam subst_value="true">
+
       rgb_image_topic: $(arg rgb_image_topic)
+
+      output_data_directory: $(arg output_data_directory)
 
       face_detector_model_filename: $(arg face_detector_model_filename)
       face_detector_weights_filename: $(arg face_detector_weights_filename)

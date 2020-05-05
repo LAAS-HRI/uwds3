@@ -1,25 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+import uuid
 import rospy
 import cv2
 import os
 import numpy as np
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-from pyuwds3.types.detection import Detection
 from pyuwds3.reasoning.detection.ssd_detector import SSDDetector
 from pyuwds3.reasoning.estimation.facial_landmarks_estimator import FacialLandmarksEstimator
 from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, centroid_cost
 
 
 DEFAULT_SENSOR_QUEUE_SIZE = 10
-MIN_EYE_PATCH_WIDTH = 5
-MIN_EYE_PATCH_HEIGHT = 3
-EYE_INPUT_WIDTH = 32
-EYE_INPUT_HEIGHT = 16
 
 
-class EyeRecorderNode(object):
+class FaceRecorderNode(object):
     def __init__(self):
         """
         """
@@ -38,8 +34,11 @@ class EyeRecorderNode(object):
 
         self.output_data_directory = rospy.get_param("~output_data_directory", "/tmp/")
 
+        self.max_samples = rospy.get_param("~max_samples", 600)
+        self.nb_sample = 0
+
         self.bridge = CvBridge()
-        self.name = rospy.get_param("~name", "eye-contact")
+        self.label = rospy.get_param("~label", "yoan")
 
         self.face_tracker = MultiObjectTracker(iou_cost,
                                                centroid_cost,
@@ -50,11 +49,13 @@ class EyeRecorderNode(object):
                                                120,
                                                use_tracker=True)
 
+        self.data_path = self.output_data_directory+"/"+self.label
+
         if not os.path.exists(self.output_data_directory):
             os.makedirs(self.output_data_directory)
-            data_path = self.output_data_directory+"/"+self.name
-            if not os.path.exists(data_path):
-                os.makedirs(data_path)
+
+        if not os.path.exists(self.data_path):
+            os.makedirs(self.data_path)
 
         self.view_publisher = rospy.Publisher("myself_view", Image, queue_size=1)
 
@@ -83,41 +84,28 @@ class EyeRecorderNode(object):
                     biggest_face = track
 
         if biggest_face is not None:
-            l_eye_contours = biggest_face.features["facial_landmarks"].right_eye_contours()
+            biggest_face.draw(view_image, (0, 200, 0), 2)
+            l_eye_contours = biggest_face.features["facial_landmarks"].left_eye_contours()
             xmin, ymin, w, h = cv2.boundingRect(l_eye_contours)
-            l_eye_detected = False
-            if h > MIN_EYE_PATCH_HEIGHT and w > MIN_EYE_PATCH_WIDTH:
-                l_eye_mask = cv2.fillConvexPoly(np.zeros(rgb_image.shape[:2], dtype=np.uint8), l_eye_contours, 255)[ymin:ymin+h, xmin:xmin+w]
-                l_eye_detection = Detection(xmin, ymin, xmin+w, ymin+h, "l_eye", 1.0, mask=l_eye_mask)
-                l_eye_patch = bgr_image[ymin:ymin+h, xmin:xmin+w]
-                l_eye_detection.bbox.draw(view_image, (0, 200, 0), 1)
-                l_eye_detected = True
-
-            r_eye_contours = biggest_face.features["facial_landmarks"].left_eye_contours()
-            xmin, ymin, w, h = cv2.boundingRect(r_eye_contours)
-            r_eye_detected = False
-            if h > MIN_EYE_PATCH_HEIGHT and w > MIN_EYE_PATCH_WIDTH:
-                r_eye_mask = cv2.fillConvexPoly(np.zeros(rgb_image.shape[:2], dtype=np.uint8), r_eye_contours, 255)[ymin:ymin+h, xmin:xmin+w]
-                r_eye_detection = Detection(xmin, ymin, xmin+w, ymin+h, "r_eye", 1.0, mask=r_eye_mask)
-                r_eye_patch = bgr_image[ymin:ymin+h, xmin:xmin+w]
-                r_eye_detection.bbox.draw(view_image, (0, 200, 0), 1)
-                r_eye_detected = True
-
-            if l_eye_detected is True and r_eye_detected is True:
-                l_eye_patch_resized = cv2.resize(l_eye_patch, (EYE_INPUT_WIDTH, EYE_INPUT_HEIGHT), interpolation=cv2.INTER_AREA)
-                r_eye_patch_resized = cv2.resize(r_eye_patch, (EYE_INPUT_WIDTH, EYE_INPUT_HEIGHT), interpolation=cv2.INTER_AREA)
-                view_image[0:EYE_INPUT_HEIGHT, 0:EYE_INPUT_WIDTH] = l_eye_patch_resized
-                view_image[0:EYE_INPUT_HEIGHT, EYE_INPUT_WIDTH:EYE_INPUT_WIDTH*2] = r_eye_patch_resized
-
-            biggest_face.features["facial_landmarks"].draw(view_image, (0, 200, 0), 1)
-
+            sample_uuid = str(uuid.uuid4()).replace("-", "")
+            xmin = int(biggest_face.bbox.xmin)
+            xmax = int(biggest_face.bbox.xmax)
+            ymin = int(biggest_face.bbox.ymin)
+            ymax = int(biggest_face.bbox.ymax)
+            face_image = rgb_image[ymin:ymax, xmin:xmax]
+            try:
+                rospy.loginfo("[face_recorder] sample: {} id: {}".format(self.nb_sample, sample_uuid))
+                cv2.imwrite(self.data_path+"/"+sample_uuid+".png", face_image, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+                self.nb_sample += 1
+            except Exception as e:
+                rospy.logwarn("[face_recorder] Exception occured: {}".format(e))
         self.view_publisher.publish(self.bridge.cv2_to_imgmsg(view_image, "bgr8"))
 
     def run(self):
-        while not rospy.is_shutdown():
+        while not rospy.is_shutdown() and self.nb_sample < self.max_samples:
             rospy.spin()
 
 
 if __name__ == "__main__":
-    rospy.init_node("eye_recorder", anonymous=False)
-    recorder = EyeRecorderNode().run()
+    rospy.init_node("face_recorder", anonymous=False)
+    recorder = FaceRecorderNode().run()

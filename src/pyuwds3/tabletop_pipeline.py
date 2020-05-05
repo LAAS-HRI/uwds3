@@ -249,16 +249,16 @@ class TabletopPipeline(BasePipeline):
         ########################################################
         # Monitoring
         ########################################################
-        # if self.track_hands is True:
-        #     events = self.action_monitor.monitor(support_tracks, self.object_tracks, self.person_tracks, self.hand_tracks)
-        # else:
-        #     events = self.action_monitor.monitor(support_tracks, self.object_tracks, self.person_tracks, [])
-        events = []
+
+        corrected_object_tracks, events = self.action_monitor.monitor(support_tracks, self.object_tracks, self.person_tracks, [])
+
+        corrected_tracks = corrected_object_tracks + self.person_tracks + support_tracks
+
         pipeline_fps = cv2.getTickFrequency() / (cv2.getTickCount()-pipeline_timer)
         ########################################################
         # Visualization
         ########################################################
         self.myself_view_publisher.publish(rgb_image, tracks, events=events, overlay_image=None, fps=pipeline_fps)
 
-        all_nodes = [myself]+static_nodes+support_tracks+tracks
+        all_nodes = [myself]+static_nodes+corrected_tracks
         return all_nodes, events

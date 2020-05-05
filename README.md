@@ -4,7 +4,7 @@ A framework for physical, spatial and semantic reasoning for Human-Robot interac
 
 This software is composed by two data-structures:
   1. A scene graph composed by scene nodes that contains the geometric and visual information.
-  2. A timeline of temporal situations that contains temporal predicates and captions.
+  2. A timeline of temporal situations that contains predicates and captions.
 
 It also contains differents modules to generate and maintain the scene graph and the timeline from the robot camera image by integrating a CPU based perception pipeline alongwith a real-time physics engine and a probabilistic triplet store.
 
@@ -13,8 +13,7 @@ Main features:
  - [x] Give to the robot physical sense of his body by using the simulation engine at runtime and the `/joint_states` topic published by the robot.
  * [x] Compute the view of the scene graph from any pose in the 3d space to latter process with image-based reasoning.
  * [x] Detect, explain and repairs beliefs divergeance by monitoring the view of the human it interact with (called the perspective).
- * [x] Correct small inconsistencies and infer the position of objects beyond the camera field of view by using physical reasoning.
- * [ ] [WIP] Reason about occlusion, motion and geometry to detect tabletop actions.
+ * [x] Correct small inconsistencies and infer the position of objects beyond the camera field of view by using physical reasoning and detect tabletop actions by analyzing inconsistency.
  * [ ] [WIP] Ground verbal expressions with rare/unknown or incomplete words by using fasttext embedding in order to match with current situations or nodes
 
 More information in the [documentation](https://github.com/LAAS-HRI/uwds3/wiki).
@@ -45,7 +44,7 @@ roslaunch uwds3 camera_publisher.launch # use the laptop/usb camera to fake the 
 roslaunch uwds3 dialogue_pipeline.launch # launch the demo pipeline
 ```
 
-**IMPORTANT**: To be able to load the robot meshes in bullet you need to have the description package in the in the `catkin_ws/src` folder.
+**IMPORTANT**: To be able to load the robot meshes in bullet you need to have the description package in the `catkin_ws/src` folder.
 
 Open Rviz in another shell with the command `rviz`, and then add three display:
 * Image display (topic : `myself_view`)
@@ -67,6 +66,6 @@ To contribute to the project, fork the repo and make a pull request
 
 TODO :
 
-- [ ] Add Mask-RCNN detector with opencv+CUDA
-- [ ] Add Openpose detector with lucas kanade trackers
+- [ ] Add Mask-RCNN detector with CUDA support
+- [ ] Add Openpose detector with CUDA and lucas kanade trackers to get higher fps
 - [ ] Add JSON serialization for base types

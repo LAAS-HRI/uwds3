@@ -42,7 +42,7 @@ class InternalSimulator(object):
 
         self.tf_bridge = TfBridge()
 
-        self.entity_map = {}
+        self.nodes_map = {}
 
         self.entity_id_map = {}
         self.reverse_entity_id_map = {}
@@ -57,6 +57,11 @@ class InternalSimulator(object):
         self.robot_joints_command = []
         self.robot_joints_command_indices = []
         self.position_tolerance = self.simulator_config["base_config"]["position_tolerance"]
+
+        if "controller_config" in self.simulator_config:
+            self.use_controller = True
+        else:
+            self.use_controller = False
 
         self.global_frame_id = global_frame_id
         self.base_frame_id = base_frame_id
@@ -78,6 +83,7 @@ class InternalSimulator(object):
             p.setAdditionalSearchPath(cad_models_additional_search_path)
 
         self.static_nodes = []
+        self.not_static_nodes = []
 
         if static_entities_config_filename != "":
             with open(static_entities_config_filename, 'r') as stream:
@@ -96,8 +102,8 @@ class InternalSimulator(object):
                                                           label=entity["label"],
                                                           description=entity["description"],
                                                           static=True)
-                    if success:
-                        self.static_nodes.append(static_node)
+                    if not success:
+                        rospy.logwarn("[simulator] Unable to load {} node, skip it.".format(entity["id"]))
 
         p.setGravity(0, 0, -10)
         p.setRealTimeSimulation(1)
@@ -107,6 +113,10 @@ class InternalSimulator(object):
 
         if load_robot is True:
             self.joint_state_subscriber = rospy.Subscriber("/joint_states", JointState, self.joint_states_callback, queue_size=1)
+
+        if self.use_controller is True:
+            pass
+            # TODO add controller to play arm traj, only PD is available in bullet, it is sufficient ?
 
     def load_urdf(self,
                   id,
@@ -214,14 +224,43 @@ class InternalSimulator(object):
                     primitive_shape.color[3] = rgba_color[3]
 
                 scene_node.shapes.append(primitive_shape)
-            self.entity_map[id] = scene_node
+            self.nodes_map[id] = scene_node
+            if static is True:
+                self.static_nodes.append(scene_node)
+            else:
+                self.not_static_nodes.append(scene_node)
             return True, scene_node
             rospy.loginfo("[simulation] '{}' File successfully loaded".format(filename))
         except Exception as e:
             rospy.logwarn("[simulation] Error loading URDF '{}': {}".format(filename, e))
             return False, None
 
-    def load_node(self, scene_node):
+    def is_on_support(self, scene_node):
+        if scene_node.has_shape() and scene_node.is_located():
+            shape = scene_node.shapes[0]
+            if shape.is_box():
+                z_offset = shape.height()/2.0
+            elif shape.is_sphere():
+                z_offset = shape.radius()
+            elif shape.is_cylinder():
+                z_offset = shape.height()/2.0
+            else:
+                return False, None
+            ray_start = scene_node.pose.position().to_array().flatten()
+            ray_start[2] -= z_offset - 0.001
+            ray_end = scene_node.pose.position().to_array().flatten()
+            ray_end[2] = 0.0 # set to ground
+            result = p.rayTest(ray_start, ray_end)
+            if result is not None:
+                distance = ray_start[2] * result[0][2]
+                sim_id = result[0][0]
+                support = self.reverse_entity_id_map[sim_id]
+                return distance, support
+            else:
+                distance = ray_start[2]
+        return distance, None
+
+    def load_node(self, scene_node, static=False):
         """ Load a scene node in the simulator
         """
         if scene_node.is_located():
@@ -313,14 +352,19 @@ class InternalSimulator(object):
                                                baseOrientation=q,
                                                baseCollisionShapeIndex=c_id,
                                                baseVisualShapeIndex=visual_shape_ids[0])
+
                     p.changeDynamics(sim_id, -1, frictionAnchor=1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
                     self.entity_id_map[scene_node.id] = sim_id
-                    self.entity_map[scene_node.id] = copy.deepcopy(scene_node)
+                    self.reverse_entity_id_map[sim_id] = scene_node.id
+                    self.nodes_map[scene_node.id] = copy.deepcopy(scene_node)
+                    if static is True:
+                        self.static_nodes.append(scene_node)
+                    else:
+                        self.not_static_nodes.append(scene_node)
+                    if static is True:
+                        self.update_constraint(scene_node.id, scene_node.pose)
                     return True
                 else:
-                    print scene_node.id
-                    print len(shape_masses)
-                    print len(scene_node.shapes)
                     rospy.logwarn("[simulation] Multibody shape not supported at the moment, consider using load URDF")
         return False
 
@@ -335,12 +379,17 @@ class InternalSimulator(object):
         """
         return self.static_nodes
 
+    def get_not_static_entities(self):
+        """ Fetch the not static scene nodes
+        """
+        return self.not_static_nodes
+
     def get_entity(self, id):
         """ Fetch an entity in the simulator and perform a lazzy update of the corresponding scene node
         """
-        if id not in self.entity_map:
+        if id not in self.nodes_map:
             raise ValueError("Invalid id provided : '{}'".format(id))
-        scene_node = self.entity_map[id]
+        scene_node = self.nodes_map[id]
         sim_id = self.entity_id_map[id]
         visual_shapes = p.getVisualShapeData(sim_id)
         for idx, shape in enumerate(visual_shapes):
@@ -387,7 +436,7 @@ class InternalSimulator(object):
                 scene_node.pose.pos.z = position[2]
 
                 scene_node.pose.from_quaternion(orientation[0], orientation[1], orientation[2], orientation[3])
-        return self.entity_map[id]
+        return self.nodes_map[id]
 
     def get_camera_view(self, camera_pose, camera, target_position=None, occlusion_threshold=0.01, rendering_ratio=1.0):
         """ Render the rgb, depth and mask images from any point or view and compute the corresponding visible nodes
@@ -494,6 +543,7 @@ class InternalSimulator(object):
             constraint_id = self.constraint_id_map[id]
         t = pose.position().to_array()
         q = pose.quaternion()
+        p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_DISABLE_SLEEPING)
         p.changeConstraint(constraint_id, jointChildPivot=t, jointChildFrameOrientation=q, maxForce=INF)
 
     def remove_constraint(self, id):
@@ -502,6 +552,8 @@ class InternalSimulator(object):
         if id in self.constraint_id_map:
             p.removeConstraint(self.constraint_id_map[id])
             del self.constraint_id_map[id]
+            base_link_sim_id = self.entity_id_map[id]
+            p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
 
     def reset_entity_pose(self, id, pose):
         """ Reset the pose and the simulation for the given entity

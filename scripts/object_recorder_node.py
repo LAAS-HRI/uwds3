@@ -21,7 +21,7 @@ class ObjectRecorderNode(object):
         self.output_data_directory = rospy.get_param("~output_data_directory", "/tmp/")
 
         self.bridge = CvBridge()
-        self.name = rospy.get_param("~name", "thing")
+        self.label = rospy.get_param("~label", "thing")
 
         self.object_detector = ForegroundDetector()
 
@@ -34,11 +34,17 @@ class ObjectRecorderNode(object):
                                                  120,
                                                  use_tracker=True)
 
+        self.data_path = self.output_data_directory+"/"+self.label
+
+        self.max_samples = rospy.get_param("~max_samples", 600)
+
+        self.nb_sample = 0
+
         if not os.path.exists(self.output_data_directory):
             os.makedirs(self.output_data_directory)
-            data_path = self.output_data_directory+"/"+self.name
-            if not os.path.exists(data_path):
-                os.makedirs(data_path)
+
+        if not os.path.exists(self.data_path):
+            os.makedirs(self.data_path)
 
         self.rgb_image_sub = rospy.Subscriber(rgb_image_topic, Image, self.observation_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
@@ -50,13 +56,34 @@ class ObjectRecorderNode(object):
         detections = self.object_detector.detect(rgb_image)
         tracks = self.object_tracker.update(rgb_image, detections)
 
-        biggest_track = None
+        biggest_object = None
         for track in tracks:
-            if biggest_track is None:
-                biggest_track = track
+            if biggest_object is None:
+                biggest_object = track
             else:
-                if track.bbox.area() > biggest_track.bbox.area():
-                    biggest_track = track
+                if track.bbox.area() > biggest_object.bbox.area():
+                    biggest_object = track
 
-        if biggest_track is not None:
-            pass
+        if biggest_object is not None:
+            xmin = biggest_object.bbox.xmin
+            xmax = biggest_object.bbox.xmax
+            ymin = biggest_object.bbox.ymin
+            ymax = biggest_object.bbox.ymax
+            object_image = rgb_image[int(ymin):int(ymax), int(xmin):int(xmax)]
+            sample_uuid = str(uuid.uuid4()).replace("-", "")
+            try:
+                rospy.loginfo("[object_recorder] sample: {} id: {}".format(self.nb_sample, sample_uuid))
+                cv2.imwrite(self.data_path+"/"+sample_uuid+"-rgb.png", object_image, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+                cv2.imwrite(self.data_path+"/"+sample_uuid+"-mask.png", biggest_object.mask, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+                self.nb_sample += 1
+            except Exception as e:
+                rospy.logwarn("[object_recorder] Exception occured: {}".format(e))
+
+    def run(self):
+        while not rospy.is_shutdown() and self.nb_sample < self.max_samples:
+            rospy.spin()
+
+
+if __name__ == "__main__":
+    rospy.init_node("object_recorder", anonymous=False)
+    recorder = ObjectRecorderNode().run()

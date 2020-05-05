@@ -2,17 +2,19 @@ import numpy as np
 from ..assignment.linear_assignment import LinearAssignment
 from ...utils.bbox_metrics import overlap, centroid
 from .monitor import Monitor
+from scipy.spatial.distance import euclidean
 
 
 OCCLUSION_THRESHOLD = 0.8
-VELOCITY_THRESHOLD = 0.001
-VELOCITY_EPSILON = 0.0002
+VELOCITY_THRESHOLD = 0.008
+POSITION_TOLERANCE = 0.06
 
 
 class ActionStates(object):
+    """ The object states
+    """
     PLACED = 0
     HELD = 1
-    RELEASED = 2
 
 
 def centroid_cost(track_a, track_b):
@@ -26,95 +28,98 @@ def overlap_cost(track_a, track_b):
 
 
 class TabletopActionMonitor(Monitor):
-    """
+    """ Special monitor for tabletop scenario
     """
     def __init__(self, internal_simulator=None, beliefs_base=None):
-        """
+        """ Tabletop monitor constructor
         """
         super(TabletopActionMonitor, self).__init__(internal_simulator=internal_simulator, beliefs_base=beliefs_base)
         self.object_states = {}
         self.centroid_assignement = LinearAssignment(centroid_cost, max_distance=None)
 
     def monitor(self, support_tracks, object_tracks, person_tracks, hand_tracks, time=None):
-        """
+        """ Monitor the physical consistency of the objects and detect human tabletop actions
         """
         self.cleanup_relations()
         if len(support_tracks) > 0:
 
-            lost_objects = []
-            moving_objects = []
-            not_moving_objects = []
-            occluded_objects = []
-
+            next_object_states = {}
+            object_tracks_map = {}
+            corrected_object_tracks = []
             for support in support_tracks:
                 if support.is_located() and support.has_shape():
-                    if self.simulator.is_entity_loaded(support.id) is False:
-                        self.simulator.load_node(support)
-                    else:
-                        self.simulator.update_constraint(support.id, support.pose)
-            support = support_tracks[0]
+                    if not self.simulator.is_entity_loaded(support.id):
+                        self.simulator.load_node(support, static=True)
 
             for object in object_tracks:
-                if object.is_lost():
-                    lost_objects.append(object)
-                elif object.is_occluded():
-                    occluded_objects.append(object)
-                elif object.is_located() and object.is_confirmed():
-                    if self.simulator.is_entity_loaded(object.id) is False:
-                        self.simulator.load_node(object)
-                        matches, unmatched_objects, unmatched_person = self.centroid_assignement.match(person_tracks, [object])
-                        for object_indice, person_indice in matches:
-                            self.mark_placed(object_tracks[object_indice], person_tracks[person_indice], support, time=time)
-                    else:
-                        if object.id in self.object_states:
-                            if self.object_states[object.id] != ActionStates.PLACED:
-                                if np.allclose(object.pose.linear_velocity().to_array(), np.zeros(3), atol=VELOCITY_THRESHOLD-VELOCITY_EPSILON) is False:
-                                    moving_objects.append(object)
-                                else:
-                                    not_moving_objects.append(object)
-                            else:
-                                if np.allclose(object.pose.linear_velocity().to_array(), np.zeros(3), atol=VELOCITY_THRESHOLD+VELOCITY_EPSILON) is False:
-                                    moving_objects.append(object)
-                                else:
-                                    not_moving_objects.append(object)
+                if object.is_located() and object.has_shape():
+                    if object.is_confirmed():
+                        if not self.simulator.is_entity_loaded(object.id):
+                            self.simulator.load_node(object)
+                            simulated_object = object
                         else:
-                            if np.allclose(object.pose.linear_velocity().to_array(), np.zeros(3), atol=VELOCITY_THRESHOLD) is False:
-                                moving_objects.append(object)
+                            simulated_object = self.simulator.get_entity(object.id)
+
+                        object_tracks_map[object.id] = object
+                        # compute scene node input
+                        simulated_position = simulated_object.pose.position()
+                        perceived_position = object.pose.position()
+                        corrected_object_tracks.append(simulated_object)
+
+                        distance = euclidean(simulated_position.to_array(), perceived_position.to_array())
+
+                        is_consistent = distance < POSITION_TOLERANCE
+                        if object.id in self.object_states:
+                            if self.object_states[object.id] == ActionStates.HELD:
+                                is_consistent = distance < 0.02
+
+                        is_perceived_object_moving = not np.allclose(object.pose.linear_velocity().to_array(), np.zeros(3), atol=VELOCITY_THRESHOLD)
+
+                        # compute next state
+                        if is_consistent:
+                            distance_to_support, support = self.simulator.is_on_support(object)
+                            if distance_to_support > POSITION_TOLERANCE or is_perceived_object_moving:
+                                next_object_states[object.id] = ActionStates.HELD
                             else:
-                                not_moving_objects.append(object)
+                                next_object_states[object.id] = ActionStates.PLACED
+                        else:
+                            next_object_states[object.id] = ActionStates.HELD
 
-            if len(moving_objects) > 0:
-                matches, unmatched_objects, unmatched_person = self.centroid_assignement.match(person_tracks, moving_objects)
-                for object_indice, person_indice in matches:
-                    obj = object_tracks[object_indice]
-                    pers = person_tracks[person_indice]
-                    obj_simulated = self.simulator.get_entity(obj.id)
-                    target_pose = obj_simulated.pose
-                    target_pose.pos.x = obj.pose.pos.x
-                    target_pose.pos.y = obj.pose.pos.y
-                    self.simulator.update_constraint(obj.id, target_pose)
-                    self.mark_pushed(obj, pers, support, time=time)
+            for object_id in self.object_states.keys():
+                if object_id not in next_object_states:
+                    self.assign_and_trigger_action(object, "release", person_tracks, time)
+                elif self.object_states[object_id] == ActionStates.HELD and \
+                        next_object_states[object_id] == ActionStates.PLACED:
+                    self.assign_and_trigger_action(object, "place", person_tracks, time)
+                elif self.object_states[object_id] == ActionStates.PLACED and \
+                        next_object_states[object_id] == ActionStates.HELD:
+                    self.assign_and_trigger_action(object, "pick", person_tracks, time)
+                else:
+                    pass
 
-            if len(not_moving_objects) > 0:
-                matches, unmatched_objects, unmatched_person = self.centroid_assignement.match(person_tracks, not_moving_objects)
-                for object_indice, person_indice in matches:
-                    obj = object_tracks[object_indice]
-                    pers = person_tracks[person_indice]
-                    self.simulator.remove_constraint(obj.id)
-                    self.mark_placed(obj, pers, support, time=time)
+                if self.object_states[object_id] == ActionStates.PLACED:
+                    self.simulator.remove_constraint(object_id)
 
-            if len(lost_objects) > 0:
-                matches, unmatched_objects, unmatched_person = self.centroid_assignement.match(person_tracks, lost_objects)
-                for object_indice, person_indice in matches:
-                    occluded, by = self.test_occlusion(object, object_tracks+person_tracks+hand_tracks)
-                    if occluded:
-                        pass
-                        #object_tracks[object_indice].mark_occluded()
-                        #self.start_predicate(object_tracks[object_indice], "behind", by, time)
-                    else:
-                        self.mark_picked(object_tracks[object_indice], person_tracks[person_indice], support, time=time)
+                if self.object_states[object_id] == ActionStates.HELD:
+                    if object_id in object_tracks_map:
+                        object = object_tracks_map[object_id]
+                        self.simulator.update_constraint(object_id, object.pose)
 
-        return self.relations
+            self.object_states = next_object_states
+
+        return corrected_object_tracks, self.relations
+
+    def assign_and_trigger_action(self, object, action, person_tracks, time):
+        """
+        """
+        matches, unmatched_objects, unmatched_person = self.centroid_assignement.match(person_tracks, [object])
+        if len(matches > 0):
+            _, person_indice = matches[0]
+            person = person_tracks[person_indice]
+        else:
+            return False
+
+        self.trigger_event(person, action, object, time)
 
     def test_occlusion(self, object, tracks):
         """ Test occlusion with 2D bbox overlap
@@ -129,54 +134,3 @@ class TabletopActionMonitor(Monitor):
             return True, object
         else:
             return False, None
-
-    def mark_placed(self, object, person, support, time):
-        """
-        """
-        if object.id not in self.object_states:
-            # Initialize the machine state
-            self.object_states[object.id] = ActionStates.PLACED
-            self.trigger_event(person, "place", object, time)
-            self.start_predicate(object, "on", support, time)
-        current_state = self.object_states[object.id]
-        if current_state == ActionStates.HELD:
-            self.object_states[object.id] = ActionStates.PLACED
-            self.end_predicate(person, "holding", object, time)
-            self.trigger_event(person, "place", object, time)
-            self.start_predicate(object, "on", support, time)
-
-    def mark_pushed(self, object, person, support, time):
-        """
-        """
-        if object.id in self.object_states:
-            current_state = self.object_states[object.id]
-            if current_state == ActionStates.PLACED:
-                current_state = ActionStates.HELD
-                self.object_states[object.id] = ActionStates.HELD
-                self.start_predicate(person, "holding", object, time=time)
-                self.trigger_event(person, "push", object, time=time)
-
-    def mark_picked(self, object, person, support):
-        """
-        """
-        if object.id in self.object_states:
-            current_state = self.object_states[object.id]
-            if current_state == ActionStates.PLACED:
-                self.object_states[object.id] = ActionStates.HELD
-                self.start_predicate(person, "holding", object)
-                self.trigger_event(person, "pick", object)
-                self.end_predicate(object, "on", support)
-            elif current_state == ActionStates.HELD:
-                self.end_predicate(person, "push", object)
-                self.start_predicate(person, "holding", object)
-                self.trigger_event(person, "pick", object)
-                self.end_predicate(object, "on", support)
-
-    def mark_released(self, object, person):
-        """
-        """
-        if object.id in self.object_states:
-            current_state = self.object_states[object.id]
-            if current_state == ActionStates.HELD:
-                self.object_states[object.id] = ActionStates.RELEASED
-                self.end_predicate(person, "holding", object)

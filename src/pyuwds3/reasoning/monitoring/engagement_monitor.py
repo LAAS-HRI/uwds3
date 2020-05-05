@@ -4,6 +4,10 @@ import cv2
 from .monitor import Monitor
 
 MAX_DEPTH = 1.5
+MIN_EYE_PATCH_WIDTH = 5
+MIN_EYE_PATCH_HEIGHT = 3
+EYE_INPUT_WIDTH = 32
+EYE_INPUT_HEIGHT = 16
 
 
 class EngagementState(object):
@@ -25,25 +29,28 @@ class EngagementMonitor(Monitor):
         self.face_to_monitor = None
 
     def monitor(rgb_image, face_tracks, person_tracks):
-        """ Monitor the engagement of the closest face
+        """ Monitor the engagement of the persons
         """
-        face_to_monitor = None
-        min_depth = 1000.0
         for t in face_tracks:
-            if t.is_confirmed():
-                if t.has_camera() is True and t.is_located() is True:
-                    if t.bbox.depth < min_depth:
-                        min_depth = t.bbox.depth
-                        face_to_monitor = t
+            r_eye_contours = t.features["facial_landmarks"].right_eye_contours()
+            xmin, ymin, w, h = cv2.boundingRect(r_eye_contours)
+            r_eye_detected = h > MIN_EYE_PATCH_HEIGHT and w > MIN_EYE_PATCH_WIDTH
+            l_eye_contours = t.features["facial_landmarks"].left_eye_contours()
+            xmin, ymin, w, h = cv2.boundingRect(l_eye_contours)
+            l_eye_detected = h > MIN_EYE_PATCH_HEIGHT and w > MIN_EYE_PATCH_WIDTH
 
-        if face_to_monitor is not None:
-            pass # extract eye image
-            
+            if l_eye_detected is True and r_eye_detected is True:
+                ## TODO prepare batch for inference
+                pass
 
     def mark_engaged(self):
         """
         """
 
     def mark_distracted(self):
+        """
+        """
+
+    def mark_disengaged(self):
         """
         """
