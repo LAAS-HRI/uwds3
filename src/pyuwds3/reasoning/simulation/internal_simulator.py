@@ -235,30 +235,18 @@ class InternalSimulator(object):
             rospy.logwarn("[simulation] Error loading URDF '{}': {}".format(filename, e))
             return False, None
 
-    def is_on_support(self, scene_node):
-        if scene_node.has_shape() and scene_node.is_located():
-            shape = scene_node.shapes[0]
-            if shape.is_box():
-                z_offset = shape.height()/2.0
-            elif shape.is_sphere():
-                z_offset = shape.radius()
-            elif shape.is_cylinder():
-                z_offset = shape.height()/2.0
-            else:
-                return False, None
-            ray_start = scene_node.pose.position().to_array().flatten()
-            ray_start[2] -= z_offset - 0.001
-            ray_end = scene_node.pose.position().to_array().flatten()
-            ray_end[2] = 0.0 # set to ground
-            result = p.rayTest(ray_start, ray_end)
-            if result is not None:
-                distance = ray_start[2] * result[0][2]
-                sim_id = result[0][0]
-                support = self.reverse_entity_id_map[sim_id]
-                return distance, support
-            else:
-                distance = ray_start[2]
-        return distance, None
+    def test_raycast(self, start_position, end_position):
+        """
+        """
+        ray_start = start_position.to_array().flatten()
+        ray_end = end_position.to_array().flatten()
+        result = p.rayTest(ray_start, ray_end)
+        if result is not None:
+            distance = ray_start[2] * result[0][2]
+            sim_id = result[0][0]
+            hit_object = self.reverse_entity_id_map[sim_id]
+            return True, distance, hit_object
+        return False, None, None
 
     def load_node(self, scene_node, static=False):
         """ Load a scene node in the simulator
@@ -382,7 +370,7 @@ class InternalSimulator(object):
     def get_not_static_entities(self):
         """ Fetch the not static scene nodes
         """
-        return self.not_static_nodes
+        return [self.get_entity(o.id) for o in self.not_static_nodes.values()]
 
     def get_entity(self, id):
         """ Fetch an entity in the simulator and perform a lazzy update of the corresponding scene node

@@ -7,7 +7,8 @@ from scipy.spatial.distance import euclidean
 
 OCCLUSION_THRESHOLD = 0.8
 VELOCITY_THRESHOLD = 0.008
-POSITION_TOLERANCE = 0.06
+PLACEMENT_TOLERANCE = 0.04
+HOLDING_TOLERANCE = 0.02
 
 
 class ActionStates(object):
@@ -68,17 +69,17 @@ class TabletopActionMonitor(Monitor):
 
                         distance = euclidean(simulated_position.to_array(), perceived_position.to_array())
 
-                        is_consistent = distance < POSITION_TOLERANCE
+                        is_consistent = distance < PLACEMENT_TOLERANCE
                         if object.id in self.object_states:
                             if self.object_states[object.id] == ActionStates.HELD:
-                                is_consistent = distance < 0.02
+                                is_consistent = distance < HOLDING_TOLERANCE
 
                         is_perceived_object_moving = not np.allclose(object.pose.linear_velocity().to_array(), np.zeros(3), atol=VELOCITY_THRESHOLD)
 
                         # compute next state
                         if is_consistent:
-                            distance_to_support, support = self.simulator.is_on_support(object)
-                            if distance_to_support > POSITION_TOLERANCE or is_perceived_object_moving:
+                            distance_to_support, support = self.test_support(object)
+                            if distance_to_support > PLACEMENT_TOLERANCE or is_perceived_object_moving:
                                 next_object_states[object.id] = ActionStates.HELD
                             else:
                                 next_object_states[object.id] = ActionStates.PLACED
@@ -116,10 +117,10 @@ class TabletopActionMonitor(Monitor):
         if len(matches > 0):
             _, person_indice = matches[0]
             person = person_tracks[person_indice]
+            self.trigger_event(person, action, object, time)
         else:
-            return False
+            self.trigger_event(object, "moved by himself")
 
-        self.trigger_event(person, action, object, time)
 
     def test_occlusion(self, object, tracks):
         """ Test occlusion with 2D bbox overlap
@@ -134,3 +135,25 @@ class TabletopActionMonitor(Monitor):
             return True, object
         else:
             return False, None
+
+    def test_support(self, object):
+        if object.has_shape() and object.is_located():
+            shape = object.shapes[0]
+            if shape.is_box():
+                z_offset = shape.height()/2.0
+            elif shape.is_sphere():
+                z_offset = shape.radius()
+            elif shape.is_cylinder():
+                z_offset = shape.height()/2.0
+            else:
+                return False, None
+            ray_start = object.pose.position()
+            ray_start.z -= z_offset
+            ray_end = object.pose.position()
+            ray_end.z = -0.001 # set to just above ground
+            hited, dist, hit_object = self.simulator.test_raycast(ray_start, ray_end)
+            if hited is True:
+                return dist, hit_object
+            else:
+                dist = ray_start.z
+        return dist, None
