@@ -76,13 +76,13 @@ class DataGenerator(object):
             ymax_camera = pose.pos.y+0.5
             if simulator.test_aabb_collision(xmin_camera, ymin_camera, 0.1, xmax_camera, ymax_camera, zmax):
                 continue
-            bgr_image, depth_image, mask_image, tracks = simulator.get_camera_view(pose, camera)
-            rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_RGB2BGR)
+            rgb_image, depth_image, mask_image, tracks = simulator.get_camera_view(pose, camera)
+            bgr_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
             if len(tracks) != 0:
                 self.nb_sample += 1
                 sample_uuid = str(uuid.uuid4()).replace("-", "")
                 rospy.loginfo("[data_generator] sample: {} id: {}".format(self.nb_sample, sample_uuid))
-                cv2.imwrite(self.data_path+"/"+sample_uuid+"-rgb.png", rgb_image, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+                cv2.imwrite(self.data_path+"/"+sample_uuid+"-rgb.png", bgr_image, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
                 cv2.imwrite(self.data_path+"/"+sample_uuid+"-depth.png", depth_image, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
         rospy.loginfo("[data_generator] Finished !")
 

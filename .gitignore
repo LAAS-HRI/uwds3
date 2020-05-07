@@ -3,7 +3,7 @@ models/features/
 models/estimation/
 models/word_embeddings
 
-data/
+data/*
 
 devel/
 logs/
