@@ -1,6 +1,6 @@
 models/detection/
 models/features/
-models/estimation/
+models/estimation/shape_predictor_68_face_landmarks.dat
 models/word_embeddings
 
 data/*

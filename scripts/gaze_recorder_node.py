@@ -14,10 +14,12 @@ from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, 
 
 
 DEFAULT_SENSOR_QUEUE_SIZE = 1
-MIN_EYE_PATCH_WIDTH = 5
-MIN_EYE_PATCH_HEIGHT = 3
-EYE_INPUT_WIDTH = 32
-EYE_INPUT_HEIGHT = 16
+MIN_EYE_PATCH_WIDTH = 0
+MIN_EYE_PATCH_HEIGHT = 0
+EYE_INPUT_WIDTH = 60
+EYE_INPUT_HEIGHT = 36
+WIDTH_MARGIN = 0.4
+HEIGHT_MARGIN = 0.4
 
 
 class GazeRecorderNode(object):
@@ -108,7 +110,9 @@ class GazeRecorderNode(object):
                 if l_eye_detected:
                     l_eye_mask = cv2.fillConvexPoly(np.zeros(rgb_image.shape[:2], dtype=np.uint8), l_eye_contours, 255)[ymin:ymin+h, xmin:xmin+w]
                     l_eye_detection = Detection(xmin, ymin, xmin+w, ymin+h, "l_eye", 1.0, mask=l_eye_mask)
-                    l_eye_patch = bgr_image[ymin:ymin+h, xmin:xmin+w]
+                    w_margin = int((w * WIDTH_MARGIN/2.0))
+                    h_margin = int((h * HEIGHT_MARGIN/2.0))
+                    l_eye_patch = bgr_image[ymin-h_margin:ymin+h+h_margin, xmin-w_margin:xmin+w+w_margin]
                     l_eye_detection.bbox.draw(view_image, (0, 200, 0), 2)
 
                 r_eye_contours = biggest_face.features["facial_landmarks"].right_eye_contours()
@@ -117,7 +121,9 @@ class GazeRecorderNode(object):
                 if r_eye_detected:
                     r_eye_mask = cv2.fillConvexPoly(np.zeros(rgb_image.shape[:2], dtype=np.uint8), r_eye_contours, 255)[ymin:ymin+h, xmin:xmin+w]
                     r_eye_detection = Detection(xmin, ymin, xmin+w, ymin+h, "r_eye", 1.0, mask=r_eye_mask)
-                    r_eye_patch = bgr_image[ymin:ymin+h, xmin:xmin+w]
+                    w_margin = int((w * WIDTH_MARGIN/2.0))
+                    h_margin = int((h * HEIGHT_MARGIN/2.0))
+                    r_eye_patch = bgr_image[ymin-h_margin:ymin+h+h_margin, xmin-w_margin:xmin+w+w_margin]
                     r_eye_detection.bbox.draw(view_image, (0, 200, 0), 2)
 
                 if l_eye_detected is True and r_eye_detected is True:

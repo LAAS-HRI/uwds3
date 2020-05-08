@@ -7,7 +7,7 @@
   <arg name="output_data_directory" default="$(find uwds3)/data/eye-contact"/>
 
   <arg name="label" default="contact"/>
-  <arg name="max_samples" default="100"/>
+  <arg name="max_samples" default="500"/>
 
   <arg name="record_faces" default="False"/>
   <arg name="record_landmarks" default="False"/>
@@ -27,6 +27,7 @@
 
       output_data_directory: $(arg output_data_directory)
       label: $(arg label)
+      max_samples: $(arg max_samples)
 
       face_detector_model_filename: $(arg face_detector_model_filename)
       face_detector_weights_filename: $(arg face_detector_weights_filename)
