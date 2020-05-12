@@ -63,5 +63,5 @@ class myThread(threading.Thread):
         for track in self.tracks:
             track.draw(bgr_image, (230, 0, 120, 125), 1, view_pose=self.view_pose, camera=self.camera)
         for i, event in enumerate(self.events):
-            cv2.putText(bgr_image, "".format(), (1, (i+1)*15), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,200), 2)
+            cv2.putText(bgr_image, "{}".format(event.description), (20, 60+i*20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,200), 2)
         self.publisher.publish(self.bridge.cv2_to_imgmsg(bgr_image, "bgr8"))

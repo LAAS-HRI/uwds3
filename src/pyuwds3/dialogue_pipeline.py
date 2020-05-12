@@ -11,6 +11,7 @@ from .reasoning.estimation.facial_features_estimator import FacialFeaturesEstima
 from .reasoning.estimation.color_features_estimator import ColorFeaturesEstimator
 from .reasoning.estimation.semantic_features_estimator import SemanticFeaturesEstimator
 from .reasoning.monitoring.perspective_monitor import PerspectiveMonitor
+from .reasoning.monitoring.engagement_monitor import EngagementMonitor
 from .utils.view_publisher import ViewPublisher
 
 
@@ -26,22 +27,21 @@ class DialoguePipeline(BasePipeline):
         ######################################################
         # Detection
         ######################################################
+        detector_weigths_filename = rospy.get_param("~detector_weigths_filename", "")
         detector_model_filename = rospy.get_param("~detector_model_filename", "")
-        detector_weights_filename = rospy.get_param("~detector_weights_filename", "")
         detector_config_filename = rospy.get_param("~detector_config_filename", "")
 
+        face_detector_weigths_filename = rospy.get_param("~face_detector_weigths_filename", "")
         face_detector_model_filename = rospy.get_param("~face_detector_model_filename", "")
-        face_detector_weights_filename = rospy.get_param("~face_detector_weights_filename", "")
         face_detector_config_filename = rospy.get_param("~face_detector_config_filename", "")
 
-        self.person_detector = SSDDetector(detector_model_filename,
-                                           detector_weights_filename,
+        self.person_detector = SSDDetector(detector_weigths_filename,
+                                           detector_model_filename,
                                            detector_config_filename)
 
-        self.face_detector = SSDDetector(face_detector_model_filename,
-                                         face_detector_weights_filename,
+        self.face_detector = SSDDetector(face_detector_weigths_filename,
+                                         face_detector_model_filename,
                                          face_detector_config_filename)
-
 
         ####################################################################
         # Features estimation
@@ -100,6 +100,13 @@ class DialoguePipeline(BasePipeline):
         ########################################################
         # Monitoring
         ########################################################
+
+        eye_contact_detector_weigths_filename = rospy.get_param("~eye_contact_detector_weigths_filename", "")
+        eye_contact_detector_model_filename = rospy.get_param("~eye_contact_detector_model_filename", "")
+
+        self.engagement_monitor = EngagementMonitor(internal_simulator,
+                                                    eye_contact_detector_weigths_filename,
+                                                    eye_contact_detector_model_filename)
 
         self.perspective_monitor = PerspectiveMonitor(internal_simulator)
 
@@ -181,16 +188,22 @@ class DialoguePipeline(BasePipeline):
 
         self.facial_features_estimator.estimate(rgb_image, self.face_tracks)
 
-        recognition_fps = cv2.getTickFrequency() / (cv2.getTickCount()-recognition_timer)
+        recognition_fps = cv2.getTickFrequency() / (cv2.getTickCount() - recognition_timer)
 
         if self.use_word_embeddings is True:
             self.semantic_features_estimator.estimate(tracks+static_nodes)
         ########################################################
         # Monitoring
         ########################################################
-        monitoring_timer = cv2.getTickCount()
+
         if self.frame_count == 2:
-            success, other_image, other_visible_tracks, others_events = self.perspective_monitor.monitor_others(self.face_tracks)
+            eye_events = self.engagement_monitor.monitor(rgb_image, self.face_tracks, self.person_tracks, time)
+        else:
+            eye_events = []
+        monitoring_timer = cv2.getTickCount()
+
+        # if self.frame_count == 2:
+        #     success, other_image, other_visible_tracks, others_events = self.perspective_monitor.monitor_others(self.face_tracks)
 
         monitoring_fps = cv2.getTickFrequency() / (cv2.getTickCount()-monitoring_timer)
         pipeline_fps = cv2.getTickFrequency() / (cv2.getTickCount()-pipeline_timer)
@@ -198,11 +211,11 @@ class DialoguePipeline(BasePipeline):
         # Visualization
         ########################################################
         self.myself_view_publisher.publish(rgb_image, tracks, overlay_image=None, fps=pipeline_fps)
-        if self.frame_count == 2:
-            if self.publish_viz is True:
-                self.myself_view_publisher.publish(rgb_image, tracks, overlay_image=None, fps=pipeline_fps)
-                if success:
-                    self.other_view_publisher.publish(other_image, other_visible_tracks, fps=monitoring_fps)
+        # if self.frame_count == 2:
+        #     if self.publish_viz is True:
+        #         self.myself_view_publisher.publish(rgb_image, tracks, overlay_image=None, fps=pipeline_fps)
+        #         if success:
+        #             self.other_view_publisher.publish(other_image, other_visible_tracks, fps=monitoring_fps)
 
         all_nodes = [myself]+static_nodes+tracks
-        return all_nodes, []
+        return all_nodes, eye_events

@@ -15,14 +15,18 @@
   <node name="map_server" pkg="map_server" type="map_server" args="$(find uwds3)/models/maps/adream_RDC_complet.yaml"/>
 
   <!-- Detector model parameters -->
-  <arg name="detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb"/>
-  <arg name="detector_weights_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pbtxt"/>
+  <arg name="detector_weigths_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb"/>
+  <arg name="detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pbtxt"/>
   <arg name="detector_config_filename" default="$(find uwds3)/config/detection/mscoco_config.yaml"/>
 
   <!-- Face detector model parameters -->
-  <arg name="face_detector_model_filename" default="$(find uwds3)/models/detection/opencv_face_detector_uint8.pb"/>
-  <arg name="face_detector_weights_filename" default="$(find uwds3)/models/detection/opencv_face_detector.pbtxt"/>
+  <arg name="face_detector_weigths_filename" default="$(find uwds3)/models/detection/opencv_face_detector_uint8.pb"/>
+  <arg name="face_detector_model_filename" default="$(find uwds3)/models/detection/opencv_face_detector.pbtxt"/>
   <arg name="face_detector_config_filename" default="$(find uwds3)/config/detection/face_config.yaml"/>
+
+  <!-- Eye contact estimation -->
+  <arg name="eye_contact_detector_weigths_filename" default="$(find uwds3)/models/estimation/eye_contact.pb"/>
+  <arg name="eye_contact_detector_model_filename" default="$(find uwds3)/models/estimation/eye_contact.pbtxt"/>
 
   <!-- Head pose estimation parameters -->
   <arg name="shape_predictor_config_filename" default="$(find uwds3)/models/estimation/shape_predictor_68_face_landmarks.dat"/>
@@ -37,8 +41,8 @@
   <arg name="max_color_distance" default="0.3"/>
   <arg name="max_face_distance" default="0.3"/>
   <arg name="max_centroid_distance" default="0.4"/>
-  <arg name="max_lost" default="10"/>
-  <arg name="max_age" default="60"/>
+  <arg name="max_lost" default="6"/>
+  <arg name="max_age" default="12"/>
 
   <arg name="use_word_embeddings" default="False"/>
   <arg name="static_word_embeddings_filename" default="$(find uwds3)/models/word_embeddings/wiki-news-300d-1M-subword.bin"/>
@@ -67,12 +71,15 @@
       global_frame_id: $(arg global_frame_id)
 
       detector_model_filename: $(arg detector_model_filename)
-      detector_weights_filename: $(arg detector_weights_filename)
+      detector_weigths_filename: $(arg detector_weigths_filename)
       detector_config_filename: $(arg detector_config_filename)
 
       face_detector_model_filename: $(arg face_detector_model_filename)
-      face_detector_weights_filename: $(arg face_detector_weights_filename)
+      face_detector_weigths_filename: $(arg face_detector_weigths_filename)
       face_detector_config_filename: $(arg face_detector_config_filename)
+
+      eye_contact_detector_weigths_filename: $(arg eye_contact_detector_weigths_filename)
+      eye_contact_detector_model_filename: $(arg eye_contact_detector_model_filename)
 
       shape_predictor_config_filename: $(arg shape_predictor_config_filename)
       face_3d_model_filename: $(arg face_3d_model_filename)

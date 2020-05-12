@@ -6,19 +6,22 @@ from pyuwds3.types.detection import Detection
 
 
 class SSDDetector(object):
-    """  """
+    """
+    """
 
-    def __init__(self, model, weights, config_file_path, input_size=300, max_overlap_ratio=0.3, swapRB=False):
-        """  """
+    def __init__(self, weights, model, config_file_path, input_size=300, max_overlap_ratio=0.3, swapRB=False):
+        """
+        """
         with open(config_file_path, "r") as f:
             self.config = yaml.load(f)
-        self.model = cv2.dnn.readNetFromTensorflow(model, weights)
+        self.model = cv2.dnn.readNetFromTensorflow(weights, model)
         self.input_size = input_size
         self.max_overlap_ratio = max_overlap_ratio
         self.swapRB = swapRB
 
     def detect(self, rgb_image, depth_image=None):
-        """ """
+        """
+        """
         frame_resized = cv2.resize(rgb_image, (self.input_size, self.input_size), interpolation=cv2.INTER_AREA)
 
         self.model.setInput(cv2.dnn.blobFromImage(frame_resized, swapRB=self.swapRB))

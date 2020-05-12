@@ -28,6 +28,7 @@ class TemporalSituation(object):
         self.subject = subject
         self.object = object
         self.confidence = confidence
+        self.expiration = expiration
         self.start_time = None
         self.end_time = None
         self.point = point
@@ -75,10 +76,14 @@ class TemporalSituation(object):
         """
         return self.point is not None
 
-    def to_delete(self):
+    def to_delete(self, time=None):
         """ Returns True is to delete
         """
-        return self.is_finished()
+        if time is None:
+            now = rospy.Time().now()
+        else:
+            now = time
+        return now > self.end_time + rospy.Duration(self.expiration)
 
     def from_msg(self, msg):
         """ Convert from ROS message

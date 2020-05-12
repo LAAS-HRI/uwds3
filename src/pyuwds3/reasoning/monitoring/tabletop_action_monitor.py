@@ -6,9 +6,9 @@ from scipy.spatial.distance import euclidean
 
 
 OCCLUSION_THRESHOLD = 0.8
-VELOCITY_THRESHOLD = 0.008
-PLACEMENT_POSITION_TOLERANCE = 0.04
-HOLDING_POSITION_TOLERANCE = 0.01
+VELOCITY_THRESHOLD = 0.006
+PLACEMENT_POSITION_TOLERANCE = 0.05
+HOLDING_POSITION_TOLERANCE = 0.02
 
 
 class ActionStates(object):
@@ -23,11 +23,6 @@ def centroid_cost(track_a, track_b):
     return centroid(track_a.bbox, track_b.bbox)
 
 
-def overlap_cost(track_a, track_b):
-    """Returns the overlap cost"""
-    return overlap(track_a.bbox, track_b.bbox)
-
-
 class TabletopActionMonitor(Monitor):
     """ Special monitor for tabletop scenario
     """
@@ -35,13 +30,15 @@ class TabletopActionMonitor(Monitor):
         """ Tabletop monitor constructor
         """
         super(TabletopActionMonitor, self).__init__(internal_simulator=internal_simulator, beliefs_base=beliefs_base)
-        self.object_states = {}
+        self.previous_object_states = {}
+        self.previous_object_tracks_map = {}
         self.centroid_assignement = LinearAssignment(centroid_cost, max_distance=None)
 
     def monitor(self, support_tracks, object_tracks, person_tracks, hand_tracks, time=None):
         """ Monitor the physical consistency of the objects and detect human tabletop actions
         """
         self.cleanup_relations()
+
         if len(support_tracks) > 0:
 
             next_object_states = {}
@@ -57,6 +54,7 @@ class TabletopActionMonitor(Monitor):
                     if object.is_confirmed():
                         if not self.simulator.is_entity_loaded(object.id):
                             self.simulator.load_node(object)
+                            self.assign_and_trigger_action(object, "place", person_tracks, time)
                             simulated_object = object
                         else:
                             simulated_object = self.simulator.get_entity(object.id)
@@ -69,49 +67,53 @@ class TabletopActionMonitor(Monitor):
                         distance = euclidean(simulated_position.to_array(), perceived_position.to_array())
 
                         is_consistent = distance < PLACEMENT_POSITION_TOLERANCE
-                        if object.id in self.object_states:
-                            if self.object_states[object.id] == ActionStates.HELD:
+                        if object.id in self.previous_object_states:
+                            if self.previous_object_states[object.id] == ActionStates.HELD:
                                 is_consistent = distance < HOLDING_POSITION_TOLERANCE
 
                         is_perceived_object_moving = not np.allclose(object.pose.linear_velocity().to_array(), np.zeros(3), atol=VELOCITY_THRESHOLD)
 
                         # compute next state
                         if is_consistent:
-                            distance_to_support, support = self.test_support(simulated_object)
-                            if distance_to_support > PLACEMENT_POSITION_TOLERANCE or is_perceived_object_moving:
-                                next_object_states[object.id] = ActionStates.HELD
-                            else:
-                                next_object_states[object.id] = ActionStates.PLACED
+                            success, distance_to_support, support = self.test_support(simulated_object)
+                            if success is True:
+                                if distance_to_support > PLACEMENT_POSITION_TOLERANCE or is_perceived_object_moving:
+                                    next_object_states[object.id] = ActionStates.HELD
+                                else:
+                                    next_object_states[object.id] = ActionStates.PLACED
                         else:
                             next_object_states[object.id] = ActionStates.HELD
 
-            for object_id in self.object_states.keys():
+            for object_id in self.previous_object_states.keys():
+                object = self.previous_object_tracks_map[object_id]
                 if object_id not in next_object_states:
                     self.assign_and_trigger_action(object, "release", person_tracks, time)
-                elif self.object_states[object_id] == ActionStates.HELD and \
+                    self.simulator.remove_constraint(object_id)
+                elif self.previous_object_states[object_id] == ActionStates.HELD and \
                         next_object_states[object_id] == ActionStates.PLACED:
                     self.assign_and_trigger_action(object, "place", person_tracks, time)
-                elif self.object_states[object_id] == ActionStates.PLACED and \
+                elif self.previous_object_states[object_id] == ActionStates.PLACED and \
                         next_object_states[object_id] == ActionStates.HELD:
                     self.assign_and_trigger_action(object, "pick", person_tracks, time)
                 else:
                     pass
 
-                if self.object_states[object_id] == ActionStates.PLACED:
+                if self.previous_object_states[object_id] == ActionStates.PLACED:
                     self.simulator.remove_constraint(object_id)
 
-                if self.object_states[object_id] == ActionStates.HELD:
+                if self.previous_object_states[object_id] == ActionStates.HELD:
                     if object_id in object_tracks_map:
                         object = object_tracks_map[object_id]
                         self.simulator.update_constraint(object_id, object.pose)
 
             corrected_object_tracks = self.simulator.get_not_static_entities()
-            self.object_states = next_object_states
+            self.previous_object_states = next_object_states
+            self.previous_object_tracks_map = object_tracks_map
 
         return corrected_object_tracks, self.relations
 
     def assign_and_trigger_action(self, object, action, person_tracks, time):
-        """
+        """ Assign the action to the closest person of the given object and trigger it
         """
         matches, unmatched_objects, unmatched_person = self.centroid_assignement.match(person_tracks, [object])
         if len(matches > 0):
@@ -124,10 +126,10 @@ class TabletopActionMonitor(Monitor):
     def test_occlusion(self, object, tracks):
         """ Test occlusion with 2D bbox overlap
         """
-        overlap = np.zeros(len(tracks))
+        overlap_score = np.zeros(len(tracks))
         for idx, track in enumerate(tracks):
-            overlap[idx] = overlap_cost(object, track)
-        idx = np.argmax(overlap)
+            overlap_score[idx] = overlap(object, track)
+        idx = np.argmax(overlap_score)
         object = tracks[idx]
         score = overlap[idx]
         if score > OCCLUSION_THRESHOLD:
@@ -136,7 +138,7 @@ class TabletopActionMonitor(Monitor):
             return False, None
 
     def test_support(self, object):
-        """
+        """ Test if an object lie on a support using raycasting
         """
         if object.has_shape() and object.is_located():
             shape = object.shapes[0]
@@ -147,14 +149,15 @@ class TabletopActionMonitor(Monitor):
             elif shape.is_cylinder():
                 z_offset = shape.height()/2.0
             else:
-                return False, None
+                return None, None
             ray_start = object.pose.position()
             ray_start.z -= z_offset
             ray_end = object.pose.position()
             ray_end.z = 0.0 # set to ground
             hited, dist, hit_object = self.simulator.test_raycast(ray_start, ray_end)
             if hited is True:
-                return dist, hit_object
+                return True, dist, hit_object
             else:
                 dist = ray_start.z
-        return dist, None
+            return True, dist, None
+        return False, None, None

@@ -16,14 +16,14 @@
   <arg name="detector_config_filename" default="$(find uwds3)/config/detection/mscoco_config.yaml"/>
 
   <!-- Hand detector model parameters -->
-  <arg name="hand_detector_model_filename" default="$(find uwds3)/models/detection/hand_detection.pb"/>
-  <arg name="hand_detector_weights_filename" default="$(find uwds3)/models/detection/hand_detection.pbtxt"/>
+  <arg name="hand_detector_model_filename" default="$(find uwds3)/models/detection/hand_detection.pbtxt"/>
+  <arg name="hand_detector_weights_filename" default="$(find uwds3)/models/detection/hand_detection.pb"/>
   <arg name="hand_detector_config_filename" default="$(find uwds3)/config/detection/hand_config.yaml"/>
 
   <!-- Tracker parameters -->
-  <arg name="n_init" default="7"/>
-  <arg name="n_frame" default="3"/>
-  <arg name="max_iou_distance" default="0.65"/>
+  <arg name="n_init" default="10"/>
+  <arg name="n_frame" default="4"/>
+  <arg name="max_iou_distance" default="0.9"/>
   <arg name="max_color_distance" default="0.9"/>
   <arg name="max_lost" default="6"/>
   <arg name="max_age" default="10"/>

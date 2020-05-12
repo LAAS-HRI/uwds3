@@ -5,6 +5,8 @@ models/word_embeddings
 
 data/*
 
+*.pb
+
 devel/
 logs/
 build/

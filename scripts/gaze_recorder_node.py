@@ -14,8 +14,8 @@ from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, 
 
 
 DEFAULT_SENSOR_QUEUE_SIZE = 1
-MIN_EYE_PATCH_WIDTH = 0
-MIN_EYE_PATCH_HEIGHT = 0
+MIN_EYE_PATCH_WIDTH = 5
+MIN_EYE_PATCH_HEIGHT = 3
 EYE_INPUT_WIDTH = 60
 EYE_INPUT_HEIGHT = 36
 WIDTH_MARGIN = 0.4

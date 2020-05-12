@@ -313,12 +313,70 @@ node {
   input: "dense_2/bias"
 }
 node {
-  name: "dense_2/Softmax"
-  op: "Softmax"
+  name: "dense_2/Relu"
+  op: "Relu"
   input: "dense_2/BiasAdd"
+}
+node {
+  name: "dense_3/MatMul"
+  op: "MatMul"
+  input: "dense_2/Relu"
+  input: "dense_3/kernel"
+  attr {
+    key: "transpose_a"
+    value {
+      b: false
+    }
+  }
+  attr {
+    key: "transpose_b"
+    value {
+      b: false
+    }
+  }
+}
+node {
+  name: "dense_3/BiasAdd"
+  op: "BiasAdd"
+  input: "dense_3/MatMul"
+  input: "dense_3/bias"
+}
+node {
+  name: "dense_3/Relu"
+  op: "Relu"
+  input: "dense_3/BiasAdd"
+}
+node {
+  name: "dense_4/MatMul"
+  op: "MatMul"
+  input: "dense_3/Relu"
+  input: "dense_4/kernel"
+  attr {
+    key: "transpose_a"
+    value {
+      b: false
+    }
+  }
+  attr {
+    key: "transpose_b"
+    value {
+      b: false
+    }
+  }
+}
+node {
+  name: "dense_4/BiasAdd"
+  op: "BiasAdd"
+  input: "dense_4/MatMul"
+  input: "dense_4/bias"
+}
+node {
+  name: "dense_4/Sigmoid"
+  op: "Sigmoid"
+  input: "dense_4/BiasAdd"
 }
 node {
   name: "output_0"
   op: "Identity"
-  input: "dense_2/Softmax"
+  input: "dense_4/Sigmoid"
 }

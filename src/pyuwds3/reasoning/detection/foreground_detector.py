@@ -7,7 +7,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
 
-LONGTERM_LEARNING_RATE = 1e-7
+LONGTERM_LEARNING_RATE = 1e-6
 SHORTTERM_LEARNING_RATE = 0.02
 
 
@@ -29,7 +29,7 @@ class ForegroundDetector(object):
         self.long_term_detector = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=130, detectShadows=True)
         self.short_term_detector = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=50, detectShadows=False)
 
-    def detect(self, rgb_image, depth_image=None):
+    def detect(self, rgb_image, depth_image=None, table_mask=None):
         """ Detect unknown objects
         """
         filtered_bbox = []

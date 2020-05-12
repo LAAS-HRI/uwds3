@@ -10,8 +10,8 @@
   <arg name="base_frame_id" default="base_footprint"/>
 
   <!-- Detector model parameters -->
-  <arg name="detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb"/>
-  <arg name="detector_weights_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pbtxt"/>
+  <arg name="detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pbtxt"/>
+  <arg name="detector_weights_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb"/>
   <arg name="detector_config_filename" default="$(find uwds3)/config/detection/mscoco_config.yaml"/>
 
   <!-- Tracker parameters -->

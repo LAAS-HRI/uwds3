@@ -370,7 +370,7 @@ class InternalSimulator(object):
     def get_not_static_entities(self):
         """ Fetch the not static scene nodes
         """
-        return [self.get_entity(o.id) for o in self.not_static_nodes.values()]
+        return [self.get_entity(o.id) for o in self.not_static_nodes]
 
     def get_entity(self, id):
         """ Fetch an entity in the simulator and perform a lazzy update of the corresponding scene node
