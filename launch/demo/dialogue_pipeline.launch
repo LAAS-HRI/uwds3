@@ -10,8 +10,6 @@
   <arg name="global_frame_id" default="map"/>
   <arg name="base_frame_id" default="base_link"/>
 
-  <node name="map2odom_publisher" pkg="tf2_ros" type="static_transform_publisher" args="-5 16 0 1.57 0 0 $(arg global_frame_id) odom"/>
-
   <node name="map_server" pkg="map_server" type="map_server" args="$(find uwds3)/models/maps/adream_RDC_complet.yaml"/>
 
   <!-- Detector model parameters -->

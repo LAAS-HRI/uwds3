@@ -21,8 +21,8 @@ class NavigationPipeline(BasePipeline):
         detector_weights_filename = rospy.get_param("~detector_weights_filename", "")
         detector_config_filename = rospy.get_param("~detector_config_filename", "")
 
-        self.person_detector = SSDDetector(detector_model_filename,
-                                           detector_weights_filename,
+        self.person_detector = SSDDetector(detector_weights_filename,
+                                           detector_model_filename,
                                            detector_config_filename,
                                            300)
 

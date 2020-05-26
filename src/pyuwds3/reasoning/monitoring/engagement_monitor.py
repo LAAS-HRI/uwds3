@@ -18,7 +18,7 @@ HEIGHT_MARGIN = 0.4
 ENGAGEMENT_START = 1.3
 ENGAGEMENT_MIN_DURATION = 3.0
 
-ALPHA = 0.33
+ALPHA = 1.0
 
 
 def overlap_cost(track_a, track_b):
@@ -94,6 +94,7 @@ class EngagementMonitor(Monitor):
                         w_margin = int((w * WIDTH_MARGIN/2.0))
                         h_margin = int((h * HEIGHT_MARGIN/2.0))
                         biggest_eye_patch = rgb_image[ymin-h_margin:ymin+h+h_margin, xmin-w_margin:xmin+w+w_margin]
+                        biggest_eye_patch = cv2.cvtColor(biggest_eye_patch, cv2.COLOR_RGB2GRAY)
                         eyes_to_process.append(biggest_eye_patch)
                         face_to_process.append(f)
 
@@ -114,7 +115,8 @@ class EngagementMonitor(Monitor):
                 else:
                     filtered_ec_prob = ec_prob
                 eye_contact_prob[f.id] = filtered_ec_prob
-                eye_contact = filtered_ec_prob < 0.5
+                eye_contact = filtered_ec_prob > 0.5
+                #print filtered_ec_prob
 
                 # TODO add hysteresis ?
 

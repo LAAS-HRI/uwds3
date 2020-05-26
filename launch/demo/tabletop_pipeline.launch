@@ -8,7 +8,6 @@
 
   <arg name="global_frame_id" default="map"/>
   <arg name="base_frame_id" default="base_footprint"/>
-  <node name="map2odom_publisher" pkg="tf2_ros" type="static_transform_publisher" args="0 0 0 1.57 0 0 $(arg global_frame_id) odom"/>
 
   <!-- Detector model parameters -->
   <arg name="detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb"/>
