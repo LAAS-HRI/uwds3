@@ -108,7 +108,7 @@ class DialoguePipeline(BasePipeline):
                                                     eye_contact_detector_weigths_filename,
                                                     eye_contact_detector_model_filename)
 
-        self.perspective_monitor = PerspectiveMonitor(internal_simulator)
+        self.perspective_monitor = PerspectiveMonitor(internal_simulator, beliefs_base)
 
         ########################################################
         # Visualization
@@ -116,6 +116,8 @@ class DialoguePipeline(BasePipeline):
 
         self.other_view_publisher = ViewPublisher("other_view")
         self.myself_view_publisher = ViewPublisher("myself_view")
+
+        self.events = []
 
     def perception_pipeline(self, view_pose, rgb_image, depth_image=None, time=None):
         """
@@ -186,24 +188,25 @@ class DialoguePipeline(BasePipeline):
         ########################################################
         recognition_timer = cv2.getTickCount()
 
-        self.facial_features_estimator.estimate(rgb_image, self.face_tracks)
+        if self.frame_count == 1:
+            self.facial_features_estimator.estimate(rgb_image, self.face_tracks)
 
         recognition_fps = cv2.getTickFrequency() / (cv2.getTickCount() - recognition_timer)
 
         if self.use_word_embeddings is True:
             self.semantic_features_estimator.estimate(tracks+static_nodes)
+
         ########################################################
         # Monitoring
         ########################################################
 
-        if self.frame_count == 2:
-            eye_events = self.engagement_monitor.monitor(rgb_image, self.face_tracks, self.person_tracks, time)
-        else:
-            eye_events = []
+        # if self.frame_count == 2:
+        #     self.events = self.engagement_monitor.monitor(rgb_image, self.face_tracks, self.person_tracks, time)
+
         monitoring_timer = cv2.getTickCount()
 
-        # if self.frame_count == 2:
-        #     success, other_image, other_visible_tracks, others_events = self.perspective_monitor.monitor_others(self.face_tracks)
+        if self.frame_count == 3:
+            success, other_image, other_visible_tracks, self.events = self.perspective_monitor.monitor_others(self.face_tracks)
 
         monitoring_fps = cv2.getTickFrequency() / (cv2.getTickCount()-monitoring_timer)
         pipeline_fps = cv2.getTickFrequency() / (cv2.getTickCount()-pipeline_timer)
@@ -211,11 +214,10 @@ class DialoguePipeline(BasePipeline):
         # Visualization
         ########################################################
         self.myself_view_publisher.publish(rgb_image, tracks, overlay_image=None, fps=pipeline_fps)
-        # if self.frame_count == 2:
-        #     if self.publish_viz is True:
-        #         self.myself_view_publisher.publish(rgb_image, tracks, overlay_image=None, fps=pipeline_fps)
-        #         if success:
-        #             self.other_view_publisher.publish(other_image, other_visible_tracks, fps=monitoring_fps)
+
+        if self.frame_count == 3:
+            if success:
+                self.other_view_publisher.publish(other_image, other_visible_tracks, fps=monitoring_fps)
 
         all_nodes = [myself]+static_nodes+tracks
-        return all_nodes, eye_events
+        return all_nodes, self.events

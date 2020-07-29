@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 from collections import Counter
 import numpy as np
 
-K = 3
+K = 6
 
 
 class ShapeEstimator(object):

@@ -18,7 +18,7 @@ class CameraPublisher(object):
         self.rgb_image_topic = rospy.get_param("~rgb_image_topic", "/camera/rgb/image_raw")
         self.camera_publisher = rospy.Publisher(self.rgb_image_topic, sensor_msgs.msg.Image, queue_size=1)
 
-        self.camera_pub_frequency = rospy.get_param("~camera_pub_frequency", 20)
+        self.camera_pub_frequency = rospy.get_param("~camera_pub_frequency", 30)
 
         self.bridge = CvBridge()
         self.camera_info_topic = rospy.get_param("~camera_info_topic", "/camera/rgb/camera_info")

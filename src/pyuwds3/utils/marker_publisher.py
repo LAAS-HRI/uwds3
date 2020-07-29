@@ -60,7 +60,7 @@ class MarkerPublisher(object):
                             else:
                                 marker.type = Marker.TRIANGLE_LIST
                                 marker.points = shape.vertices
-                            marker.scale = Vector3(x=1.0, y=1.0, z=1.0)
+                            marker.scale = Vector3(x=shape.scale.x, y=shape.scale.y, z=shape.scale.z)
                         else:
                             raise NotImplementedError("Shape not implemented")
                         marker.color.r = shape.color[0]

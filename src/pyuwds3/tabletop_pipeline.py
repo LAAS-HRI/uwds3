@@ -96,6 +96,8 @@ class TabletopPipeline(BasePipeline):
         self.other_view_publisher = ViewPublisher("other_view")
         self.myself_view_publisher = ViewPublisher("myself_view")
 
+        self.events = []
+
     def get_point_measure(self, rgb_image, depth_image, x, y, camera):
         depth_height, depth_width = depth_image.shape
         camera_matrix = camera.camera_matrix()
@@ -250,7 +252,7 @@ class TabletopPipeline(BasePipeline):
         # Monitoring
         ########################################################
 
-        corrected_object_tracks, events = self.action_monitor.monitor(support_tracks, self.object_tracks, self.person_tracks, [])
+        corrected_object_tracks, self.events = self.action_monitor.monitor(support_tracks, self.object_tracks, self.person_tracks, [])
 
         corrected_tracks = corrected_object_tracks + self.person_tracks + support_tracks
 
@@ -261,4 +263,4 @@ class TabletopPipeline(BasePipeline):
         self.myself_view_publisher.publish(rgb_image, tracks, events=events, overlay_image=None, fps=pipeline_fps)
 
         all_nodes = [myself]+static_nodes+corrected_tracks
-        return all_nodes, events
+        return all_nodes, self.events

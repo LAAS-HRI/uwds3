@@ -35,8 +35,8 @@ class InternalSimulator(object):
         """ Internal simulator constructor
         """
         if simulation_config_filename != "":
-            with open(simulation_config_filename, 'r') as stream:
-                self.simulator_config = yaml.load(stream)
+            with open(simulation_config_filename, 'r') as config:
+                self.simulator_config = yaml.safe_load(config)
         else:
             self.load_robot = False
 
@@ -87,7 +87,7 @@ class InternalSimulator(object):
 
         if static_entities_config_filename != "":
             with open(static_entities_config_filename, 'r') as stream:
-                static_entities = yaml.load(stream)
+                static_entities = yaml.safe_load(stream)
                 for entity in static_entities:
                     start_pose = Vector6D(x=entity["position"]["x"],
                                           y=entity["position"]["y"],
@@ -429,6 +429,7 @@ class InternalSimulator(object):
     def get_camera_view(self, camera_pose, camera, target_position=None, occlusion_threshold=0.01, rendering_ratio=1.0):
         """ Render the rgb, depth and mask images from any point or view and compute the corresponding visible nodes
         """
+        # rendering_ratio = 1.0
         visible_nodes = []
         rot = quaternion_matrix(camera_pose.quaternion())
         trans = translation_matrix(camera_pose.position().to_array().flatten())
@@ -463,7 +464,8 @@ class InternalSimulator(object):
                                             renderer=p.ER_TINY_RENDERER,
                                             projectionMatrix=projection_matrix)
 
-        rgb_image = cv2.resize(np.array(camera_image[2]), (width, height))[:,:,:3]
+        rgb_image = np.array(camera_image[2])[:, :, :3]
+        rgb_image_resized = cv2.resize(rgb_image, (width, height))
         depth_image = np.array(camera_image[3], np.float32).reshape((rendered_height, rendered_width))
 
         far = camera.clipfar
@@ -473,6 +475,10 @@ class InternalSimulator(object):
         mask_image = camera_image[4]
         mask_image_resized = cv2.resize(np.array(camera_image[4]).copy().astype("uint8"), (width, height))
         unique, counts = np.unique(np.array(mask_image).flatten(), return_counts=True)
+
+        # bgr_image_resized = cv2.cvtColor(rgb_image_resized, cv2.COLOR_RGB2BGR)
+
+        # cv2.imwrite("/home/ysallami/Documents/presentation_hri_uwds3/img/perspective_input_rgb_image.png", bgr_image_resized, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
 
         for sim_id, count in zip(unique, counts):
             if sim_id > 0:
@@ -509,7 +515,26 @@ class InternalSimulator(object):
                     track.description = scene_node.description
                     visible_nodes.append(track)
 
-        return rgb_image, real_depth_image, mask_image_resized, visible_nodes
+                    # xmin, ymin, w, h = cv2.boundingRect(cv_mask.astype(np.uint8))
+                    # cv_mask = cv2.cvtColor(cv_mask.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+                    # cv_mask_resized = cv2.resize(cv_mask, (width, height))
+                    # cv2.imwrite("/home/ysallami/Documents/presentation_hri_uwds3/img/perspective_input_mask_image_"+str(sim_id)+".png", cv_mask_resized, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+
+        real_depth_image_resized = cv2.resize(real_depth_image, (width, height))
+        # normalized_depth_image = cv2.normalize(depth_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+        # normalized_depth_image_resized = cv2.resize(normalized_depth_image, (width, height))
+        # cv2.imwrite("/home/ysallami/Documents/presentation_hri_uwds3/img/perspective_normalized_z_buffer.png", normalized_depth_image_resized, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+
+        # mask_image_normalized = cv2.normalize(mask_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+        # mask_image_viz = cv2.applyColorMap(mask_image_normalized.astype("uint8"), cv2.COLORMAP_HSV)
+        # mask_image_viz_resized = cv2.resize(mask_image_viz, (width, height))
+        # cv2.imwrite("/home/ysallami/Documents/presentation_hri_uwds3/img/perspective_mask_image.png", mask_image_viz_resized, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+        #
+        # for node in visible_nodes:
+        #     node.draw(bgr_image_resized, (230, 0, 120, 125), 1, view_pose=camera_pose, camera=camera)
+        # cv2.imwrite("/home/ysallami/Documents/presentation_hri_uwds3/img/perspective_rgb_output.png", bgr_image_resized, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+
+        return rgb_image_resized, real_depth_image_resized, mask_image_resized, visible_nodes
 
     def test_aabb_collision(self, xmin, ymin, zmin, xmax, ymax, zmax):
         """ Return True if the aabb is in contact with an other object

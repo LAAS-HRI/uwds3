@@ -22,7 +22,7 @@ class Camera(object):
         self.focal_length = Vector2D(self.width, self.height)
 
     def fov(self):
-        """ Returns the diagonal field of view (used in openGL)
+        """ Returns the diagonal field of view (used in openGL rendering)
         """
         d = math.sqrt(pow(self.width, 2) + pow(self.height, 2))
         return math.degrees(2 * math.atan2(d/2.0, self.width))

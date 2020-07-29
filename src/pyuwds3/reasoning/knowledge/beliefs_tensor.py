@@ -63,11 +63,10 @@ class BeliefsTensor(object):
         if type is None:
             return self.entities
 
-
     def get_entity_index(self, entity):
         """ This method return the index of the given entity """
 
-        if entity not in self.entities:
+        if entity not in list(self.entities):
             raise ValueError("Entity '{}' not registered.".format(entity))
         return np.where(self.entities == entity)[0][0]
 
@@ -81,7 +80,7 @@ class BeliefsTensor(object):
     def get_relation_index(self, relation):
         """ This method return the index of the given relation """
 
-        if relation not in self.relations:
+        if relation not in list(self.relations):
             raise ValueError("Relation '{}' not registered.".format(relation))
         return np.where(self.relations == relation)[0][0]
 
@@ -141,7 +140,7 @@ class BeliefsTensor(object):
     def add_relation(self, relation, type):
         """ This method add a relation to the beliefs base (+1 in dim 1) """
 
-        if relation in self.relations:
+        if relation in list(self.relations):
             raise ValueError("Relation '{}' already registered.".format(relation))
 
         self.relations = np.append(self.relations, relation)

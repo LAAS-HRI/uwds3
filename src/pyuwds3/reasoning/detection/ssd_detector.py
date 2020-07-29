@@ -13,7 +13,7 @@ class SSDDetector(object):
         """
         """
         with open(config_file_path, "r") as f:
-            self.config = yaml.load(f)
+            self.config = yaml.safe_load(f)
         self.model = cv2.dnn.readNetFromTensorflow(weights, model)
         self.input_size = input_size
         self.max_overlap_ratio = max_overlap_ratio

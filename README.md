@@ -4,7 +4,7 @@ A framework for physical, spatial and semantic reasoning for Human-Robot interac
 
 This software is composed by two data-structures:
   1. A scene graph composed by scene nodes that contains the geometric and visual information.
-  2. A timeline of temporal situations that contains predicates and captions.
+  2. A timeline of temporal situations that contains temporal events that can represent an action, a statement or a caption.
 
 It also contains differents modules to generate and maintain the scene graph and the timeline from the robot camera image by integrating a CPU based perception pipeline alongwith a real-time physics engine and a probabilistic triplet store.
 

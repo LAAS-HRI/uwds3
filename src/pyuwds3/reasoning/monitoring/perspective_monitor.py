@@ -6,11 +6,11 @@ from .monitor import Monitor
 class PerspectiveMonitor(Monitor):
     """
     """
-    def __init__(self, simulator, rendering_ratio=(1/4.5)):
+    def __init__(self, internal_simulator, beliefs_base, rendering_ratio=(1/4.5)):
         """
         """
-        Monitor.__init__(self)
-        self.simulator = simulator
+        super(PerspectiveMonitor, self).__init__(internal_simulator=internal_simulator,
+                                                 beliefs_base=beliefs_base)
         self.rendering_ratio = rendering_ratio
         self.other_perspective = None
 
@@ -35,7 +35,7 @@ class PerspectiveMonitor(Monitor):
                         person_camera = t
 
         if person_camera is not None:
-            rgb_image, _, _, visibles_tracks = self.simulator.get_camera_view(person_camera.pose, person_camera.camera, rendering_ratio=self.rendering_ratio)
+            rgb_image, depth_image, mask_image, visibles_tracks = self.simulator.get_camera_view(person_camera.pose, person_camera.camera, rendering_ratio=self.rendering_ratio)
             success = True
         else:
             success = False

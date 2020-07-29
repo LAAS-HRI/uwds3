@@ -130,8 +130,7 @@ class BasePipeline(object):
                 rospy.logwarn("[perception] The camera sensor is not localized in world space (frame '{}'), please check if the sensor frame is published in /tf".format(self.global_frame_id))
             else:
                 if self.internal_simulator.is_robot_loaded():
-                    self.frame_count %= self.n_frame - 1
-
+                    self.frame_count %= self.n_frame
                     all_nodes, events = self.perception_pipeline(view_pose, rgb_image, depth_image=depth_image, time=header.stamp)
 
                     self.publish_changes(all_nodes, events, header)

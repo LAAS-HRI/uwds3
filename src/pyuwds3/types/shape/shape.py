@@ -1,6 +1,7 @@
 import numpy as np
 import uwds3_msgs.msg
 from ..vector.vector6d import Vector6D
+from ..vector.vector3d import Vector3D
 
 
 class ShapeType(object):
@@ -20,7 +21,7 @@ class Shape(object):
         self.type = type
         self.pose = Vector6D(x=x, y=y, z=z,
                              rx=rx, ry=ry, rz=rz)
-        self.scale = np.array([scale_x, scale_y, scale_z])
+        self.scale = Vector3D(x=scale_x, y=scale_y, z=scale_z)
         self.color = np.zeros(4)
         self.color[3] = 1.0
 

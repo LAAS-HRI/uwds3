@@ -42,9 +42,9 @@ class Mesh(Shape):
         shape.type = self.type
         shape.name = self.name
         shape.mesh_resource = self.mesh_resource
-        shape.scale.x = self.scale[0]
-        shape.scale.y = self.scale[1]
-        shape.scale.z = self.scale[2]
+        shape.scale.x = self.scale.x
+        shape.scale.y = self.scale.y
+        shape.scale.z = self.scale.z
         shape.color.r = self.color[0]
         shape.color.g = self.color[1]
         shape.color.b = self.color[2]
