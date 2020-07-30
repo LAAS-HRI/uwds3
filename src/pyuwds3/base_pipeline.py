@@ -12,10 +12,11 @@ from .utils.static_word_embeddings import StaticWordEmbeddings
 from .utils.view_publisher import ViewPublisher
 from .utils.marker_publisher import MarkerPublisher
 from .types.camera import Camera
+from .types.scene_node import SceneNode
 from .reasoning.knowledge.beliefs_base import BeliefsBase
 
 
-DEFAULT_SENSOR_QUEUE_SIZE = 30
+DEFAULT_SENSOR_QUEUE_SIZE = 3
 
 
 class BasePipeline(object):
@@ -38,6 +39,18 @@ class BasePipeline(object):
         self.robot_camera = None
         self.camera_info = None
         self.camera_frame_id = None
+
+        self.use_ar_tags = rospy.get_param("use_ar_tags", True)
+        self.ar_tags_topic = rospy.get_param("ar_tags_topic", "ar_tags_tracks")
+        if self.use_ar_tags is True:
+            self.ar_tags_tracks = []
+            self.ar_tags_sub = rospy.Subscriber(self.ar_tags_topic, SceneChangesStamped, self.ar_tags_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
+
+        self.use_motion_capture = rospy.get_param("use_motion_capture", True)
+        self.motion_capture_topic = rospy.get_param("motion_capture_topic", "motion_capture_tracks")
+        if self.use_motion_capture is True:
+            self.motion_capture_tracks = []
+            self.motion_capture_sub = rospy.Subscriber(self.motion_capture_topic, SceneChangesStamped, self.motion_capture_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
         self.n_frame = rospy.get_param("~n_frame", 4)
         self.frame_count = 0
@@ -63,7 +76,7 @@ class BasePipeline(object):
         robot_urdf_file_path = rospy.get_param("~robot_urdf_file_path", "")
 
         self.robot_camera_clipnear = rospy.get_param("~robot_camera_clipnear", 0.1)
-        self.robot_camera_clipfar = rospy.get_param("~robot_camera_clipfar", 1000.0)
+        self.robot_camera_clipfar = rospy.get_param("~robot_camera_clipfar", 25.0)
 
         self.last_update = rospy.Time().now()
 
@@ -109,6 +122,18 @@ class BasePipeline(object):
 
     def initialize_pipeline(self, internal_simulator, beliefs_base):
         raise NotImplementedError("You should implement the initialization of the pipeline.")
+
+    def ar_tags_callback(self, scene_changes_msg):
+        ar_tags_tracks = []
+        for node in scene_changes_msg.changes.nodes:
+            ar_tags_tracks.append(SceneNode().from_msg(node))
+        self.ar_tags_tracks = ar_tags_tracks
+
+    def motion_capture_callback(self, scene_changes_msg):
+        motion_capture_tracks = []
+        for node in scene_changes_msg.changes.nodes:
+            motion_capture_tracks.append(SceneNode().from_msg(node))
+        self.motion_capture_tracks = motion_capture_tracks
 
     def observation_callback(self, bgr_image_msg, depth_image_msg=None):
         """ """

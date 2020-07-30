@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import math
+import uwds3_msgs.msg
 from .vector.vector2d import Vector2D
 from .features import Features
 from .shape.cylinder import Cylinder
@@ -64,6 +65,29 @@ class BoundingBox(object):
             return np.array([self.xmin, self.ymin, self.xmax, self.ymax, self.depth], np.float32)
         else:
             return np.array([self.xmin, self.ymin, self.xmax, self.ymax], np.float32)
+
+    def from_msg(self, msg):
+        self.xmin = msg.xmin
+        self.ymin = msg.ymin
+        self.xmax = msg.xmax
+        self.ymax = msg.ymax
+        if msg.has_depth is True:
+            self.depth = msg.depth
+        else:
+            self.depth = None
+
+    def to_msg(self):
+        msg = uwds3_msgs.msg.BoundingBox()
+        msg.xmin = self.xmin
+        msg.ymin = self.ymin
+        msg.xmax = self.xmax
+        msg.ymax = self.ymax
+        if self.has_depth():
+            msg.has_depth = True
+            msg.depth = self.depth
+        else:
+            msg.has_depth = False
+        return msg
 
     def to_xyxy(self):
         """ """

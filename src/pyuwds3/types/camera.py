@@ -11,7 +11,7 @@ class Camera(object):
                  width=480,
                  height=360,
                  clipnear=0.1,
-                 clipfar=1e+3):
+                 clipfar=25):
         """Camera constructor"""
         self.width = width
         self.height = height
@@ -95,7 +95,7 @@ class HumanVisualModel(object):
     WIDTH = 480 # image width resolution for rendering
     HEIGHT = 360  # image height resolution for rendering
     CLIPNEAR = 0.1 # clipnear
-    CLIPFAR = 1e+3 # clipfar
+    CLIPFAR = 25 # clipfar
 
 
 class HumanCamera(Camera):

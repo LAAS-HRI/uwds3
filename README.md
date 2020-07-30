@@ -44,7 +44,7 @@ roslaunch uwds3 camera_publisher.launch # use the laptop/usb camera to fake the 
 roslaunch uwds3 dialogue_pipeline.launch # launch the demo pipeline
 ```
 
-**IMPORTANT**: To be able to load the robot meshes in bullet you need to have the description package in the `catkin_ws/src` folder.
+**IMPORTANT**: To be able to load the robot meshes in bullet you need to have the description package in the `catkin_ws/src` folder (exept for r2d2 that is composed only by simple primitives).
 
 Open Rviz in another shell with the command `rviz`, and then add three display:
 * Image display (topic : `myself_view`)
@@ -68,4 +68,3 @@ TODO :
 
 - [ ] Add Mask-RCNN detector with CUDA support
 - [ ] Add Openpose detector with CUDA and lucas kanade trackers to get higher fps
-- [ ] Add JSON serialization for base types

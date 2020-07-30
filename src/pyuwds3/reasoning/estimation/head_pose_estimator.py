@@ -72,7 +72,7 @@ class HeadPoseEstimator(object):
                         r = self.__rodrigues2euler(rvec)
                         self.__add_offset(r, RX_OFFSET, RY_OFFSET, RZ_OFFSET)
                         sensor_pose = Vector6D(x=tvec[0][0], y=tvec[1][0], z=tvec[2][0],
-                                               rx=r[0][0], ry=r[1][0], rz=.0)
+                                               rx=r[0][0], ry=r[1][0], rz=r[2][0])
                         world_pose = Vector6D().from_transform(np.dot(view_matrix, sensor_pose.transform()))
                         f.bbox.depth = tvec[2][0]
                         f.update_pose(world_pose.position(), rotation=world_pose.rotation())

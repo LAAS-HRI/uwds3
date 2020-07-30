@@ -215,7 +215,7 @@ class SceneNode(object):
     def is_perceived(self):
         """ Return True if is perceived by a camera (real of virtual)
         """
-        return self.perceived
+        return self.bbox is not None
 
     def is_confirmed(self):
         """ Return True if is confirmed
@@ -264,7 +264,14 @@ class SceneNode(object):
         self.label = msg.label
         self.parent = msg.parent
         self.type = msg.type
+        self.state = msg.state
         self.description = msg.description
+
+        if msg.is_perceived is True:
+            self.bbox.from_msg(msg.bbox)
+        else:
+            self.bbox = None
+
         if msg.is_located is True:
             x = msg.pose_stamped.pose.pose.position.x
             y = msg.pose_stamped.pose.pose.position.y
@@ -307,7 +314,9 @@ class SceneNode(object):
                     self.shapes.append(Mesh().from_msg(shape))
 
         if msg.has_camera is True:
-            self.camera = Camera()
+            self.camera = Camera().from_msg(msg.camera.info,
+                                            clipnear=msg.camera.clipnear,
+                                            clipfar=msg.camera.clipfar)
         else:
             self.camera = None
 
@@ -317,8 +326,18 @@ class SceneNode(object):
         """ Convert to ROS message
         """
         msg = uwds3_msgs.msg.SceneNode()
+
+        msg.state = self.state
+
+        if self.is_perceived():
+            msg.is_perceived = True
+            msg.bbox = self.bbox.to_msg()
+        else:
+            msg.is_perceived = False
+
         msg.id = self.id
         msg.label = self.label
+        msg.description = self.description
         if self.is_located():
             msg.is_located = True
             msg.pose_stamped.header = header

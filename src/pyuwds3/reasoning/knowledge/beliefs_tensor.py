@@ -54,9 +54,7 @@ class BeliefsTensor(object):
 
         self.E = {}
 
-        self.T = np.full((t_max, len(self.relations),
-                             len(self.entities),
-                             len(self.entities)), self.unknown_confidence, dtype=np.float32)
+        self.T = np.full((t_max, len(self.relations), len(self.entities), len(self.entities)), self.unknown_confidence, dtype=np.float32)
 
     def get_entities(self, type=None):
         """ This method return the list of the entities present in the beliefs base """
