@@ -73,10 +73,10 @@ class BeliefsBase(object):
             # self.other_beliefs[entity].my_beliefs.B = (self.other_beliefs[entity].my_beliefs.B*0.0)+0.5
 
     def add_relation(self, relation, type):
+        """ """
         self.my_beliefs.add_relation(relation, type)
         for other_belief in self.other_beliefs.values():
             other_belief.add_relation(relation, type)
-
 
     def update_description(self, entity, description):
         """ This method update the description of an entity """
@@ -159,7 +159,8 @@ class BeliefsBase(object):
 
         assert Rprojected.shape == Restimated.shape
 
-        return 1 - cosine(Rprojected.flatten(), Restimated.flatten())
+        return max(Rprojected.flatten() - Restimated.flatten())
+        #return 1 - cosine(Rprojected.flatten(), Restimated.flatten())
 
     def __str__(self):
         return str(self.my_beliefs.get_tensor())

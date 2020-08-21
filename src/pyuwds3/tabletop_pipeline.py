@@ -260,7 +260,7 @@ class TabletopPipeline(BasePipeline):
         ########################################################
         # Visualization
         ########################################################
-        self.myself_view_publisher.publish(rgb_image, tracks, events=events, overlay_image=None, fps=pipeline_fps)
+        self.myself_view_publisher.publish(rgb_image, corrected_tracks, events=self.events, overlay_image=None, fps=pipeline_fps)
 
         all_nodes = [myself]+static_nodes+corrected_tracks
         return all_nodes, self.events

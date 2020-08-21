@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   uwds3_msgs
+  ar_track_alvar_msgs
 )
 
 ## System dependencies are found with CMake's conventions

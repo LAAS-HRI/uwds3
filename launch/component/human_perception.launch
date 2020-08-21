@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <!-- Camera parameters -->
+  <arg name="rgb_image_topic" default="kinect2/qhd/image_color_rect"/>
+  <arg name="rgb_camera_info_topic" default="kinect2/qhd/camera_info"/>
+  <arg name="depth_image_topic" default="kinect2/qhd/image_depth_rect"/>
+  <arg name="depth_camera_info_topic" default="kinect2/qhd/camera_info"/>
+
+  <arg name="global_frame_id" default="map"/>
+
+  <!-- Detector model parameters -->
+  <arg name="person_detector_weights_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb"/>
+  <arg name="person_detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pbtxt"/>
+  <arg name="person_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_config.yaml"/>
+
+  <!-- Face detector model parameters -->
+  <arg name="face_detector_weights_filename" default="$(find uwds3)/models/detection/opencv_face_detector_uint8.pb"/>
+  <arg name="face_detector_model_filename" default="$(find uwds3)/models/detection/opencv_face_detector.pbtxt"/>
+  <arg name="face_detector_config_filename" default="$(find uwds3)/config/detection/face_config.yaml"/>
+
+  <!-- Head pose estimation parameters -->
+  <arg name="shape_predictor_config_filename" default="$(find uwds3)/models/estimation/shape_predictor_68_face_landmarks.dat"/>
+  <arg name="face_3d_model_filename" default="$(find uwds3)/config/estimation/face_3d_model.npy"/>
+  <!-- Face embedding parameters -->
+  <arg name="facial_features_model_filename" default="$(find uwds3)/models/features/nn4.small2.v1.t7"/>
+
+  <!-- Tracker parameters -->
+  <arg name="n_init" default="1"/>
+  <arg name="n_frame" default="4"/>
+  <arg name="max_lost" default="22"/>
+  <arg name="max_age" default="64"/>
+  <arg name="max_iou_distance" default="0.98"/>
+
+  <!-- Other parameters -->
+  <arg name="publish_viz" default="true"/>
+  <arg name="publish_tf" default="true"/>
+  <arg name="use_depth" default="false"/>
+
+  <node name="human_perception" pkg="uwds3" type="human_perception_node.py" args="" output="screen" respawn="false">
+    <rosparam subst_value="true">
+
+      rgb_image_topic: $(arg rgb_image_topic)
+      rgb_camera_info_topic: $(arg rgb_camera_info_topic)
+
+      depth_image_topic: $(arg depth_image_topic)
+      depth_camera_info_topic: $(arg depth_camera_info_topic)
+
+      global_frame_id: $(arg global_frame_id)
+
+      person_detector_weights_filename: $(arg person_detector_weights_filename)
+      person_detector_model_filename: $(arg person_detector_model_filename)
+      person_detector_config_filename: $(arg person_detector_config_filename)
+
+      face_detector_weights_filename: $(arg face_detector_weights_filename)
+      face_detector_model_filename: $(arg face_detector_model_filename)
+      face_detector_config_filename: $(arg face_detector_config_filename)
+
+      shape_predictor_config_filename: $(arg shape_predictor_config_filename)
+      face_3d_model_filename: $(arg face_3d_model_filename)
+
+      facial_features_model_filename: $(arg facial_features_model_filename)
+
+      publish_viz: $(arg publish_viz)
+      publish_tf: $(arg publish_tf)
+
+      use_depth: $(arg use_depth)
+
+      n_init: $(arg n_init)
+      n_frame: $(arg n_frame)
+      max_iou_distance: $(arg max_iou_distance)
+      max_lost: $(arg max_lost)
+      max_age: $(arg max_age)
+    </rosparam>
+  </node>
+
+</launch>

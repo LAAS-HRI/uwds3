@@ -58,6 +58,7 @@
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>uwds3_msgs</exec_depend>
+  <depend>ar_track_alvar_msgs</depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
