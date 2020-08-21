@@ -3,7 +3,7 @@ scipy==0.10.0
 uuid
 pyyaml
 argparse
-scikit-image
+scikit-image<0.15
 scikit-learn
 matplotlib
 tqdm
