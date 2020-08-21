@@ -1,5 +1,5 @@
 numpy==1.11.0
-scipy==0.1
+scipy==0.10.0
 uuid
 pyyaml
 argparse
