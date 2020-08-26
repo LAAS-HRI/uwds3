@@ -104,9 +104,9 @@ class DialoguePipeline(BasePipeline):
         eye_contact_detector_weigths_filename = rospy.get_param("~eye_contact_detector_weigths_filename", "")
         eye_contact_detector_model_filename = rospy.get_param("~eye_contact_detector_model_filename", "")
 
-        self.engagement_monitor = EngagementMonitor(internal_simulator,
-                                                    eye_contact_detector_weigths_filename,
-                                                    eye_contact_detector_model_filename)
+        # self.engagement_monitor = EngagementMonitor(internal_simulator,
+        #                                             eye_contact_detector_weigths_filename,
+        #                                             eye_contact_detector_model_filename)
 
         self.perspective_monitor = PerspectiveMonitor(internal_simulator, beliefs_base)
 
@@ -118,6 +118,8 @@ class DialoguePipeline(BasePipeline):
         self.myself_view_publisher = ViewPublisher("myself_view")
 
         self.events = []
+
+        rospy.loginfo("Pipeline intialized")
 
     def perception_pipeline(self, view_pose, rgb_image, depth_image=None, time=None):
         """
