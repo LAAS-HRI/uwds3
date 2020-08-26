@@ -39,4 +39,6 @@ class PerspectiveMonitor(Monitor):
             success = True
         else:
             success = False
+
+
         return success, rgb_image, visibles_tracks, self.relations
