@@ -72,7 +72,7 @@ class MarkerPublisher(object):
                         elif track.is_static():
                             marker.color.a = 1.0
                         else:
-                            marker.color.a = 0.8
+                            marker.color.a = shape.color[3]
 
                         marker.lifetime = rospy.Duration(1.0)
                         markers_msg.markers.append(marker)

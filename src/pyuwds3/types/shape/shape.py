@@ -12,7 +12,8 @@ class ShapeType(object):
 
 
 class Shape(object):
-    def __init__(self, type, name="", scale_x=1., scale_y=1., scale_z=1.,
+    def __init__(self, type, name="",
+                 scale_x=1., scale_y=1., scale_z=1.,
                  x=.0, y=.0, z=.0,
                  rx=.0, ry=.0, rz=.0):
         """ Shape constructor

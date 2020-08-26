@@ -44,7 +44,6 @@
   <arg name="publish_tf" default="true"/>
   <arg name="use_depth" default="false"/>
 
-
   <node name="tabletop_pipeline" pkg="uwds3" type="tabletop_pipeline_node.py" args="" output="screen" respawn="false">
     <rosparam subst_value="true">
 

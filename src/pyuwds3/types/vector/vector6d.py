@@ -100,6 +100,7 @@ class Vector6D(object):
         qz = msg.orientation.z
         qw = msg.orientation.w
         self.from_quaternion(qx, qy, qz, qw)
+        return self
 
     def to_msg(self):
         """Converts to ROS message"""

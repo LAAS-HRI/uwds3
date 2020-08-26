@@ -1,0 +1,32 @@
+- id: 10
+  label: green_bin
+  file: "obj/green_bin.obj"
+  position:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  orientation:
+    x: 1.57
+    y: 0.0
+    z: 0.0
+  color:
+    r: 0.0
+    g: 0.8
+    b: 0.0
+    a: 1.0
+- id: 11
+  label: blue_bin
+  file: "obj/blue_bin.obj"
+  position:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  orientation:
+    x: 1.57
+    y: 0.0
+    z: 0.0
+  color:
+    r: 0.0
+    g: 0.0
+    b: 0.8
+    a: 1.0

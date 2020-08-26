@@ -9,22 +9,6 @@
 
   <arg name="global_frame_id" default="map"/>
 
-  <!-- Detector model parameters -->
-  <arg name="person_detector_weights_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb"/>
-  <arg name="person_detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pbtxt"/>
-  <arg name="person_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_config.yaml"/>
-
-  <!-- Face detector model parameters -->
-  <arg name="face_detector_weights_filename" default="$(find uwds3)/models/detection/opencv_face_detector_uint8.pb"/>
-  <arg name="face_detector_model_filename" default="$(find uwds3)/models/detection/opencv_face_detector.pbtxt"/>
-  <arg name="face_detector_config_filename" default="$(find uwds3)/config/detection/face_config.yaml"/>
-
-  <!-- Head pose estimation parameters -->
-  <arg name="shape_predictor_config_filename" default="$(find uwds3)/models/estimation/shape_predictor_68_face_landmarks.dat"/>
-  <arg name="face_3d_model_filename" default="$(find uwds3)/config/estimation/face_3d_model.npy"/>
-  <!-- Face embedding parameters -->
-  <arg name="facial_features_model_filename" default="$(find uwds3)/models/features/nn4.small2.v1.t7"/>
-
   <!-- Tracker parameters -->
   <arg name="n_init" default="3"/>
   <arg name="n_frame" default="4"/>
