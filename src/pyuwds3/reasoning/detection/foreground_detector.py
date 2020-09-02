@@ -14,14 +14,18 @@ SHORTTERM_LEARNING_RATE = 0.02
 class ForegroundDetector(object):
     """ Foreground detector for unknown object in interactive tabletop scenario with fixed camera
     """
-    def __init__(self, max_overlap=0.3):
+    def __init__(self, max_overlap=0.3, debug_topics=True):
         """ Detector constructor
         """
         self.initialize()
         self.max_overlap = max_overlap
         self.kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
         self.bridge = CvBridge()
-        self.pub = rospy.Publisher("foreground_mask", Image, queue_size=1)
+        self.debug_topics = debug_topics
+        if self.debug_topics is True:
+            self.moving_pub = rospy.Publisher("moving_foreground_mask", Image, queue_size=1)
+            self.static_pub = rospy.Publisher("static_foreground_mask", Image, queue_size=1)
+            self.foreground_pub = rospy.Publisher("foreground_mask", Image, queue_size=1)
 
     def initialize(self):
         """ Initialize the detector (reset the background)
@@ -47,6 +51,7 @@ class ForegroundDetector(object):
         foreground_mask[foreground_mask != 255] = 0 # shadows suppression
         foreground_mask = cv2.morphologyEx(foreground_mask, cv2.MORPH_CLOSE, self.kernel)
         foreground_mask = cv2.morphologyEx(foreground_mask, cv2.MORPH_OPEN, self.kernel)
+        foreground_mask = cv2.dilate(foreground_mask, self.kernel)
 
         motion_mask = self.short_term_detector.apply(bgr_image_cropped, learningRate=SHORTTERM_LEARNING_RATE)
         motion_mask = cv2.morphologyEx(motion_mask, cv2.MORPH_CLOSE, self.kernel)
@@ -54,10 +59,13 @@ class ForegroundDetector(object):
         motion_mask = cv2.dilate(motion_mask, self.kernel)
 
         not_moving_mask = cv2.bitwise_not(motion_mask)
-        foreground_mask = cv2.bitwise_and(foreground_mask, not_moving_mask)
-        foreground_mask_full[int(h/2.0):h, 0:int(w)] = foreground_mask
+        static_foreground_mask = cv2.bitwise_and(foreground_mask, not_moving_mask)
+        foreground_mask_full[int(h/2.0):h, 0:int(w)] = static_foreground_mask
 
-        self.pub.publish(self.bridge.cv2_to_imgmsg(foreground_mask))
+        if self.debug_topics is True:
+            self.moving_pub.publish(self.bridge.cv2_to_imgmsg(motion_mask))
+            self.static_pub.publish(self.bridge.cv2_to_imgmsg(foreground_mask))
+            self.foreground_pub.publish(self.bridge.cv2_to_imgmsg(foreground_mask_full))
 
         # find the contours
         contours, hierarchy = cv2.findContours(foreground_mask_full, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)

@@ -8,12 +8,14 @@
   <arg name="depth_camera_info_topic" default="kinect2/qhd/camera_info"/>
 
   <arg name="global_frame_id" default="map"/>
+  
+  <arg name="color" default="red"/>
 
   <!-- Tracker parameters -->
   <arg name="n_init" default="3"/>
   <arg name="n_frame" default="4"/>
   <arg name="max_lost" default="6"/>
-  <arg name="max_age" default="20"/>
+  <arg name="max_age" default="300"/>
   <arg name="max_iou_distance" default="0.98"/>
 
   <!-- Other parameters -->
@@ -22,7 +24,7 @@
   <arg name="use_depth" default="false"/>
   <arg name="debug_topics" default="true"/>
 
-  <node name="tabletop_object_perception" pkg="uwds3" type="tabletop_object_perception_node.py" args="" output="screen" respawn="false">
+  <node name="color_object_perception" pkg="uwds3" type="color_object_perception_node.py" args="" output="screen" respawn="false">
     <rosparam subst_value="true">
 
       rgb_image_topic: $(arg rgb_image_topic)
@@ -38,6 +40,8 @@
       debug_topics: $(arg debug_topics)
 
       use_depth: $(arg use_depth)
+
+      color: $(arg color)
 
       n_init: $(arg n_init)
       n_frame: $(arg n_frame)
