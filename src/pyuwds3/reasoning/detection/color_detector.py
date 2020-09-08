@@ -42,9 +42,6 @@ class ColorDetector(object):
 
         color_mask = cv2.inRange(hsv_image, self.lower, self.upper)
 
-        #
-        #color_mask = cv2.morphologyEx(color_mask, cv2.MORPH_OPEN, self.kernel)
-        #color_mask = cv2.morphologyEx(color_mask, cv2.MORPH_CLOSE, self.kernel)
         color_mask = cv2.dilate(color_mask, self.kernel)
 
         if self.debug_topics is True:

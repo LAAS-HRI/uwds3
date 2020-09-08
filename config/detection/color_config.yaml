@@ -1,0 +1,9 @@
+- color: "red"
+  lower: [136, 87, 111]
+  upper: [180, 255, 255]
+- color: "blue"
+  lower: [107, 140, 100]
+  upper: [130, 255, 255]
+- color: "green"
+  lower: [25, 100, 100]
+  upper: [102, 255, 255]

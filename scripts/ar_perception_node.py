@@ -41,7 +41,7 @@ class ArPerceptionNode(object):
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
         self.scene_publisher = rospy.Publisher("ar_tracks", SceneChangesStamped, queue_size=1)
-        self.view_publisher = ViewPublisher("ar_perception")
+
         self.marker_publisher = MarkerPublisher("ar_markers")
 
         self.rgb_camera_info_topic = rospy.get_param("~rgb_camera_info_topic", "/camera/rgb/camera_info")
