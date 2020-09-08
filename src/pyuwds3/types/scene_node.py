@@ -42,6 +42,11 @@ class SceneNode(object):
                  vrx=0., vry=0., vrz=0.,
                  ax=0., ay=0., az=0.,
                  arx=0., ary=0., arz=0.,
+                 p_cov_c=0.85, m_cov_c=0.003,
+                 p_cov_a=0.85, m_cov_a=1e-9,
+                 p_cov_h=0.85, m_cov_h=1e-9,
+                 p_cov_p=0.8, m_cov_p=0.01,
+                 p_cov_r=0.06, m_cov_r=0.001,
                  time=None):
         """ Scene node constructor
         """
@@ -86,13 +91,28 @@ class SceneNode(object):
         self.description = ""
         self.perceived = False
 
+        self.p_cov_p = p_cov_p
+        self.m_cov_p = m_cov_p
+        self.p_cov_r = p_cov_r
+        self.m_cov_r = m_cov_r
+
+        self.p_cov_c = p_cov_c
+        self.m_cov_c = m_cov_c
+        self.p_cov_a = p_cov_a
+        self.m_cov_a = m_cov_a
+        self.p_cov_h = p_cov_h
+        self.m_cov_h = m_cov_h
+
         if pose is not None:
             self.pose = Vector6DStable(x=pose.pos.x, y=pose.pos.y, z=pose.pos.z,
                                        rx=pose.rot.x, ry=pose.rot.y, rz=pose.rot.z,
                                        vx=vx, vy=vy, vz=vz,
                                        vrx=vrx, vry=vry, vrz=vrz,
                                        ax=ax, ay=ay, az=az,
-                                       arx=arx, ary=ary, arz=arz, time=time)
+                                       arx=arx, ary=ary, arz=arz,
+                                       p_cov_p=self.p_cov_p, m_cov_p=self.m_cov_p,
+                                       p_cov_r=self.p_cov_r, m_cov_r=self.m_cov_r,
+                                       time=time)
         else:
             self.pose = None
 
@@ -157,6 +177,10 @@ class SceneNode(object):
                 self.pose = Vector6DStable(x=position.x,
                                            y=position.y,
                                            z=position.z,
+                                           p_cov_p=self.p_cov_p,
+                                           m_cov_p=self.m_cov_p,
+                                           p_cov_r=self.p_cov_r,
+                                           m_cov_r=self.m_cov_r,
                                            time=time)
             else:
                 self.pose = Vector6DStable(x=position.x,
@@ -165,6 +189,10 @@ class SceneNode(object):
                                            rx=rotation.x,
                                            ry=rotation.y,
                                            rz=rotation.z,
+                                           p_cov_p=self.p_cov_p,
+                                           m_cov_p=self.m_cov_p,
+                                           p_cov_r=self.p_cov_r,
+                                           m_cov_r=self.m_cov_r,
                                            time=time)
         else:
             self.pose.pos.update(position.x, position.y, position.z, time=time)

@@ -51,7 +51,7 @@ Open Rviz in another shell with the command `rviz`, and then add three display:
 * Image display (topic : `other_view`)
 * MarkerArray display (topic : `tracks_markers`)
 
-you can monitor the output topic of type `SceneChangesStamped` by running:
+you can monitor the output topic of type `WorldStamped` by running:
 ```shell
 rostopic echo /tracks
 ```
@@ -63,8 +63,3 @@ Please fill an issue with the error log and an example of code to reproduce the 
 ### How to contribute
 
 To contribute to the project, fork the repo and make a pull request
-
-TODO :
-
-- [ ] Add Mask-RCNN detector with CUDA support
-- [ ] Add Openpose detector with CUDA and lucas kanade trackers to get higher fps

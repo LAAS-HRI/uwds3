@@ -4,7 +4,7 @@ import math
 import numpy as np
 from sensor_msgs.msg import Image, CameraInfo
 import message_filters
-from uwds3_msgs.msg import SceneChangesStamped
+from uwds3_msgs.msg import WorldStamped
 from cv_bridge import CvBridge
 from .utils.tf_bridge import TfBridge
 from .reasoning.simulation.internal_simulator import InternalSimulator
@@ -44,13 +44,13 @@ class BasePipeline(object):
         self.ar_tags_topic = rospy.get_param("ar_tags_topic", "ar_tags_tracks")
         if self.use_ar_tags is True:
             self.ar_tags_tracks = []
-            self.ar_tags_sub = rospy.Subscriber(self.ar_tags_topic, SceneChangesStamped, self.ar_tags_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
+            self.ar_tags_sub = rospy.Subscriber(self.ar_tags_topic, WorldStamped, self.ar_tags_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
         self.use_motion_capture = rospy.get_param("use_motion_capture", True)
         self.motion_capture_topic = rospy.get_param("motion_capture_topic", "motion_capture_tracks")
         if self.use_motion_capture is True:
             self.motion_capture_tracks = []
-            self.motion_capture_sub = rospy.Subscriber(self.motion_capture_topic, SceneChangesStamped, self.motion_capture_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
+            self.motion_capture_sub = rospy.Subscriber(self.motion_capture_topic, WorldStamped, self.motion_capture_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
         self.n_frame = rospy.get_param("~n_frame", 4)
         self.frame_count = 0
@@ -61,7 +61,7 @@ class BasePipeline(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.scene_publisher = rospy.Publisher("tracks", SceneChangesStamped, queue_size=1)
+        self.world_publisher = rospy.Publisher("tracks", WorldStamped, queue_size=1)
 
         self.view_publisher = ViewPublisher("tracks_image")
         self.marker_publisher = MarkerPublisher("tracks_markers")
@@ -123,15 +123,15 @@ class BasePipeline(object):
     def initialize_pipeline(self, internal_simulator, beliefs_base):
         raise NotImplementedError("You should implement the initialization of the pipeline.")
 
-    def ar_tags_callback(self, scene_changes_msg):
+    def ar_tags_callback(self, world_msg):
         ar_tags_tracks = []
-        for node in scene_changes_msg.changes.nodes:
+        for node in world_msg.world.scene:
             ar_tags_tracks.append(SceneNode().from_msg(node))
         self.ar_tags_tracks = ar_tags_tracks
 
-    def motion_capture_callback(self, scene_changes_msg):
+    def motion_capture_callback(self, world_msg):
         motion_capture_tracks = []
-        for node in scene_changes_msg.changes.nodes:
+        for node in world_msg.world.scene:
             motion_capture_tracks.append(SceneNode().from_msg(node))
         self.motion_capture_tracks = motion_capture_tracks
 
@@ -158,7 +158,7 @@ class BasePipeline(object):
                     self.frame_count %= self.n_frame
                     all_nodes, events = self.perception_pipeline(view_pose, rgb_image, depth_image=depth_image, time=header.stamp)
 
-                    self.publish_changes(all_nodes, events, header)
+                    self.publish_world(all_nodes, events, header)
 
                     if self.publish_viz is True:
                         self.marker_publisher.publish(all_nodes, header)
@@ -173,13 +173,14 @@ class BasePipeline(object):
     def perception_pipeline(self, view_pose, rgb_image, depth_image=None, time=None):
         raise NotImplementedError("You should implement the perception pipeline.")
 
-    def publish_changes(self, tracks, events, header):
+    def publish_world(self, tracks, events, header):
         """ """
-        scene_changes = SceneChangesStamped()
-        scene_changes.header.frame_id = self.global_frame_id
+        world_msg = WorldStamped()
+        world_msg.header = header
+        world_msg.header.frame_id = self.global_frame_id
         for track in tracks:
             if track.is_confirmed():
-                scene_changes.changes.nodes.append(track.to_msg(header))
+                world_msg.world.scene.append(track.to_msg(header))
         for event in events:
-            scene_changes.changes.events.append(event.to_msg(header))
-        self.scene_publisher.publish(scene_changes)
+            world_msg.world.timeline.append(event.to_msg(header))
+        self.world_publisher.publish(world_msg)

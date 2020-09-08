@@ -9,7 +9,7 @@ from pyuwds3.types.vector.vector6d import Vector6D
 from pyuwds3.types.vector.vector6d_stable import Vector6DStable
 from pyuwds3.types.scene_node import SceneNode
 from pyuwds3.types.shape.mesh import Mesh
-from uwds3_msgs.msg import SceneChangesStamped
+from uwds3_msgs.msg import WorldStamped
 from pyuwds3.utils.tf_bridge import TfBridge
 from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
@@ -40,7 +40,7 @@ class ArPerceptionNode(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.scene_publisher = rospy.Publisher("ar_tracks", SceneChangesStamped, queue_size=1)
+        self.world_publisher = rospy.Publisher("ar_tracks", WorldStamped, queue_size=1)
 
         self.marker_publisher = MarkerPublisher("ar_markers")
 
@@ -113,7 +113,7 @@ class ArPerceptionNode(object):
                             self.ar_nodes[marker.id].pose.rot.update(x=pose.rot.x, y=pose.rot.y, z=pose.rot.z, time=header.stamp)
                         all_nodes.append(self.ar_nodes[marker.id])
 
-                self.publish_changes(all_nodes, [], header)
+                self.publish_world(all_nodes, [], header)
 
                 if self.publish_viz is True:
                     self.marker_publisher.publish(all_nodes, header)
@@ -121,16 +121,17 @@ class ArPerceptionNode(object):
                 if self.publish_tf is True:
                     self.tf_bridge.publish_tf_frames(all_nodes, [], header)
 
-    def publish_changes(self, tracks, events, header):
+    def publish_world(self, tracks, events, header):
         """ """
-        scene_changes = SceneChangesStamped()
-        scene_changes.header.frame_id = self.global_frame_id
+        world_msg = WorldStamped()
+        world_msg.header = header
+        world_msg.header.frame_id = self.global_frame_id
         for track in tracks:
             if track.is_confirmed():
-                scene_changes.changes.nodes.append(track.to_msg(header))
+                world_msg.world.scene.append(track.to_msg(header))
         for event in events:
-            scene_changes.changes.events.append(event.to_msg(header))
-        self.scene_publisher.publish(scene_changes)
+            world_msg.world.timeline.append(event.to_msg(header))
+        self.world_publisher.publish(world_msg)
 
     def run(self):
         while not rospy.is_shutdown():

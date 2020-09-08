@@ -19,7 +19,7 @@ def overlap_cost(detection, track):
 def centroid_cost(detection, track):
     """Returns the centroid cost"""
     return centroid(detection.bbox, track.bbox)
-    
+
 
 def color_cost(detection, track):
     """Returns the color cost"""
@@ -43,7 +43,24 @@ class MultiObjectTracker(object):
                  n_init,
                  max_lost,
                  max_age,
+                 p_cov_c=0.85, m_cov_c=0.003,
+                 p_cov_a=0.85, m_cov_a=1e-9,
+                 p_cov_h=0.85, m_cov_h=1e-9,
+                 p_cov_p=0.8, m_cov_p=0.01,
+                 p_cov_r=0.06, m_cov_r=0.001,
                  use_tracker=True):
+
+        self.p_cov_p = p_cov_p
+        self.m_cov_p = m_cov_p
+        self.p_cov_r = p_cov_r
+        self.m_cov_r = m_cov_r
+
+        self.p_cov_c = p_cov_c
+        self.m_cov_c = m_cov_c
+        self.p_cov_a = p_cov_a
+        self.m_cov_a = m_cov_a
+        self.p_cov_h = p_cov_h
+        self.m_cov_h = m_cov_h
 
         self.n_init = n_init
         self.max_lost = max_lost
@@ -104,6 +121,11 @@ class MultiObjectTracker(object):
                                      n_init=self.n_init,
                                      max_lost=self.max_lost,
                                      max_age=self.max_age,
+                                     p_cov_c=self.p_cov_c, m_cov_c=self.m_cov_c,
+                                     p_cov_a=self.p_cov_a, m_cov_a=self.m_cov_a,
+                                     p_cov_h=self.p_cov_h, m_cov_h=self.m_cov_h,
+                                     p_cov_p=self.p_cov_p, m_cov_p=self.m_cov_p,
+                                     p_cov_r=self.p_cov_r, m_cov_r=self.m_cov_r,
                                      time=time))
         track_indice = len(self.tracks)-1
         if self.use_tracker is True:
