@@ -6,8 +6,8 @@ from ..vector.vector6d import Vector6D
 
 
 class Box(Shape):
-    """Represents a 3D BoundingBox"""
-    def __init__(self, dim_x, dim_y, dim_z, name="",
+    """Represents a 3D Box"""
+    def __init__(self, dim_x=0., dim_y=0., dim_z=0., name="",
                  x=.0, y=.0, z=.0,
                  rx=.0, ry=.0, rz=.0,
                  scale_x=1., scale_y=1., scale_z=1.):

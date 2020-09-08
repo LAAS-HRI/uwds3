@@ -4,7 +4,7 @@ A framework for physical, spatial and semantic reasoning for Human-Robot interac
 
 This software is composed by two data-structures:
   1. A scene graph composed by scene nodes that contains the geometric and visual information.
-  2. A timeline of temporal situations that contains temporal events that can represent an action, a statement or a caption.
+  2. A timeline of temporal situations that contains temporal events that can represent an action, a fact or a caption.
 
 It also contains differents modules to generate and maintain the scene graph and the timeline from the robot camera image by integrating a CPU based perception pipeline alongwith a real-time physics engine and a probabilistic triplet store.
 
@@ -41,19 +41,20 @@ In different shells, run the following:
 ```shell
 roslaunch uwds3 r2d2_upload.launch # upload a fake R2D2 robot
 roslaunch uwds3 camera_publisher.launch # use the laptop/usb camera to fake the robot sensor
-roslaunch uwds3 dialogue_pipeline.launch # launch the demo pipeline
+roslaunch uwds3 human_perception.launch
+roslaunch uwds3 internal_simulator.launch
 ```
 
 **IMPORTANT**: To be able to load the robot meshes in bullet you need to have the description package in the `catkin_ws/src` folder (exept for r2d2 that is composed only by simple primitives).
 
-Open Rviz in another shell with the command `rviz`, and then add three display:
-* Image display (topic : `myself_view`)
+Open Rviz in another shell with the command `rviz`, and add the following displays:
+* Image display (topic : `human_perception`)
 * Image display (topic : `other_view`)
-* MarkerArray display (topic : `tracks_markers`)
+* MarkerArray display (topic : `human_markers`)
 
 you can monitor the output topic of type `WorldStamped` by running:
 ```shell
-rostopic echo /tracks
+rostopic echo /human_tracks
 ```
 
 ### Any problem ?

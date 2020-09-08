@@ -6,7 +6,7 @@ from .bbox import BoundingBox
 
 class BoundingBoxStable(BoundingBox):
     """ """
-    def __init__(self, xmin, ymin, xmax, ymax, depth=None,
+    def __init__(self, xmin=0, ymin=0, xmax=0, ymax=0, depth=None,
                  p_cov_c=0.85, m_cov_c=0.003,
                  p_cov_a=0.85, m_cov_a=1e-9,
                  p_cov_h=0.85, m_cov_h=1e-9, time=None):
@@ -19,7 +19,10 @@ class BoundingBoxStable(BoundingBox):
         center = self.center()
         x = center.x
         y = center.y
-        a = w/float(h)
+        if h == 0:
+            a = 1.0
+        else:
+            a = w/float(h)
         self.center_filter = Vector2DStable(x=x, y=y, p_cov=p_cov_c, m_cov=m_cov_c, time=time)
         self.aspect_filter = ScalarStable(x=a, p_cov=p_cov_a, m_cov=m_cov_a, time=time)
         self.height_filter = ScalarStable(x=h, p_cov=p_cov_h, m_cov=m_cov_h, time=time)

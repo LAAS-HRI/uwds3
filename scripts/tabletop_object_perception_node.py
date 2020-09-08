@@ -10,6 +10,7 @@ from uwds3_msgs.msg import WorldStamped
 from pyuwds3.utils.tf_bridge import TfBridge
 from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
+from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.reasoning.estimation.object_pose_estimator import ObjectPoseEstimator
 from pyuwds3.reasoning.estimation.shape_estimator import ShapeEstimator
 from pyuwds3.reasoning.detection.foreground_detector import ForegroundDetector
@@ -66,7 +67,7 @@ class TabletopObjectPerceptionNode(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.world_publisher = rospy.Publisher("tabletop_object_tracks", WorldStamped, queue_size=1)
+        self.world_publisher = WorldPublisher("tabletop_object_tracks")
         self.view_publisher = ViewPublisher("tabletop_object_perception")
         self.marker_publisher = MarkerPublisher("tabletop_object_markers")
 
@@ -125,7 +126,7 @@ class TabletopObjectPerceptionNode(object):
                 self.frame_count %= self.n_frame
                 all_nodes, events = self.perception_pipeline(view_pose, rgb_image, depth_image=depth_image, time=header.stamp)
 
-                self.publish_world(all_nodes, events, header)
+                self.world_publisher.publish(all_nodes, events, header)
 
                 if self.publish_viz is True:
                     self.marker_publisher.publish(all_nodes, header)

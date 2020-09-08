@@ -55,7 +55,7 @@ class FacialFeaturesEstimator(object):
 
     def align_face(self, rgb_image, landmarks):
         """ Align a face given a 2d template
-        original code from openface
+        original code from openface (to be sure to extract correctly)
         """
         npLandmarks = landmarks.data
         npLandmarkIndices = [39, 42, 57]

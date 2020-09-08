@@ -15,6 +15,8 @@ wget https://raw.githubusercontent.com/opencv/opencv_extra/master/testdata/dnn/s
 rm ssd_mobilenet_v2_coco_2018_03_29.tar.gz
 rm -rf ssd_mobilenet_v2_coco_2018_03_29/
 
+wget http://dlib.net/files/mmod_human_face_detector.dat.bz2
+
 wget https://raw.githubusercontent.com/opencv/opencv_extra/master/testdata/dnn/opencv_face_detector.pbtxt
 wget https://github.com/opencv/opencv_3rdparty/raw/8033c2bc31b3256f0d461c919ecc01c2428ca03b/opencv_face_detector_uint8.pb
 

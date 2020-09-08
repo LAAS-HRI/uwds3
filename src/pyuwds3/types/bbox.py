@@ -75,6 +75,7 @@ class BoundingBox(object):
             self.depth = msg.depth
         else:
             self.depth = None
+        return self
 
     def to_msg(self):
         msg = uwds3_msgs.msg.BoundingBox()

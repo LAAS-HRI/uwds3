@@ -13,6 +13,7 @@ from uwds3_msgs.msg import WorldStamped
 from pyuwds3.utils.tf_bridge import TfBridge
 from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
+from pyuwds3.utils.world_publisher import WorldPublisher
 from ar_track_alvar_msgs.msg import AlvarMarkers
 import yaml
 
@@ -40,7 +41,7 @@ class ArPerceptionNode(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.world_publisher = rospy.Publisher("ar_tracks", WorldStamped, queue_size=1)
+        self.world_publisher = WorldPublisher("ar_tracks")
 
         self.marker_publisher = MarkerPublisher("ar_markers")
 
@@ -113,7 +114,7 @@ class ArPerceptionNode(object):
                             self.ar_nodes[marker.id].pose.rot.update(x=pose.rot.x, y=pose.rot.y, z=pose.rot.z, time=header.stamp)
                         all_nodes.append(self.ar_nodes[marker.id])
 
-                self.publish_world(all_nodes, [], header)
+                self.world_publisher.publish(all_nodes, [], header)
 
                 if self.publish_viz is True:
                     self.marker_publisher.publish(all_nodes, header)

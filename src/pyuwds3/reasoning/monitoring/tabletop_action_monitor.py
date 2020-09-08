@@ -34,81 +34,75 @@ class TabletopActionMonitor(Monitor):
         self.previous_object_tracks_map = {}
         self.centroid_assignement = LinearAssignment(centroid_cost, max_distance=None)
 
-    def monitor(self, support_tracks, object_tracks, person_tracks, hand_tracks, time=None):
+    def monitor(self, object_tracks, person_tracks, hand_tracks, time=None):
         """ Monitor the physical consistency of the objects and detect human tabletop actions
         """
         self.cleanup_relations()
 
-        if len(support_tracks) > 0:
+        next_object_states = {}
+        object_tracks_map = {}
+        corrected_object_tracks = []
 
-            next_object_states = {}
-            object_tracks_map = {}
-            corrected_object_tracks = []
-            for support in support_tracks:
-                if support.is_located() and support.has_shape():
-                    if not self.simulator.is_entity_loaded(support.id):
-                        self.simulator.load_node(support, static=True)
+        for object in object_tracks:
+            if object.is_located() and object.has_shape():
+                if object.is_confirmed():
+                    if not self.simulator.is_entity_loaded(object.id):
+                        self.simulator.load_node(object)
+                        self.assign_and_trigger_action(object, "place", person_tracks, time)
+                        simulated_object = object
+                    else:
+                        simulated_object = self.simulator.get_entity(object.id)
 
-            for object in object_tracks:
-                if object.is_located() and object.has_shape():
-                    if object.is_confirmed():
-                        if not self.simulator.is_entity_loaded(object.id):
-                            self.simulator.load_node(object)
-                            self.assign_and_trigger_action(object, "place", person_tracks, time)
-                            simulated_object = object
-                        else:
-                            simulated_object = self.simulator.get_entity(object.id)
+                    object_tracks_map[object.id] = object
+                    # compute scene node input
+                    simulated_position = simulated_object.pose.position()
+                    perceived_position = object.pose.position()
 
-                        object_tracks_map[object.id] = object
-                        # compute scene node input
-                        simulated_position = simulated_object.pose.position()
-                        perceived_position = object.pose.position()
+                    distance = euclidean(simulated_position.to_array(), perceived_position.to_array())
 
-                        distance = euclidean(simulated_position.to_array(), perceived_position.to_array())
+                    is_consistent = distance < PLACEMENT_POSITION_TOLERANCE
+                    if object.id in self.previous_object_states:
+                        if self.previous_object_states[object.id] == ActionStates.HELD:
+                            is_consistent = distance < HOLDING_POSITION_TOLERANCE
 
-                        is_consistent = distance < PLACEMENT_POSITION_TOLERANCE
-                        if object.id in self.previous_object_states:
-                            if self.previous_object_states[object.id] == ActionStates.HELD:
-                                is_consistent = distance < HOLDING_POSITION_TOLERANCE
+                    is_perceived_object_moving = not np.allclose(object.pose.linear_velocity().to_array(), np.zeros(3), atol=VELOCITY_THRESHOLD)
 
-                        is_perceived_object_moving = not np.allclose(object.pose.linear_velocity().to_array(), np.zeros(3), atol=VELOCITY_THRESHOLD)
+                    # compute next state
+                    if is_consistent:
+                        success, distance_to_support, support = self.test_support(simulated_object)
+                        if success is True:
+                            if distance_to_support > PLACEMENT_POSITION_TOLERANCE or is_perceived_object_moving:
+                                next_object_states[object.id] = ActionStates.HELD
+                            else:
+                                next_object_states[object.id] = ActionStates.PLACED
+                    else:
+                        next_object_states[object.id] = ActionStates.HELD
 
-                        # compute next state
-                        if is_consistent:
-                            success, distance_to_support, support = self.test_support(simulated_object)
-                            if success is True:
-                                if distance_to_support > PLACEMENT_POSITION_TOLERANCE or is_perceived_object_moving:
-                                    next_object_states[object.id] = ActionStates.HELD
-                                else:
-                                    next_object_states[object.id] = ActionStates.PLACED
-                        else:
-                            next_object_states[object.id] = ActionStates.HELD
+        for object_id in self.previous_object_states.keys():
+            object = self.previous_object_tracks_map[object_id]
+            if object_id not in next_object_states:
+                self.assign_and_trigger_action(object, "release", person_tracks, time)
+                self.simulator.remove_constraint(object_id)
+            elif self.previous_object_states[object_id] == ActionStates.HELD and \
+                    next_object_states[object_id] == ActionStates.PLACED:
+                self.assign_and_trigger_action(object, "place", person_tracks, time)
+            elif self.previous_object_states[object_id] == ActionStates.PLACED and \
+                    next_object_states[object_id] == ActionStates.HELD:
+                self.assign_and_trigger_action(object, "pick", person_tracks, time)
+            else:
+                pass
 
-            for object_id in self.previous_object_states.keys():
-                object = self.previous_object_tracks_map[object_id]
-                if object_id not in next_object_states:
-                    self.assign_and_trigger_action(object, "release", person_tracks, time)
-                    self.simulator.remove_constraint(object_id)
-                elif self.previous_object_states[object_id] == ActionStates.HELD and \
-                        next_object_states[object_id] == ActionStates.PLACED:
-                    self.assign_and_trigger_action(object, "place", person_tracks, time)
-                elif self.previous_object_states[object_id] == ActionStates.PLACED and \
-                        next_object_states[object_id] == ActionStates.HELD:
-                    self.assign_and_trigger_action(object, "pick", person_tracks, time)
-                else:
-                    pass
+            if self.previous_object_states[object_id] == ActionStates.PLACED:
+                self.simulator.remove_constraint(object_id)
 
-                if self.previous_object_states[object_id] == ActionStates.PLACED:
-                    self.simulator.remove_constraint(object_id)
+            if self.previous_object_states[object_id] == ActionStates.HELD:
+                if object_id in object_tracks_map:
+                    object = object_tracks_map[object_id]
+                    self.simulator.update_constraint(object_id, object.pose)
 
-                if self.previous_object_states[object_id] == ActionStates.HELD:
-                    if object_id in object_tracks_map:
-                        object = object_tracks_map[object_id]
-                        self.simulator.update_constraint(object_id, object.pose)
-
-            corrected_object_tracks = self.simulator.get_not_static_entities()
-            self.previous_object_states = next_object_states
-            self.previous_object_tracks_map = object_tracks_map
+        corrected_object_tracks = self.simulator.get_not_static_entities()
+        self.previous_object_states = next_object_states
+        self.previous_object_tracks_map = object_tracks_map
 
         return corrected_object_tracks, self.relations
 

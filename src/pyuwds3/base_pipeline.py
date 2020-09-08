@@ -7,6 +7,7 @@ import message_filters
 from uwds3_msgs.msg import WorldStamped
 from cv_bridge import CvBridge
 from .utils.tf_bridge import TfBridge
+from .utils.world_publisher import WorldPublisher
 from .reasoning.simulation.internal_simulator import InternalSimulator
 from .utils.static_word_embeddings import StaticWordEmbeddings
 from .utils.view_publisher import ViewPublisher
@@ -61,7 +62,7 @@ class BasePipeline(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.world_publisher = rospy.Publisher("tracks", WorldStamped, queue_size=1)
+        self.world_publisher = WorldPublisher("tracks")
 
         self.view_publisher = ViewPublisher("tracks_image")
         self.marker_publisher = MarkerPublisher("tracks_markers")
@@ -158,7 +159,7 @@ class BasePipeline(object):
                     self.frame_count %= self.n_frame
                     all_nodes, events = self.perception_pipeline(view_pose, rgb_image, depth_image=depth_image, time=header.stamp)
 
-                    self.publish_world(all_nodes, events, header)
+                    self.world_publisher.publish(all_nodes, events, header)
 
                     if self.publish_viz is True:
                         self.marker_publisher.publish(all_nodes, header)
@@ -172,15 +173,3 @@ class BasePipeline(object):
 
     def perception_pipeline(self, view_pose, rgb_image, depth_image=None, time=None):
         raise NotImplementedError("You should implement the perception pipeline.")
-
-    def publish_world(self, tracks, events, header):
-        """ """
-        world_msg = WorldStamped()
-        world_msg.header = header
-        world_msg.header.frame_id = self.global_frame_id
-        for track in tracks:
-            if track.is_confirmed():
-                world_msg.world.scene.append(track.to_msg(header))
-        for event in events:
-            world_msg.world.timeline.append(event.to_msg(header))
-        self.world_publisher.publish(world_msg)

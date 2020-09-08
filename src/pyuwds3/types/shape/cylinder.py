@@ -8,7 +8,7 @@ from ..vector.vector6d import Vector6D
 class Cylinder(Shape):
     """ Represents a 2D BoundingBox + depth in the world space (e.g. cylinder)
     """
-    def __init__(self, w, h, name="",
+    def __init__(self, w=0., h=0., name="",
                  x=.0, y=.0, z=.0,
                  rx=.0, ry=.0, rz=.0,
                  scale_x=1., scale_y=1., scale_z=1.):

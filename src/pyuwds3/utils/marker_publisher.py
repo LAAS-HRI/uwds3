@@ -7,16 +7,20 @@ class MarkerPublisher(object):
     def __init__(self, topic_name, queue_size=1, alpha=1.0):
         self.publisher = rospy.Publisher(topic_name, MarkerArray, queue_size=1)
         self.alpha = alpha
+        self.marker_id_map = {}
+        self.last_marker_id = 0
 
     def publish(self, tracks, header):
         markers_msg = MarkerArray()
-        marker_id = 0
         for track in tracks:
             if track.is_confirmed():
                 if track.has_shape() and track.is_located():
                     for shape_idx, shape in enumerate(track.shapes):
                         marker = Marker()
-                        marker_id += 1
+                        if track.id not in self.marker_id_map:
+                            self.marker_id_map[track.id] = self.last_marker_id
+                            self.last_marker_id += 1
+                        marker_id = self.marker_id_map[track.id]
                         marker.id = marker_id
                         marker.ns = track.id
                         marker.action = Marker.MODIFY

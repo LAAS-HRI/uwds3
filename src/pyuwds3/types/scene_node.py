@@ -296,7 +296,7 @@ class SceneNode(object):
         self.description = msg.description
 
         if msg.is_perceived is True:
-            self.bbox.from_msg(msg.bbox)
+            self.bbox = BoundingBoxStable().from_msg(msg.bbox)
         else:
             self.bbox = None
 

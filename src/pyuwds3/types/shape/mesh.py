@@ -7,7 +7,7 @@ from ..vector.vector6d import Vector6D
 
 class Mesh(Shape):
     """Represents a 3D Mesh"""
-    def __init__(self, mesh_resource, name="",
+    def __init__(self, mesh_resource="", name="",
                  x=.0, y=.0, z=.0,
                  rx=.0, ry=.0, rz=.0,
                  scale_x=1., scale_y=1., scale_z=1.):

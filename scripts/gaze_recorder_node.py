@@ -10,6 +10,7 @@ from sensor_msgs.msg import Image
 from pyuwds3.types.detection import Detection
 from pyuwds3.reasoning.detection.ssd_detector import SSDDetector
 from pyuwds3.reasoning.estimation.facial_landmarks_estimator import FacialLandmarksEstimator
+from pyuwds3.reasoning.detection.dlib_face_detector import DlibFaceDetector
 from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, centroid_cost
 
 
@@ -28,13 +29,18 @@ class GazeRecorderNode(object):
         """
         rgb_image_topic = rospy.get_param("~rgb_image_topic", "")
 
+        use_dlib_frontal_face_detector = rospy.get_param("~use_dlib_frontal_face_detector", True)
+
         face_detector_model_filename = rospy.get_param("~face_detector_model_filename", "")
         face_detector_weights_filename = rospy.get_param("~face_detector_weights_filename", "")
         face_detector_config_filename = rospy.get_param("~face_detector_config_filename", "")
 
-        self.face_detector = SSDDetector(face_detector_model_filename,
-                                         face_detector_weights_filename,
-                                         face_detector_config_filename)
+        if use_dlib_frontal_face_detector is True:
+            self.face_detector = DlibFaceDetector()
+        else:
+            self.face_detector = SSDDetector(face_detector_weights_filename,
+                                             face_detector_model_filename,
+                                             face_detector_config_filename)
 
         shape_predictor_config_filename = rospy.get_param("~shape_predictor_config_filename", "")
         self.facial_landmarks_estimator = FacialLandmarksEstimator(shape_predictor_config_filename)

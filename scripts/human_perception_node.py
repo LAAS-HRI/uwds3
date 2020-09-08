@@ -10,10 +10,12 @@ from uwds3_msgs.msg import WorldStamped
 from pyuwds3.utils.tf_bridge import TfBridge
 from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
+from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.reasoning.estimation.object_pose_estimator import ObjectPoseEstimator
 from pyuwds3.reasoning.estimation.shape_estimator import ShapeEstimator
 from pyuwds3.reasoning.estimation.head_pose_estimator import HeadPoseEstimator
 from pyuwds3.reasoning.detection.ssd_detector import SSDDetector
+from pyuwds3.reasoning.detection.dlib_face_detector import DlibFaceDetector
 from pyuwds3.reasoning.estimation.facial_landmarks_estimator import FacialLandmarksEstimator
 from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, centroid_cost
 
@@ -24,13 +26,14 @@ class HumanPerceptionNode(object):
     def __init__(self):
         """
         """
-
         self.tf_bridge = TfBridge()
 
         self.n_frame = rospy.get_param("~n_frame", 4)
         self.frame_count = 0
 
         self.global_frame_id = rospy.get_param("~global_frame_id", "odom")
+
+        use_dlib_frontal_face_detector = rospy.get_param("~use_dlib_frontal_face_detector", True)
 
         person_detector_weights_filename = rospy.get_param("~person_detector_weights_filename", "")
         person_detector_model_filename = rospy.get_param("~person_detector_model_filename", "")
@@ -40,9 +43,12 @@ class HumanPerceptionNode(object):
         face_detector_model_filename = rospy.get_param("~face_detector_model_filename", "")
         face_detector_config_filename = rospy.get_param("~face_detector_config_filename", "")
 
-        self.face_detector = SSDDetector(face_detector_weights_filename,
-                                         face_detector_model_filename,
-                                         face_detector_config_filename)
+        if use_dlib_frontal_face_detector is True:
+            self.face_detector = DlibFaceDetector()
+        else:
+            self.face_detector = SSDDetector(face_detector_weights_filename,
+                                             face_detector_model_filename,
+                                             face_detector_config_filename)
 
         self.person_detector = SSDDetector(person_detector_weights_filename,
                                            person_detector_model_filename,
@@ -95,7 +101,7 @@ class HumanPerceptionNode(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.world_publisher = rospy.Publisher("human_tracks", WorldStamped, queue_size=1)
+        self.world_publisher = WorldPublisher("human_tracks")
         self.view_publisher = ViewPublisher("human_perception")
         self.marker_publisher = MarkerPublisher("human_markers")
 
@@ -154,7 +160,7 @@ class HumanPerceptionNode(object):
                 self.frame_count %= self.n_frame
                 all_nodes, events = self.perception_pipeline(view_pose, rgb_image, depth_image=depth_image, time=header.stamp)
 
-                self.publish_world(all_nodes, events, header)
+                self.world_publisher.publish(all_nodes, events, header)
 
                 if self.publish_viz is True:
                     self.marker_publisher.publish(all_nodes, header)
@@ -163,18 +169,6 @@ class HumanPerceptionNode(object):
                     self.tf_bridge.publish_tf_frames(all_nodes, events, header)
 
                 self.frame_count += 1
-
-    def publish_world(self, tracks, events, header):
-        """ """
-        world_msg = WorldStamped()
-        world_msg.header = header
-        world_msg.header.frame_id = self.global_frame_id
-        for track in tracks:
-            if track.is_confirmed():
-                world_msg.world.scene.append(track.to_msg(header))
-        for event in events:
-            world_msg.world.timeline.append(event.to_msg(header))
-        self.world_publisher.publish(world_msg)
 
     def perception_pipeline(self, view_pose, rgb_image, depth_image=None, time=None):
         ######################################################
@@ -197,8 +191,6 @@ class HumanPerceptionNode(object):
         # Features estimation
         ####################################################################
         features_timer = cv2.getTickCount()
-
-        #self.color_features_estimator.estimate(rgb_image, detections)
 
         features_fps = cv2.getTickFrequency() / (cv2.getTickCount()-features_timer)
         ######################################################
