@@ -62,7 +62,7 @@ class InternalSimulatorNode(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.world_publisher = WorldPublisher("corrected_tracks")
+        self.world_publisher = WorldPublisher("corrected_tracks", self.global_frame_id)
         self.marker_publisher = MarkerPublisher("corrected_markers")
 
         self.robot_camera_clipnear = rospy.get_param("~robot_camera_clipnear", 0.1)

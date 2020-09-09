@@ -75,6 +75,7 @@ class TabletopActionMonitor(Monitor):
                                 next_object_states[object.id] = ActionStates.HELD
                             else:
                                 next_object_states[object.id] = ActionStates.PLACED
+                                #TODO
                     else:
                         next_object_states[object.id] = ActionStates.HELD
 

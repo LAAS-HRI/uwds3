@@ -41,7 +41,7 @@ class ArPerceptionNode(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.world_publisher = WorldPublisher("ar_tracks")
+        self.world_publisher = WorldPublisher("ar_tracks", self.global_frame_id)
 
         self.marker_publisher = MarkerPublisher("ar_markers")
 
@@ -121,18 +121,6 @@ class ArPerceptionNode(object):
 
                 if self.publish_tf is True:
                     self.tf_bridge.publish_tf_frames(all_nodes, [], header)
-
-    def publish_world(self, tracks, events, header):
-        """ """
-        world_msg = WorldStamped()
-        world_msg.header = header
-        world_msg.header.frame_id = self.global_frame_id
-        for track in tracks:
-            if track.is_confirmed():
-                world_msg.world.scene.append(track.to_msg(header))
-        for event in events:
-            world_msg.world.timeline.append(event.to_msg(header))
-        self.world_publisher.publish(world_msg)
 
     def run(self):
         while not rospy.is_shutdown():

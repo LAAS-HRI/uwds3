@@ -48,13 +48,13 @@ roslaunch uwds3 internal_simulator.launch
 **IMPORTANT**: To be able to load the robot meshes in bullet you need to have the description package in the `catkin_ws/src` folder (exept for r2d2 that is composed only by simple primitives).
 
 Open Rviz in another shell with the command `rviz`, and add the following displays:
-* Image display (topic : `human_perception`)
-* Image display (topic : `other_view`)
-* MarkerArray display (topic : `human_markers`)
+* Image display (topic : `human_perception`) # the people detected by the robot
+* Image display (topic : `other_view`) # the perspective of the human in front of the robot
+* MarkerArray display (topic : `corrected_tracks`) # display the world corrected by the physics engine
 
 you can monitor the output topic of type `WorldStamped` by running:
 ```shell
-rostopic echo /human_tracks
+rostopic echo /corrected_tracks
 ```
 
 ### Any problem ?

@@ -67,7 +67,7 @@ class TabletopObjectPerceptionNode(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.world_publisher = WorldPublisher("tabletop_object_tracks")
+        self.world_publisher = WorldPublisher("tabletop_object_tracks", self.global_frame_id)
         self.view_publisher = ViewPublisher("tabletop_object_perception")
         self.marker_publisher = MarkerPublisher("tabletop_object_markers")
 
@@ -135,18 +135,6 @@ class TabletopObjectPerceptionNode(object):
                     self.tf_bridge.publish_tf_frames(all_nodes, events, header)
 
                 self.frame_count += 1
-
-    def publish_world(self, tracks, events, header):
-        """ """
-        world_msg = WorldStamped()
-        world_msg.header = header
-        world_msg.header.frame_id = self.global_frame_id
-        for track in tracks:
-            if track.is_confirmed():
-                world_msg.world.scene.append(track.to_msg(header))
-        for event in events:
-            world_msg.world.timeline.append(event.to_msg(header))
-        self.world_publisher.publish(world_msg)
 
     def perception_pipeline(self, view_pose, rgb_image, depth_image=None, time=None):
         ######################################################
