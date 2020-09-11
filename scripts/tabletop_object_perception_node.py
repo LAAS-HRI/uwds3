@@ -67,7 +67,7 @@ class TabletopObjectPerceptionNode(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.world_publisher = WorldPublisher("tabletop_object_tracks", self.global_frame_id)
+        self.world_publisher = WorldPublisher("tabletop_object_tracks")
         self.view_publisher = ViewPublisher("tabletop_object_perception")
         self.marker_publisher = MarkerPublisher("tabletop_object_markers")
 

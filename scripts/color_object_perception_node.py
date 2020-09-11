@@ -71,7 +71,7 @@ class ColorObjectPerceptionNode(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.world_publisher = WorldPublisher("color_object_tracks", self.global_frame_id)
+        self.world_publisher = WorldPublisher("color_object_tracks")
 
         self.view_publisher = ViewPublisher("color_object_perception")
         self.marker_publisher = MarkerPublisher("color_object_markers")

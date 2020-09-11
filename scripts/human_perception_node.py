@@ -101,7 +101,7 @@ class HumanPerceptionNode(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.world_publisher = WorldPublisher("human_tracks", self.global_frame_id)
+        self.world_publisher = WorldPublisher("human_tracks")
         self.view_publisher = ViewPublisher("human_perception")
         self.marker_publisher = MarkerPublisher("human_markers")
 

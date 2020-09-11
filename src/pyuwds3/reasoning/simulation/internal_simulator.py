@@ -600,8 +600,9 @@ class InternalSimulator(object):
         if success is True:
             if self.robot_loaded is False:
                 try:
-                    self.load_urdf("myself", self.robot_urdf_file_path, pose)
-                    self.robot_loaded = True
+                    success, _ = self.load_urdf("myself", self.robot_urdf_file_path, pose)
+                    if success is True:
+                        self.robot_loaded = True
                 except Exception as e:
                     rospy.logwarn("[simulation] Exception occured: {}".format(e))
             try:

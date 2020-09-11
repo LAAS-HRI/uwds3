@@ -41,7 +41,7 @@ class ArPerceptionNode(object):
 
         self.publish_viz = rospy.get_param("~publish_viz", True)
 
-        self.world_publisher = WorldPublisher("ar_tracks", self.global_frame_id)
+        self.world_publisher = WorldPublisher("ar_tracks")
 
         self.marker_publisher = MarkerPublisher("ar_markers")
 
