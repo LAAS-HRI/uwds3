@@ -163,7 +163,9 @@ class GazeRecorderNode(object):
                         self.nb_sample += 1
                     except Exception as e:
                         rospy.logwarn("Exeption occured: {}".format(e))
-            self.view_publisher.publish(self.bridge.cv2_to_imgmsg(view_image, "bgr8"))
+            msg = self.bridge.cv2_to_imgmsg(view_image, "bgr8")
+            msg.header = bgr_image_msg.header
+            self.view_publisher.publish(msg)
 
     def run(self):
         while not rospy.is_shutdown():

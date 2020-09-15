@@ -10,7 +10,8 @@ class Box(Shape):
     def __init__(self, dim_x=0., dim_y=0., dim_z=0., name="",
                  x=.0, y=.0, z=.0,
                  rx=.0, ry=.0, rz=.0,
-                 scale_x=1., scale_y=1., scale_z=1.):
+                 scale_x=1., scale_y=1., scale_z=1.,
+                 r=0, g=0., b=0., a=1.):
         """Box constructor
         """
         super(Box, self).__init__(ShapeType.BOX,
@@ -19,7 +20,8 @@ class Box(Shape):
                                   rx=rx, ry=ry, rz=rz,
                                   scale_x=scale_x,
                                   scale_y=scale_y,
-                                  scale_z=scale_z)
+                                  scale_z=scale_z,
+                                  r=r, g=g, b=b, a=a)
         self.x = dim_x
         self.y = dim_y
         self.z = dim_z

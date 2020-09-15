@@ -6,7 +6,6 @@ from cv_bridge import CvBridge
 import message_filters
 from sensor_msgs.msg import Image, CameraInfo
 from pyuwds3.types.camera import Camera
-from uwds3_msgs.msg import WorldStamped
 from pyuwds3.utils.tf_bridge import TfBridge
 from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
@@ -16,6 +15,7 @@ from pyuwds3.reasoning.estimation.shape_estimator import ShapeEstimator
 from pyuwds3.reasoning.estimation.head_pose_estimator import HeadPoseEstimator
 from pyuwds3.reasoning.detection.ssd_detector import SSDDetector
 from pyuwds3.reasoning.detection.dlib_face_detector import DlibFaceDetector
+from pyuwds3.reasoning.detection.mask_rcnn_detector import MaskRCNNDetector
 from pyuwds3.reasoning.estimation.facial_landmarks_estimator import FacialLandmarksEstimator
 from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, centroid_cost
 
@@ -50,9 +50,18 @@ class HumanPerceptionNode(object):
                                              face_detector_model_filename,
                                              face_detector_config_filename)
 
-        self.person_detector = SSDDetector(person_detector_weights_filename,
-                                           person_detector_model_filename,
-                                           person_detector_config_filename)
+        enable_cuda = rospy.get_param("~enable_cuda", True)
+        use_mask_rcnn = rospy.get_param("~use_mask_rcnn", True)
+        if use_mask_rcnn is True:
+            self.person_detector = MaskRCNNDetector(person_detector_weights_filename,
+                                                    person_detector_model_filename,
+                                                    person_detector_config_filename,
+                                                    enable_cuda=enable_cuda)
+        else:
+            self.person_detector = SSDDetector(person_detector_weights_filename,
+                                               person_detector_model_filename,
+                                               person_detector_config_filename,
+                                               enable_cuda=enable_cuda)
 
         shape_predictor_config_filename = rospy.get_param("~shape_predictor_config_filename", "")
 
@@ -229,8 +238,7 @@ class HumanPerceptionNode(object):
         ########################################################
         # Visualization
         ########################################################
-        if self.publish_tf is True:
-            self.view_publisher.publish(rgb_image, tracks, overlay_image=None, fps=pipeline_fps, view_pose=view_pose, camera=self.robot_camera)
+        self.view_publisher.publish(rgb_image, tracks, time, overlay_image=None, fps=pipeline_fps, view_pose=view_pose, camera=self.robot_camera)
 
         all_nodes = tracks
         return all_nodes, self.events

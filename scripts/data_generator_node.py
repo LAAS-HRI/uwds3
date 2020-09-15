@@ -74,7 +74,7 @@ class DataGenerator(object):
             xmax_camera = pose.pos.x+0.5
             ymin_camera = pose.pos.y-0.5
             ymax_camera = pose.pos.y+0.5
-            if simulator.test_aabb_collision(xmin_camera, ymin_camera, 0.1, xmax_camera, ymax_camera, zmax):
+            if simulator.test_overlap(xmin_camera, ymin_camera, 0.1, xmax_camera, ymax_camera, zmax):
                 continue
             rgb_image, depth_image, mask_image, tracks = simulator.get_camera_view(pose, camera)
             bgr_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)

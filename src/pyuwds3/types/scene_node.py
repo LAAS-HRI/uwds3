@@ -430,9 +430,11 @@ class SceneNode(object):
             if self.is_lost():
                 track_color = (0, 0, 200)
                 text_color = (250, 250, 250)
+                mask_color = (0, 0, 100)
             else:
                 track_color = (200, 0, 0)
                 text_color = (250, 250, 250)
+                mask_color = (100, 0, 0)
 
         if self.is_confirmed():
             if self.is_located():
@@ -464,12 +466,13 @@ class SceneNode(object):
                                 (255, 255, 255),
                                 2)
             if self.mask is not None:
-                contours, hierarchy = cv2.findContours(self.mask.astype("uint8"), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                roi = image[int(self.bbox.ymin):int(self.bbox.ymax), int(self.bbox.xmin):int(self.bbox.xmax)]
-                overlay = roi.copy()
-                cv2.drawContours(overlay, contours, -1, mask_color, 2, cv2.LINE_8, hierarchy, 100)
-                alpha = 0.6
-                roi = cv2.addWeighted(overlay, alpha, roi, 1 - alpha, 0, roi)
+                pass
+                # contours, hierarchy = cv2.findContours(self.mask.astype("uint8"), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                # roi = image[int(self.bbox.ymin):int(self.bbox.ymax), int(self.bbox.xmin):int(self.bbox.xmax)]
+                # overlay = roi.copy()
+                # cv2.drawContours(overlay, contours, -1, mask_color, 2, cv2.LINE_8, hierarchy, 100)
+                # alpha = 0.6
+                # roi = cv2.addWeighted(overlay, alpha, roi, 1 - alpha, 0, roi)
             cv2.rectangle(image, (self.bbox.xmin, self.bbox.ymax-26),
                                  (self.bbox.xmax, self.bbox.ymax),
                                  (200, 200, 200), -1)

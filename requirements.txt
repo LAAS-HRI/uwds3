@@ -3,10 +3,10 @@ scipy==0.10.0
 uuid
 pyyaml
 argparse
-scikit-image<0.15
-scikit-learn<0.15
+scikit-image
+scikit-learn
 tqdm
 dlib
-opencv-contrib-python<4.0
+opencv-contrib-python>=4.2
 fasttext
 pybullet

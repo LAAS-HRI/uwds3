@@ -10,9 +10,16 @@
   <arg name="global_frame_id" default="map"/>
 
   <!-- Detector model parameters -->
-  <arg name="person_detector_weights_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb"/>
-  <arg name="person_detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pbtxt"/>
-  <arg name="person_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_config.yaml"/>
+  <arg name="enable_cuda" default="false"/>
+  <arg name="use_mask_rcnn" default="false"/>
+
+  <arg name="person_detector_weights_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb" unless="$(arg use_mask_rcnn)"/>
+  <arg name="person_detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pbtxt" unless="$(arg use_mask_rcnn)"/>
+  <arg name="person_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_config.yaml" unless="$(arg use_mask_rcnn)"/>
+
+  <arg name="person_detector_weights_filename" default="$(find uwds3)/models/detection/mask_rcnn_inception_v2_coco_2018_01_28.pb" if="$(arg use_mask_rcnn)"/>
+  <arg name="person_detector_model_filename" default="$(find uwds3)/models/detection/mask_rcnn_inception_v2_coco_2018_01_28.pbtxt" if="$(arg use_mask_rcnn)"/>
+  <arg name="person_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_config.yaml" if="$(arg use_mask_rcnn)"/>
 
   <!-- Face detector model parameters -->
   <arg name="face_detector_weights_filename" default="$(find uwds3)/models/detection/opencv_face_detector_uint8.pb"/>
@@ -47,6 +54,9 @@
       depth_camera_info_topic: $(arg depth_camera_info_topic)
 
       global_frame_id: $(arg global_frame_id)
+
+      enable_cuda: $(arg enable_cuda)
+      use_mask_rcnn: $(arg use_mask_rcnn)
 
       person_detector_weights_filename: $(arg person_detector_weights_filename)
       person_detector_model_filename: $(arg person_detector_model_filename)

@@ -52,7 +52,7 @@
     <visual>
       <material name="Grey2"/>
       <geometry>
-        <mesh filename="package://pepper_meshes/meshes/1.0/HeadYaw.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/HeadYaw_0.10.stl" scale="0.1 0.1 0.1"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </visual>
@@ -83,7 +83,7 @@
     <visual>
       <material name="Grey2"/>
       <geometry>
-        <mesh filename="package://pepper_meshes/meshes/1.0/HeadPitch.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/HeadPitch_0.10.stl" scale="0.1 0.1 0.1"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </visual>
@@ -132,7 +132,7 @@
     <visual>
       <material name="Grey2"/>
       <geometry>
-        <mesh filename="package://pepper_meshes/meshes/1.0/HipRoll.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/HipRoll_0.10.stl" scale="0.1 0.1 0.1"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0.079"/>
     </visual>
@@ -164,7 +164,7 @@
     <visual>
       <material name="Grey2"/>
       <geometry>
-        <mesh filename="package://pepper_meshes/meshes/1.0/HipPitch.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/HipPitch_0.10.stl" scale="0.1 0.1 0.1"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0.268"/>
     </visual>
@@ -198,7 +198,7 @@
     <visual>
       <material name="Grey2"/>
       <geometry>
-        <mesh filename="package://pepper_meshes/meshes/1.0/KneePitch.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/KneePitch_0.10.stl" scale="0.1 0.1 0.1"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0.334"/>
     </visual>
@@ -241,7 +241,7 @@
       <material name="Grey2"/>
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/Torso.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/Torso_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -295,7 +295,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LShoulderPitch.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LShoulderPitch_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -349,7 +349,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LShoulderRoll.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LShoulderRoll_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -403,7 +403,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LElbowYaw.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LElbowYaw_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -457,7 +457,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LElbowRoll.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LElbowRoll_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -511,7 +511,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LWristYaw.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LWristYaw_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -591,7 +591,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RShoulderPitch.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RShoulderPitch_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -645,7 +645,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RShoulderRoll.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RShoulderRoll_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -699,7 +699,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RElbowYaw.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RElbowYaw_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -753,7 +753,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RElbowRoll.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RElbowRoll_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -807,7 +807,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RWristYaw.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RWristYaw_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -871,7 +871,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger41.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger41_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -923,7 +923,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger42.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger42_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -975,7 +975,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger11.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger11_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1027,7 +1027,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger12.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger12_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1079,7 +1079,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger33.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger33_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1131,7 +1131,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger31.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger31_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1183,7 +1183,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger21.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger21_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1235,7 +1235,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger32.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger32_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1287,7 +1287,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger13.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger13_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1339,7 +1339,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger32.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger32_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1391,7 +1391,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger11.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger11_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1443,7 +1443,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger22.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger22_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1495,7 +1495,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger13.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger13_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1547,7 +1547,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger22.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger22_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1599,7 +1599,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger21.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger21_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1651,7 +1651,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger41.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger41_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1703,7 +1703,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger12.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger12_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1755,7 +1755,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger23.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger23_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1807,7 +1807,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger23.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger23_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1859,7 +1859,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger43.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger43_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1911,7 +1911,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger43.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger43_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -1963,7 +1963,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger42.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger42_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -2015,7 +2015,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger31.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LFinger31_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -2067,7 +2067,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger33.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RFinger33_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -2119,7 +2119,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LThumb1.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LThumb1_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -2171,7 +2171,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RThumb2.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RThumb2_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -2223,7 +2223,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/RThumb1.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/RThumb1_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -2275,7 +2275,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/LThumb2.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/LThumb2_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -2329,7 +2329,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/WheelB.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/WheelB_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -2385,7 +2385,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/WheelFL.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/WheelFL_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 
@@ -2441,7 +2441,7 @@
 
       <geometry>
 
-        <mesh filename="package://pepper_meshes/meshes/1.0/WheelFR.dae" scale="0.1 0.1 0.1"/>
+        <mesh filename="package://pepper_meshes/meshes/1.0/WheelFR_0.10.stl" scale="0.1 0.1 0.1"/>
 
       </geometry>
 

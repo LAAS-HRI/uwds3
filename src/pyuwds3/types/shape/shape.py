@@ -15,7 +15,8 @@ class Shape(object):
     def __init__(self, type, name="",
                  scale_x=1., scale_y=1., scale_z=1.,
                  x=.0, y=.0, z=.0,
-                 rx=.0, ry=.0, rz=.0):
+                 rx=.0, ry=.0, rz=.0,
+                 r=0, g=0., b=0., a=1.):
         """ Shape constructor
         """
         self.name = name
@@ -24,7 +25,10 @@ class Shape(object):
                              rx=rx, ry=ry, rz=rz)
         self.scale = Vector3D(x=scale_x, y=scale_y, z=scale_z)
         self.color = np.zeros(4)
-        self.color[3] = 1.0
+        self.color[0] = r
+        self.color[1] = g
+        self.color[2] = b
+        self.color[3] = a
 
     def is_box(self):
         """ Returns True if is a box

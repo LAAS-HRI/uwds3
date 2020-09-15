@@ -1,17 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 import rospy
-import cv2
 from cv_bridge import CvBridge
-from sensor_msgs.msg import Image, CameraInfo
+from sensor_msgs.msg import CameraInfo
 from pyuwds3.types.camera import Camera
 from pyuwds3.types.vector.vector6d import Vector6D
 from pyuwds3.types.vector.vector6d_stable import Vector6DStable
-from pyuwds3.types.scene_node import SceneNode
+from pyuwds3.types.scene_node import SceneNode, SceneNodeState
 from pyuwds3.types.shape.mesh import Mesh
-from uwds3_msgs.msg import WorldStamped
 from pyuwds3.utils.tf_bridge import TfBridge
-from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
 from ar_track_alvar_msgs.msg import AlvarMarkers
@@ -67,6 +64,7 @@ class ArPerceptionNode(object):
                 node.label = marker["label"]
                 position = marker["position"]
                 orientation = marker["orientation"]
+                description = marker["description"]
                 color = marker["color"]
                 shape = Mesh("file://"+self.cad_models_search_path + "/" + marker["file"],
                              x=position["x"], y=position["y"], z=position["z"],
@@ -76,6 +74,8 @@ class ArPerceptionNode(object):
                 shape.color[2] = color["b"]
                 shape.color[3] = color["a"]
                 node.shapes.append(shape)
+                node.description = description
+                node.state = SceneNodeState.CONFIRMED
                 self.ar_nodes[marker["id"]] = node
 
     def camera_info_callback(self, msg):

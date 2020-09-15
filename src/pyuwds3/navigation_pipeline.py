@@ -108,7 +108,7 @@ class NavigationPipeline(BasePipeline):
         ########################################################
         # Visualization
         ########################################################
-        self.myself_view_publisher.publish(rgb_image, tracks, overlay_image=None, fps=pipeline_fps)
+        self.myself_view_publisher.publish(rgb_image, tracks, time, overlay_image=None, fps=pipeline_fps)
 
         all_nodes = [myself]+static_nodes+tracks
 

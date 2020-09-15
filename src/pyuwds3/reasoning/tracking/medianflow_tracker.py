@@ -34,7 +34,7 @@ class MedianFlowTracker(object):
             if depth_image is not None:
                 x = depth_image.shape[1]-1 if x > depth_image.shape[1] else x
                 y = depth_image.shape[0]-1 if y > depth_image.shape[0] else y
-                depth = depth_image[int(y)][int(x)]/1000.0
+                depth = depth_image[int(y-1)][int(x)]/1000.0
                 if math.isnan(depth) or depth == 0.0:
                     depth = None
             else:

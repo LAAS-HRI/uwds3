@@ -213,11 +213,11 @@ class DialoguePipeline(BasePipeline):
         ########################################################
         # Visualization
         ########################################################
-        self.myself_view_publisher.publish(rgb_image, tracks, overlay_image=None, fps=pipeline_fps, view_pose=view_pose, camera=self.robot_camera)
+        self.myself_view_publisher.publish(rgb_image, tracks, time, overlay_image=None, fps=pipeline_fps, view_pose=view_pose, camera=self.robot_camera)
 
         if self.frame_count == 3:
             if success:
-                self.other_view_publisher.publish(other_image, other_visible_tracks, fps=monitoring_fps)
+                self.other_view_publisher.publish(other_image, other_visible_tracks, time, fps=monitoring_fps)
 
         all_nodes = [myself]+static_nodes+tracks
         return all_nodes, self.events

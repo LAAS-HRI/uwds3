@@ -1,5 +1,5 @@
 base_config:
-  position_tolerance: 0.005
+  position_tolerance: 0.01
 
 controller_config:
  end_effectors: ['l_gripper_joint', 'r_gripper_joint']

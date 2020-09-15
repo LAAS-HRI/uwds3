@@ -11,7 +11,8 @@ class Cylinder(Shape):
     def __init__(self, w=0., h=0., name="",
                  x=.0, y=.0, z=.0,
                  rx=.0, ry=.0, rz=.0,
-                 scale_x=1., scale_y=1., scale_z=1.):
+                 scale_x=1., scale_y=1., scale_z=1.,
+                 r=0, g=0., b=0., a=1.):
         """ Cylinder constructor
         """
         super(Cylinder, self).__init__(ShapeType.CYLINDER,
@@ -20,7 +21,8 @@ class Cylinder(Shape):
                                        rx=rx, ry=ry, rz=rz,
                                        scale_x=scale_x,
                                        scale_y=scale_y,
-                                       scale_z=scale_z)
+                                       scale_z=scale_z,
+                                       r=r, g=g, b=b, a=a)
         self.w = w
         self.h = h
 

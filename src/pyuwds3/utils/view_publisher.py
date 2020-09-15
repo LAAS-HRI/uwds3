@@ -6,13 +6,14 @@ import threading
 
 
 class ViewPublisher(object):
-    def __init__(self, topic_name, queue_size=1):
+    def __init__(self, topic_name, queue_size=5):
         self.bridge = CvBridge()
         self.publisher = rospy.Publisher(topic_name, Image, queue_size=queue_size)
 
     def publish(self,
                 rgb_image,
                 tracks,
+                time,
                 view_pose=None,
                 camera=None,
                 events=[],
@@ -22,12 +23,13 @@ class ViewPublisher(object):
                  self.publisher,
                  rgb_image,
                  tracks,
+                 time,
                  view_pose=view_pose,
                  camera=camera,
                  events=events,
                  overlay_image=overlay_image,
                  fps=fps).start()
-
+                 
 
 class myThread(threading.Thread):
     def __init__(self,
@@ -35,6 +37,7 @@ class myThread(threading.Thread):
                  publisher,
                  rgb_image,
                  tracks,
+                 time,
                  view_pose=None,
                  camera=None,
                  events=[],
@@ -45,6 +48,7 @@ class myThread(threading.Thread):
         self.publisher = publisher
         self.rgb_image = rgb_image
         self.tracks = tracks
+        self.time = time
         self.view_pose = view_pose
         self.camera = camera
         self.events = events
@@ -64,4 +68,6 @@ class myThread(threading.Thread):
             track.draw(bgr_image, (230, 0, 120, 125), 1, view_pose=self.view_pose, camera=self.camera)
         for i, event in enumerate(self.events):
             cv2.putText(bgr_image, "{}".format(event.description), (20, 60+i*20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,200), 2)
-        self.publisher.publish(self.bridge.cv2_to_imgmsg(bgr_image, "bgr8"))
+        msg = self.bridge.cv2_to_imgmsg(bgr_image, "bgr8")
+        msg.header.stamp = self.time
+        self.publisher.publish(msg)

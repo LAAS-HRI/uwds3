@@ -187,7 +187,7 @@ class TabletopObjectPerceptionNode(object):
         # Visualization
         ########################################################
         if self.publish_tf is True:
-            self.view_publisher.publish(rgb_image, tracks, overlay_image=None, fps=pipeline_fps, view_pose=view_pose, camera=self.robot_camera)
+            self.view_publisher.publish(rgb_image, tracks, time, overlay_image=None, fps=pipeline_fps, view_pose=view_pose, camera=self.robot_camera)
 
         all_nodes = tracks
         return all_nodes, self.events

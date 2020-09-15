@@ -7,9 +7,9 @@ from .bbox import BoundingBox
 class BoundingBoxStable(BoundingBox):
     """ """
     def __init__(self, xmin=0, ymin=0, xmax=0, ymax=0, depth=None,
-                 p_cov_c=0.85, m_cov_c=0.003,
-                 p_cov_a=0.85, m_cov_a=1e-9,
-                 p_cov_h=0.85, m_cov_h=1e-9, time=None):
+                 p_cov_c=0.85, m_cov_c=1e-13,
+                 p_cov_a=0.85, m_cov_a=1e-13,
+                 p_cov_h=0.85, m_cov_h=1e-13, time=None):
         self.xmin = int(xmin)
         self.ymin = int(ymin)
         self.xmax = int(xmax)

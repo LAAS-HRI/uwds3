@@ -11,7 +11,7 @@ from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.reasoning.simulation.internal_simulator import InternalSimulator
-from pyuwds3.reasoning.monitoring.tabletop_action_monitor import TabletopActionMonitor
+from pyuwds3.reasoning.monitoring.physics_monitor import PhysicsMonitor
 from pyuwds3.reasoning.monitoring.perspective_monitor import PerspectiveMonitor
 
 
@@ -35,7 +35,7 @@ class InternalSimulatorNode(object):
         self.base_frame_id = rospy.get_param("~base_frame_id", "odom")
 
         self.use_ar_tags = rospy.get_param("use_ar_tags", True)
-        self.ar_tags_topic = rospy.get_param("ar_tags_topic", "ar_tags_tracks")
+        self.ar_tags_topic = rospy.get_param("ar_tags_topic", "ar_tracks")
         if self.use_ar_tags is True:
             self.ar_tags_tracks = []
             self.ar_tags_sub = rospy.Subscriber(self.ar_tags_topic, WorldStamped, self.ar_tags_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
@@ -86,7 +86,7 @@ class InternalSimulatorNode(object):
 
         self.use_physical_monitoring = rospy.get_param("use_physical_monitoring", True)
         if self.use_physical_monitoring is True:
-            self.physics_monitor = TabletopActionMonitor(self.internal_simulator)
+            self.physics_monitor = PhysicsMonitor(self.internal_simulator)
 
         self.use_perspective_monitoring = rospy.get_param("use_perspective_monitoring", True)
         if self.use_perspective_monitoring is True:
@@ -130,6 +130,9 @@ class InternalSimulatorNode(object):
                                                   clipnear=self.robot_camera_clipnear,
                                                   clipfar=self.robot_camera_clipfar)
         if self.internal_simulator.is_robot_loaded() is True:
+
+            header = msg.header
+            header.frame_id = self.global_frame_id
             self.frame_count %= self.n_frame
 
             if self.use_perspective_monitoring is True:
@@ -139,19 +142,20 @@ class InternalSimulatorNode(object):
                     success, other_image, other_visible_tracks, self.events = self.perspective_monitor.monitor_others(face_tracks)
                     monitoring_fps = cv2.getTickFrequency() / (cv2.getTickCount()-monitoring_timer)
                     if success:
-                        self.other_view_publisher.publish(other_image, other_visible_tracks, fps=monitoring_fps)
+                        self.other_view_publisher.publish(other_image, other_visible_tracks, header.stamp, fps=monitoring_fps)
 
-        object_tracks = self.ar_tags_tracks + self.object_tracks
-        person_tracks = [f for f in self.human_tracks if f.label == "person"]
+            object_tracks = self.ar_tags_tracks + self.object_tracks
+            person_tracks = [f for f in self.human_tracks if f.label == "person"]
 
-        corrected_object_tracks, action_events = self.physics_monitor.monitor([], object_tracks, person_tracks, [])
+            corrected_object_tracks, action_events = self.physics_monitor.monitor(object_tracks, person_tracks)
 
-        corrected_tracks = corrected_object_tracks + self.human_tracks + self.internal_simulator.get_static_entities()
+            corrected_tracks = self.internal_simulator.get_static_entities() + self.human_tracks + corrected_object_tracks
 
-        self.world_publisher.publish(corrected_tracks, action_events, msg.header)
-        self.marker_publisher.publish(corrected_tracks, msg.header)
+            self.world_publisher.publish(corrected_tracks, action_events, header)
 
-        self.frame_count += 1
+            self.marker_publisher.publish(corrected_tracks, header)
+
+            self.frame_count += 1
 
     def run(self):
         while not rospy.is_shutdown():

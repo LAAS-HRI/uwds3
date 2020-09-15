@@ -106,7 +106,7 @@ class InternalSimulator(object):
                         rospy.logwarn("[simulator] Unable to load {} node, skip it.".format(entity["id"]))
 
         p.setGravity(0, 0, -10)
-        p.setRealTimeSimulation(1)
+        p.setRealTimeSimulation(0)
 
         self.robot_loaded = False
         self.joint_states_last_update = None
@@ -172,21 +172,20 @@ class InternalSimulator(object):
                     tf_world_link = np.dot(translation_matrix(t_link), quaternion_matrix(q_link))
                     tf_inertial_link = np.dot(translation_matrix(t_inertial), quaternion_matrix(q_inertial))
                     world_transform = np.dot(tf_world_link, np.linalg.inv(tf_inertial_link))
-
                 else:
                     t_link, q_link = p.getBasePositionAndOrientation(sim_id)
                     world_transform = np.dot(translation_matrix(t_link), quaternion_matrix(q_link))
 
                 if type == p.GEOM_SPHERE:
-                    primitive_shape = Sphere(dimensions[0]*2.0)
+                    primitive_shape = Sphere(d=dimensions[0]*2.0)
                 elif type == p.GEOM_BOX:
-                    primitive_shape = Box(dimensions[0], dimensions[1], dimensions[2])
+                    primitive_shape = Box(dim_x=dimensions[0], dim_y=dimensions[1], dim_z=dimensions[2])
                 elif type == p.GEOM_CYLINDER:
-                    primitive_shape = Cylinder(dimensions[1]*2.0, dimensions[0])
+                    primitive_shape = Cylinder(w=dimensions[1]*2.0, h=dimensions[0])
                 elif type == p.GEOM_PLANE:
-                    primitive_shape = Box(dimensions[0], dimensions[1], 0.0001)
+                    primitive_shape = Box(dim_x=dimensions[0], dim_y=dimensions[1], dim_z=0.0001)
                 elif type == p.GEOM_MESH:
-                    primitive_shape = Mesh("file://"+mesh_file_path,
+                    primitive_shape = Mesh(mesh_resource="file://"+mesh_file_path,
                                            scale_x=dimensions[0],
                                            scale_y=dimensions[1],
                                            scale_z=dimensions[2])
@@ -217,14 +216,13 @@ class InternalSimulator(object):
 
                     scene_node.pose.from_quaternion(orientation[0], orientation[1], orientation[2], orientation[3])
 
-                if len(rgba_color) > 0:
-                    primitive_shape.color[0] = rgba_color[0]
-                    primitive_shape.color[1] = rgba_color[1]
-                    primitive_shape.color[2] = rgba_color[2]
-                    primitive_shape.color[3] = rgba_color[3]
+                primitive_shape.color[0] = rgba_color[0]
+                primitive_shape.color[1] = rgba_color[1]
+                primitive_shape.color[2] = rgba_color[2]
+                primitive_shape.color[3] = rgba_color[3]
 
                 scene_node.shapes.append(primitive_shape)
-            self.nodes_map[id] = scene_node
+            self.nodes_map[id] = copy.deepcopy(scene_node)
             if static is True:
                 self.static_nodes.append(scene_node)
             else:
@@ -247,6 +245,9 @@ class InternalSimulator(object):
             hit_object = self.reverse_entity_id_map[sim_id]
             return True, distance, hit_object
         return False, None, None
+
+    def get_aabb(self, object):
+        pass
 
     def load_node(self, scene_node, static=False):
         """ Load a scene node in the simulator
@@ -316,18 +317,20 @@ class InternalSimulator(object):
                     elif shape.is_mesh():
                         shape_type = p.GEOM_MESH
                         mesh_resource = shape.mesh_resource
-                        scale = [shape.scale_x, shape.scale_y, shape.scale_z]
-                        rospy.logwarn("[simulation] Collision shape not supported for Mesh primitives")
-                        visual_shape_id = p.createVisualShape(shape_type,
-                                                              meshScale=scale,
-                                                              fileName=mesh_resource,
-                                                              visualFramePosition=t,
-                                                              visualFrameOrientation=q,
-                                                              rgbaColor=shape.color)
-                        if visual_shape_id >= 0:
-                            mass = 0.0
-                            shape_masses.append(mass)
-                            visual_shape_ids.append(visual_shape_id)
+                        mesh_resource = mesh_resource.replace("obj", "urdf")
+                        mesh_resource = mesh_resource.replace("file://", "")
+
+                        success, node = self.load_urdf(scene_node.id,
+                                                       mesh_resource,
+                                                       base_pose,
+                                                       label=scene_node.label,
+                                                       description=scene_node.description)
+                        for shape_id in enumerate(node.shapes):
+                            node.shapes[shape_id].color = scene_node.shapes[shape_id].color
+                        if success is True:
+                            return True
+                        else:
+                            return False
                     else:
                         pass
                 assert len(shape_masses) == max(len(collision_shape_ids), len(visual_shape_ids))
@@ -344,7 +347,7 @@ class InternalSimulator(object):
                     p.changeDynamics(sim_id, -1, frictionAnchor=1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
                     self.entity_id_map[scene_node.id] = sim_id
                     self.reverse_entity_id_map[sim_id] = scene_node.id
-                    self.nodes_map[scene_node.id] = copy.deepcopy(scene_node)
+                    self.nodes_map[scene_node.id] = scene_node
                     if static is True:
                         self.static_nodes.append(scene_node)
                     else:
@@ -429,7 +432,6 @@ class InternalSimulator(object):
     def get_camera_view(self, camera_pose, camera, target_position=None, occlusion_threshold=0.01, rendering_ratio=1.0):
         """ Render the rgb, depth and mask images from any point or view and compute the corresponding visible nodes
         """
-        # rendering_ratio = 1.0
         visible_nodes = []
         rot = quaternion_matrix(camera_pose.quaternion())
         trans = translation_matrix(camera_pose.position().to_array().flatten())
@@ -536,7 +538,7 @@ class InternalSimulator(object):
 
         return rgb_image_resized, real_depth_image_resized, mask_image_resized, visible_nodes
 
-    def test_aabb_collision(self, xmin, ymin, zmin, xmax, ymax, zmax):
+    def test_overlap(self, xmin, ymin, zmin, xmax, ymax, zmax):
         """ Return True if the aabb is in contact with an other object
         """
         contacts = p.getOverlappingObjects([xmin, ymin, zmin], [xmax, ymax, zmax])
@@ -593,6 +595,9 @@ class InternalSimulator(object):
         """
         return self.robot_moving
 
+    def step_simulation(self):
+        p.stepSimulation()
+
     def joint_states_callback(self, joint_states_msg):
         """
         """
@@ -601,8 +606,8 @@ class InternalSimulator(object):
             if self.robot_loaded is False:
                 try:
                     success, _ = self.load_urdf("myself", self.robot_urdf_file_path, pose)
-                    if success is True:
-                        self.robot_loaded = True
+                    rospy.loginfo("[simulation] Robot loaded")
+                    self.robot_loaded = True
                 except Exception as e:
                     rospy.logwarn("[simulation] Exception occured: {}".format(e))
             try:
@@ -634,14 +639,3 @@ class InternalSimulator(object):
                 else:
                     self.robot_moving = False
                     p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
-            if self.use_gui is False:
-                if self.joint_states_last_update is None:
-                    p.stepSimulation()
-                    self.joint_states_last_update = cv2.getTickCount()
-                else:
-                    now = cv2.getTickCount()
-                    elapsed_time = (now-self.joint_states_last_update) / cv2.getTickFrequency()
-                    nb_step = int(elapsed_time/(1/240.0))
-                    for i in range(0, nb_step):
-                        p.stepSimulation()
-                    self.joint_states_last_update = now

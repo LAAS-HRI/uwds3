@@ -8,21 +8,22 @@ from pyuwds3.types.detection import Detection
 class SSDDetector(object):
     """
     """
-
-    def __init__(self, weights, model, config_file_path, input_size=300, max_overlap_ratio=0.3, swapRB=False):
+    def __init__(self, weights, model, config_file_path, input_size=(300, 300), max_overlap_ratio=0.3, swapRB=False, enable_cuda=True):
         """
         """
         with open(config_file_path, "r") as f:
             self.config = yaml.safe_load(f)
         self.model = cv2.dnn.readNetFromTensorflow(weights, model)
+        if enable_cuda is True:
+            self.model.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+            self.model.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
         self.input_size = input_size
         self.max_overlap_ratio = max_overlap_ratio
         self.swapRB = swapRB
 
     def detect(self, rgb_image, depth_image=None):
-        """
-        """
-        frame_resized = cv2.resize(rgb_image, (self.input_size, self.input_size), interpolation=cv2.INTER_AREA)
+        """ """
+        frame_resized = cv2.resize(rgb_image, self.input_size, interpolation=cv2.INTER_AREA)
 
         self.model.setInput(cv2.dnn.blobFromImage(frame_resized, swapRB=self.swapRB))
 
@@ -35,8 +36,8 @@ class SSDDetector(object):
         rows = frame_resized.shape[0]
         cols = frame_resized.shape[1]
 
-        height_factor = rgb_image.shape[0]/float(self.input_size)
-        width_factor = rgb_image.shape[1]/float(self.input_size)
+        height_factor = rgb_image.shape[0]/float(self.input_size[0])
+        width_factor = rgb_image.shape[1]/float(self.input_size[1])
 
         for i in range(detections.shape[2]):
             class_id = int(detections[0, 0, i, 1])

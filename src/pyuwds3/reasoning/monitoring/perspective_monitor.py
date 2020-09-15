@@ -6,7 +6,7 @@ from .monitor import Monitor
 class PerspectiveMonitor(Monitor):
     """
     """
-    def __init__(self, internal_simulator, beliefs_base, rendering_ratio=(1/4.5)):
+    def __init__(self, internal_simulator, beliefs_base, rendering_ratio=(1/10.0)):
         """
         """
         super(PerspectiveMonitor, self).__init__(internal_simulator=internal_simulator,

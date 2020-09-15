@@ -9,7 +9,6 @@ This software is composed by two data-structures:
 It also contains differents modules to generate and maintain the scene graph and the timeline from the robot camera image by integrating a CPU based perception pipeline alongwith a real-time physics engine and a probabilistic triplet store.
 
 Main features:
- - [x] Lightweight CPU perception pipeline that use SSD detectors with kalman+medianflow trackers to let the GPU for the physics engine.
  - [x] Give to the robot physical sense of his body by using the simulation engine at runtime and the `/joint_states` topic published by the robot.
  * [x] Compute the view of the scene graph from any pose in the 3d space to latter process with image-based reasoning.
  * [x] Detect, explain and repairs beliefs divergeance by monitoring the view of the human it interact with (called the perspective).
@@ -21,7 +20,9 @@ More information in the [documentation](https://github.com/LAAS-HRI/uwds3/wiki).
 # Quick start
 **Note:** We assume that you have ROS installed, otherwise install it by following the instructions [here](https://wiki.ros.org/ROS/Installation).
 
-Follow this instructions to quickly install :
+In order to enable CUDA support (usefull for the MASK-RCNN detector), [follow this tutorial](https://www.pyimagesearch.com/2020/02/03/how-to-use-opencvs-dnn-module-with-nvidia-gpus-cuda-and-cudnn/) and to install the kinect2 drivers [follow this one](https://github.com/code-iai/iai_kinect2).
+
+Then follow this instructions to install Underworlds:
 ```shell
 cd ~/catkin_ws/src # go to your catkin workspace src folder
 git clone https://github.com/LAAS-HRI/uwds3_msgs.git # clone the msgs definitions
@@ -45,7 +46,7 @@ roslaunch uwds3 human_perception.launch
 roslaunch uwds3 internal_simulator.launch
 ```
 
-**IMPORTANT**: To be able to load the robot meshes in bullet you need to have the description package in the `catkin_ws/src` folder (exept for r2d2 that is composed only by simple primitives).
+**IMPORTANT**: To be able to load the robot meshes in bullet you need to have the description package in the `catkin_ws/src` folder (exept for r2d2 that is composed only by simple primitives). One workaround is to create a symbolic link using the command `ln -s [target_file] [link_name]`.
 
 Open Rviz in another shell with the command `rviz`, and add the following displays:
 * Image display (topic : `human_perception`) # the people detected by the robot

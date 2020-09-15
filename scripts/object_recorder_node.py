@@ -6,7 +6,7 @@ import cv2
 import os
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-from pyuwds.reasoning.detection.foreground_detector import ForegroundDetector
+from pyuwds3.reasoning.detection.foreground_detector import ForegroundDetector
 from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, centroid_cost
 
 DEFAULT_SENSOR_QUEUE_SIZE = 10
@@ -29,14 +29,14 @@ class ObjectRecorderNode(object):
                                                  centroid_cost,
                                                  0.98,
                                                  None,
-                                                 5,
-                                                 60,
+                                                 40,
+                                                 10,
                                                  120,
                                                  use_tracker=True)
 
         self.data_path = self.output_data_directory+"/"+self.label
 
-        self.max_samples = rospy.get_param("~max_samples", 50)
+        self.max_samples = rospy.get_param("~max_samples", 10)
 
         self.nb_sample = 0
 
@@ -59,18 +59,19 @@ class ObjectRecorderNode(object):
 
             biggest_object = None
             for track in tracks:
-                if biggest_object is None:
-                    biggest_object = track
-                else:
-                    if track.bbox.area() > biggest_object.bbox.area():
+                if track.is_confirmed():
+                    if biggest_object is None:
                         biggest_object = track
+                    else:
+                        if track.bbox.area() > biggest_object.bbox.area():
+                            biggest_object = track
 
             if biggest_object is not None:
                 xmin = biggest_object.bbox.xmin
                 xmax = biggest_object.bbox.xmax
                 ymin = biggest_object.bbox.ymin
                 ymax = biggest_object.bbox.ymax
-                object_image = rgb_image[int(ymin):int(ymax), int(xmin):int(xmax)]
+                object_image = bgr_image[int(ymin+1):int(ymax-1), int(xmin+1):int(xmax-1)]
                 sample_uuid = str(uuid.uuid4()).replace("-", "")
                 try:
                     rospy.loginfo("[object_recorder] sample: {} id: {}".format(self.nb_sample, sample_uuid))

@@ -9,7 +9,7 @@ from .types.scene_node import SceneNode
 from .reasoning.estimation.object_pose_estimator import ObjectPoseEstimator
 from .reasoning.estimation.shape_estimator import ShapeEstimator
 from .reasoning.estimation.color_features_estimator import ColorFeaturesEstimator
-from .reasoning.monitoring.tabletop_action_monitor import TabletopActionMonitor
+from .reasoning.monitoring.physics_monitor import PhysicsMonitor
 from .types.vector.vector6d import Vector6D
 from .types.detection import Detection
 from .utils.view_publisher import ViewPublisher
@@ -88,7 +88,7 @@ class TabletopPipeline(BasePipeline):
 
         self.object_pose_estimator = ObjectPoseEstimator()
 
-        self.action_monitor = TabletopActionMonitor(internal_simulator)
+        self.action_monitor = PhysicsMonitor(internal_simulator)
         ########################################################
         # Visualization
         ########################################################
@@ -260,7 +260,7 @@ class TabletopPipeline(BasePipeline):
         ########################################################
         # Visualization
         ########################################################
-        self.myself_view_publisher.publish(rgb_image, corrected_tracks, events=self.events, overlay_image=None, fps=pipeline_fps)
+        self.myself_view_publisher.publish(rgb_image, corrected_tracks, time, events=self.events, overlay_image=None, fps=pipeline_fps)
 
-        all_nodes = [myself]+static_nodes+corrected_tracks
+        all_nodes = static_nodes+corrected_tracks
         return all_nodes, self.events
