@@ -15,7 +15,7 @@
   <arg name="use_simulation_gui" default="false"/>
   <arg name="simulation_config_filename" default="$(find uwds3)/config/simulation/pr2_config.yaml"/>
   <arg name="cad_models_additional_search_path" default="$(find uwds3)/models/cad_models"/>
-  <arg name="static_entities_config_filename" default="$(find uwds3)/config/simulation/adream_static_entities.yaml"/>
+  <arg name="static_entities_config_filename" default="$(find uwds3)/config/simulation/empty_floor.yaml"/>
   <arg name="robot_urdf_file_path" default="urdf/$(arg robot).urdf"/>
 
   <!-- Other parameters -->
