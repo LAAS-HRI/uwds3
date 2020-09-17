@@ -9,13 +9,13 @@
   <arg name="depth_camera_info_topic" default="kinect2/qhd/camera_info"/>
 
   <arg name="global_frame_id" default="map"/>
-  <arg name="base_frame_id" default="base_link"/>
+  <arg name="base_frame_id" default="base_footprint"/>
 
   <!-- Simulation parameters -->
   <arg name="use_simulation_gui" default="false"/>
   <arg name="simulation_config_filename" default="$(find uwds3)/config/simulation/pr2_config.yaml"/>
   <arg name="cad_models_additional_search_path" default="$(find uwds3)/models/cad_models"/>
-  <arg name="static_entities_config_filename" default="$(find uwds3)/config/simulation/empty_floor.yaml"/>
+  <arg name="static_entities_config_filename" default="$(find uwds3)/config/simulation/tabletop_setup.yaml"/>
   <arg name="robot_urdf_file_path" default="urdf/$(arg robot).urdf"/>
 
   <!-- Other parameters -->

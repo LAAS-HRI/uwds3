@@ -28,16 +28,14 @@ def centroid_cost(track_a, track_b):
 class PhysicsMonitor(Monitor):
     """ Special monitor for tabletop scenario
     """
-    def __init__(self, internal_simulator=None, beliefs_base=None, placement_tolerance=0.1, holding_tolerance=0.08):
+    def __init__(self, internal_simulator=None, beliefs_base=None, position_tolerance=0.04):
         """ Tabletop monitor constructor
         """
         super(PhysicsMonitor, self).__init__(internal_simulator=internal_simulator, beliefs_base=beliefs_base)
         self.previous_object_states = {}
         self.previous_object_tracks_map = {}
-        self.placement_tolerance = placement_tolerance
-        self.holding_tolerance = holding_tolerance
+        self.position_tolerance = position_tolerance
         self.centroid_assignement = LinearAssignment(centroid_cost, max_distance=None)
-        self.sim_last_update = None
 
     def monitor(self, object_tracks, person_tracks, time=None):
         """ Monitor the physical consistency of the objects and detect human tabletop actions
@@ -51,6 +49,7 @@ class PhysicsMonitor(Monitor):
         for object in object_tracks:
             if not self.simulator.is_entity_loaded(object.id):
                 self.simulator.load_node(object)
+            self.simulator.reset_entity_pose(object.id, object.pose)
         # perform prediction
         self.generate_prediction()
 
@@ -65,11 +64,8 @@ class PhysicsMonitor(Monitor):
                     perceived_position = object.pose.position()
 
                     distance = euclidean(simulated_position.to_array(), perceived_position.to_array())
-
-                    is_physically_plausible = distance < self.placement_tolerance
-                    if object.id in self.previous_object_states:
-                        if self.previous_object_states[object.id] == ActionStates.HELD:
-                            is_physically_plausible = distance < self.holding_tolerance
+                    #print distance
+                    is_physically_plausible = distance < self.position_tolerance
 
                     # compute next state
                     if is_physically_plausible:
@@ -78,29 +74,32 @@ class PhysicsMonitor(Monitor):
                         next_object_states[object.id] = ActionStates.HELD
                         self.simulator.reset_entity_pose(object.id, object.pose)
 
+                    if object.id not in self.previous_object_states:
+                        if next_object_states[object.id] == ActionStates.HELD:
+                            self.assign_and_trigger_action(object, "pick", person_tracks, time)
+                        if next_object_states[object.id] == ActionStates.PLACED:
+                            self.assign_and_trigger_action(object, "place", person_tracks, time)
+
         for object_id in self.previous_object_states.keys():
             if object_id in self.previous_object_tracks_map:
                 object = self.previous_object_tracks_map[object_id]
-                if object_id not in next_object_states:
-                    if self.previous_object_states[object_id] == ActionStates.HELD:
-                        next_object_states[object_id] = ActionStates.RELEASED
-                        self.assign_and_trigger_action(object, "release", person_tracks, time)
-                    else:
-                        next_object_states[object_id] = self.previous_object_states[object_id]
-                elif self.previous_object_states[object_id] == ActionStates.HELD and \
-                        next_object_states[object_id] == ActionStates.PLACED:
-                    self.assign_and_trigger_action(object, "place", person_tracks, time)
-                elif self.previous_object_states[object_id] == ActionStates.RELEASED and \
-                        next_object_states[object_id] == ActionStates.PLACED:
-                    self.assign_and_trigger_action(object, "place", person_tracks, time)
-                elif self.previous_object_states[object_id] == ActionStates.PLACED and \
-                        next_object_states[object_id] == ActionStates.HELD:
-                    self.assign_and_trigger_action(object, "pick", person_tracks, time)
-                elif self.previous_object_states[object_id] == ActionStates.RELEASED and \
-                        next_object_states[object_id] == ActionStates.HELD:
-                    self.assign_and_trigger_action(object, "pick", person_tracks, time)
+                if object_id in next_object_states:
+                    if self.previous_object_states[object_id] == ActionStates.HELD and \
+                            next_object_states[object_id] == ActionStates.PLACED:
+                        self.assign_and_trigger_action(object, "place", person_tracks, time)
+                    if self.previous_object_states[object_id] == ActionStates.RELEASED and \
+                            next_object_states[object_id] == ActionStates.PLACED:
+                        self.assign_and_trigger_action(object, "place", person_tracks, time)
+                    if self.previous_object_states[object_id] == ActionStates.PLACED and \
+                            next_object_states[object_id] == ActionStates.HELD:
+                        self.assign_and_trigger_action(object, "pick", person_tracks, time)
+                    if self.previous_object_states[object_id] == ActionStates.RELEASED and \
+                            next_object_states[object_id] == ActionStates.HELD:
+                        self.assign_and_trigger_action(object, "pick", person_tracks, time)
                 else:
-                    pass
+                    if self.previous_object_states[object_id] == ActionStates.HELD:
+                        self.assign_and_trigger_action(object, "release", person_tracks, time)
+                        next_object_states[object_id] = ActionStates.RELEASED
 
         corrected_object_tracks = self.simulator.get_not_static_entities()
         self.previous_object_states = next_object_states
@@ -108,18 +107,11 @@ class PhysicsMonitor(Monitor):
 
         return corrected_object_tracks, self.relations
 
-    def generate_prediction(self):
+    def generate_prediction(self, prediction_horizon=(1/10.0)):
         """ Perform physics prediction"""
-        if self.sim_last_update is None:
+        nb_step = int(prediction_horizon/(1/240.0))
+        for i in range(0, nb_step):
             self.simulator.step_simulation()
-            self.sim_last_update = cv2.getTickCount()
-        else:
-            now = cv2.getTickCount()
-            elapsed_time = (now-self.sim_last_update) / cv2.getTickFrequency()
-            nb_step = int(elapsed_time/(1/240.0))
-            for i in range(0, nb_step):
-                self.simulator.step_simulation()
-            self.sim_last_update = now
 
     def assign_and_trigger_action(self, object, action, person_tracks, time):
         """ Assign the action to the closest person of the given object and trigger it """

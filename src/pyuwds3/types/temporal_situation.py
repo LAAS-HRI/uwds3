@@ -90,6 +90,7 @@ class TemporalSituation(object):
         """
         self.type = msg.type
         self.description = msg.description
+        self.predicate = msg.predicate
         self.subject = msg.subject_id
         self.object = msg.object_id
         self.confidence = msg.confidence
@@ -113,6 +114,7 @@ class TemporalSituation(object):
         msg = uwds3_msgs.msg.TemporalSituation()
         msg.type = self.type
         msg.description = self.description
+        msg.predicate = self.predicate
         msg.subject_id = self.subject
         msg.object_id = self.object
         msg.confidence = self.confidence

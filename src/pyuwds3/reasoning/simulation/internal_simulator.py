@@ -324,14 +324,8 @@ class InternalSimulator(object):
                                                        mesh_resource,
                                                        base_pose,
                                                        label=scene_node.label,
-                                                       description=scene_node.description)
-                        if len(node.shapes) > 0:
-                            for shape_id, shape in enumerate(node.shapes):
-                                node.shapes[shape_id].color = scene_node.shapes[shape_id].color
-                        if static is True:
-                            self.static_nodes.append(scene_node)
-                        else:
-                            self.not_static_nodes.append(scene_node)
+                                                       description=scene_node.description,
+                                                       static=static)
                         if success is True:
                             return True
                         else:

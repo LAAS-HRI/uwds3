@@ -61,6 +61,7 @@ class ArPerceptionNode(object):
         for marker in self.ar_config:
             if marker["id"] not in self.ar_nodes:
                 node = SceneNode()
+                node.id = marker["id"]
                 node.label = marker["label"]
                 position = marker["position"]
                 orientation = marker["orientation"]
@@ -76,7 +77,7 @@ class ArPerceptionNode(object):
                 node.shapes.append(shape)
                 node.description = description
                 node.state = SceneNodeState.CONFIRMED
-                self.ar_nodes[marker["id"]] = node
+                self.ar_nodes[marker["marker_id"]] = node
 
     def camera_info_callback(self, msg):
         """ """

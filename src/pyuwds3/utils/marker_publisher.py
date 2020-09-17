@@ -46,7 +46,11 @@ class MarkerPublisher(object):
                         marker.color.r = shape.color[0]
                         marker.color.g = shape.color[1]
                         marker.color.b = shape.color[2]
-                        marker.color.a = shape.color[3]
+
+                        if track.label in ["person", "face"]:
+                            marker.color.a = 0.2
+                        else:
+                            marker.color.a = shape.color[3]
 
                         if track.is_static() is True:
                             marker.color.a = 1.0
@@ -71,6 +75,10 @@ class MarkerPublisher(object):
                                 marker.type = Marker.MESH_RESOURCE
                                 marker.mesh_resource = shape.mesh_resource
                                 marker.mesh_use_embedded_materials = True
+                                marker.color.r = 0.0
+                                marker.color.g = 0.0
+                                marker.color.b = 0.0
+                                marker.color.a = 0.0
                             else:
                                 marker.type = Marker.TRIANGLE_LIST
                                 marker.points = shape.vertices
