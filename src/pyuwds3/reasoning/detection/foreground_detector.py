@@ -68,7 +68,7 @@ class ForegroundDetector(object):
             self.foreground_pub.publish(self.bridge.cv2_to_imgmsg(foreground_mask_full))
 
         # find the contours
-        contours, hierarchy = cv2.findContours(foreground_mask_full, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        _, contours, _ = cv2.findContours(foreground_mask_full, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         for c in contours:
             peri = cv2.arcLength(c, True)

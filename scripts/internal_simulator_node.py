@@ -47,7 +47,7 @@ class InternalSimulatorNode(object):
             self.motion_capture_sub = rospy.Subscriber(self.motion_capture_topic, WorldStamped, self.motion_capture_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
         self.use_object_perception = rospy.get_param("use_object_perception", True)
-        self.object_perception_topic = rospy.get_param("object_perception_topic", "object_tracks")
+        self.object_perception_topic = rospy.get_param("object_perception_topic", "tabletop_object_tracks")
         if self.use_object_perception is True:
             self.object_tracks = []
             self.object_sub = rospy.Subscriber(self.object_perception_topic, WorldStamped, self.object_perception_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)

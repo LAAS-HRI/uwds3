@@ -75,10 +75,6 @@ class MarkerPublisher(object):
                                 marker.type = Marker.MESH_RESOURCE
                                 marker.mesh_resource = shape.mesh_resource
                                 marker.mesh_use_embedded_materials = True
-                                marker.color.r = 0.0
-                                marker.color.g = 0.0
-                                marker.color.b = 0.0
-                                marker.color.a = 0.0
                             else:
                                 marker.type = Marker.TRIANGLE_LIST
                                 marker.points = shape.vertices
