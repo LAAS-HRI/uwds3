@@ -26,14 +26,13 @@ class Monitor(object):
         """ Trigger an event like predicate
         """
         if object is not None:
-            description = subject.label+"-"+subject.id[:6]+" "+event+" "+object.label+"-"+object.id[:6]
+            description = subject.label+"("+subject.id[:6]+") "+event+" "+object.label+"("+object.id[:6]+")"
             e = Event(subject.id, description, predicate=event, object=object.id, time=time)
             self.relations_index[subject.id+str(event)+object.id] = len(self.relations)-1
         else:
             description = subject.label+"-"+subject.id[:6]+" "+event
             e = Event(subject.id, description, time=time)
             self.relations_index[subject.id+str(event)] = len(self.relations)-1
-        print("Evt: "+description)
         self.relations.append(e)
 
     def update_relation_prob(self, subject, predicate, object, confidence):
@@ -46,17 +45,19 @@ class Monitor(object):
         """ Start a temporal predictate
         """
         if object is not None:
-            description = subject.label+"-"+subject.id[:6]+" is "+predicate+" "+object.label+"-"+object.id[:6]
-            relation = TemporalPredicate(subject.id, description, predicate=predicate, object=object.id)
-            relation.start(time=time)
-            self.relations.append(relation)
-            self.relations_index[subject.id+str(predicate)+object.id] = len(self.relations)-1
+            if subject.id+str(predicate)+object.id not in self.relations_index:
+                description = subject.description+"("+subject.id[:6]+") is "+predicate+" "+object.description+"("+object.id[:6]+")"
+                relation = TemporalPredicate(subject.id, description, predicate=predicate, object=object.id)
+                relation.start(time=time)
+                self.relations.append(relation)
+                self.relations_index[subject.id+str(predicate)+object.id] = len(self.relations)-1
         else:
-            description = subject.label+"-"+subject.id[:6]+" is "+predicate
-            relation = TemporalPredicate(subject.id, description, predicate=predicate)
-            self.relations.append(relation.start(time=time))
-            self.relations_index[subject.id+str(predicate)] = len(self.relations)-1
-        print("Str: "+description)
+            if subject.id+str(predicate) not in self.relations_index:
+                description = subject.description+"("+subject.id[:6]+") is "+predicate
+                relation = TemporalPredicate(subject.id, description, predicate=predicate)
+                self.relations.append(relation.start(time=time))
+                self.relations_index[subject.id+str(predicate)] = len(self.relations)-1
+                print("Start: "+relation.description)
 
     def end_predicate(self, subject, predicate, object=None, time=None):
         """ End a temporal predicate
@@ -64,10 +65,14 @@ class Monitor(object):
         if object is not None:
             if subject.id+str(predicate)+object.id in self.relations_index:
                 relation = self.relations[self.relations_index[subject.id+str(predicate)+object.id]]
-                print("End: "+subject.label+"-"+subject.id[:6]+" was "+predicate+" "+object.label+"-"+object.id[:6])
+                relation.description.replace("is", "was")
                 relation.end(time=time)
+                del self.relations_index[subject.id+str(predicate)+object.id]
+                print("End: "+relation.description)
         else:
             if subject.id+str(predicate) in self.relations_index:
                 relation = self.relations[self.relations_index[subject.id+str(predicate)]].end(time=time)
+                relation.description.replace("is", "was")
                 relation.end(time=time)
-                print("End: "+subject.label+"-"+subject.id[:6]+" was "+predicate)
+                del self.relations_index[subject.id+str(predicate)]
+                print("End: "+relation.description)

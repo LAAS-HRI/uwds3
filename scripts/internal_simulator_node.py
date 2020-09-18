@@ -59,8 +59,8 @@ class InternalSimulatorNode(object):
             self.human_sub = rospy.Subscriber(self.human_perception_topic, WorldStamped, self.human_perception_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
         self.publish_tf = rospy.get_param("~publish_tf", False)
-
         self.publish_viz = rospy.get_param("~publish_viz", True)
+        self.publish_markers = rospy.get_param("~publish_markers", True)
 
         self.world_publisher = WorldPublisher("corrected_tracks")
         self.marker_publisher = MarkerPublisher("corrected_markers")
@@ -147,13 +147,17 @@ class InternalSimulatorNode(object):
             object_tracks = self.ar_tags_tracks + self.object_tracks
             person_tracks = [f for f in self.human_tracks if f.label == "person"]
 
-            corrected_object_tracks, action_events = self.physics_monitor.monitor(object_tracks, person_tracks)
+            corrected_object_tracks, action_events = self.physics_monitor.monitor(object_tracks, person_tracks, header.stamp)
 
             corrected_tracks = self.internal_simulator.get_static_entities() + self.human_tracks + corrected_object_tracks
 
             self.world_publisher.publish(corrected_tracks, action_events, header)
 
-            self.marker_publisher.publish(corrected_tracks, header)
+            if self.publish_tf is True:
+                self.tf_bridge.publish_tf_frames(corrected_tracks, action_events, header)
+
+            if self.publish_markers is True:
+                self.marker_publisher.publish(corrected_tracks, header)
 
             self.frame_count += 1
 

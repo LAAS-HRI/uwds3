@@ -1,6 +1,13 @@
 
 # Underworlds
-A framework for physical, spatial and semantic reasoning for Human-Robot interactions.
+
+![tabletop_objects](img/tabletop_objects.png)
+
+The corresponding scene graph generated:
+
+![tabletop_objects](img/underworlds_scene.png)
+
+Underworlds is a framework for physical, spatial and semantic reasoning for situation-assessment in the context of Human-Robot collaboration.
 
 This software is composed by two data-structures:
   1. A scene graph composed by scene nodes that contains the geometric and visual information.
@@ -17,7 +24,23 @@ Main features:
 
 More information in the [documentation](https://github.com/LAAS-HRI/uwds3/wiki).
 
-# Quick start
+## Modules available
+
+### Static foreground detector
+
+
+With
+
+```
+roslaunch uwds3 tabletop_object_perception.launch
+```
+
+### Human perception
+
+
+
+
+## Quick start
 **Note:** We assume that you have ROS installed, otherwise install it by following the instructions [here](https://wiki.ros.org/ROS/Installation).
 
 In order to enable CUDA support (usefull for the MASK-RCNN detector), [follow this tutorial](https://www.pyimagesearch.com/2020/02/03/how-to-use-opencvs-dnn-module-with-nvidia-gpus-cuda-and-cudnn/) and to install the kinect2 drivers [follow this one](https://github.com/code-iai/iai_kinect2).

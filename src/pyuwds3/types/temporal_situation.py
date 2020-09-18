@@ -79,6 +79,8 @@ class TemporalSituation(object):
     def to_delete(self, time=None):
         """ Returns True is to delete
         """
+        if self.end_time is None:
+            return False
         if time is None:
             now = rospy.Time().now()
         else:
@@ -132,6 +134,12 @@ class TemporalSituation(object):
             if other.object == self.object:
                 return other.description == self.description
         return False
+
+    def __str(self):
+        return self.description
+
+    def __repr__(self):
+        return self.description
 
 
 class TemporalPredicate(TemporalSituation):

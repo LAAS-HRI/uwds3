@@ -44,6 +44,8 @@ class InternalSimulator(object):
 
         self.nodes_map = {}
 
+        self.my_id = None
+
         self.entity_id_map = {}
         self.reverse_entity_id_map = {}
 
@@ -96,9 +98,9 @@ class InternalSimulator(object):
                                           ry=entity["orientation"]["x"],
                                           rz=entity["orientation"]["z"])
 
-                    success, static_node = self.load_urdf(entity["id"],
-                                                          entity["file"],
+                    success, static_node = self.load_urdf(entity["file"],
                                                           start_pose,
+                                                          id=entity["id"],
                                                           label=entity["label"],
                                                           description=entity["description"],
                                                           static=True)
@@ -119,21 +121,29 @@ class InternalSimulator(object):
             # TODO add controller to play arm traj, only PD is available in bullet, it is sufficient ?
 
     def load_urdf(self,
-                  id,
                   filename,
                   start_pose,
                   static=False,
+                  id="",
                   label="thing",
-                  description=""):
+                  description="unknown"):
         """ Load an URDF file in the simulator
         """
         try:
+            scene_node = SceneNode(pose=start_pose, is_static=static)
+            if id !="":
+                scene_node.id = id
+            scene_node.label = label
+            scene_node.description = description
+            if label == "myself":
+                scene_node.type = SceneNodeType.MYSELF
+                scene_node.label = "robot"
             use_fixed_base = 1 if static is True else 0
             flags = p.URDF_ENABLE_SLEEPING or p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES or p.URDF_MERGE_FIXED_LINKS
             base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base, flags=flags)
-            self.entity_id_map[id] = base_link_sim_id
+            self.entity_id_map[scene_node.id] = base_link_sim_id
             # Create a joint map to ease exploration
-            self.reverse_entity_id_map[base_link_sim_id] = id
+            self.reverse_entity_id_map[base_link_sim_id] = scene_node.id
             self.joint_id_map[base_link_sim_id] = {}
             self.reverse_joint_id_map[base_link_sim_id] = {}
             for i in range(0, p.getNumJoints(base_link_sim_id)):
@@ -144,14 +154,8 @@ class InternalSimulator(object):
             # If file successfully loaded
             if base_link_sim_id < 0:
                 raise RuntimeError("Invalid URDF provided: {}".format(filename))
-            scene_node = SceneNode(pose=start_pose, is_static=True)
-            scene_node.id = id
-            scene_node.label = label
-            scene_node.description = description
-            if label == "myself":
-                scene_node.type = SceneNodeType.MYSELF
-                scene_node.label = "robot"
-            sim_id = self.entity_id_map[id]
+
+            sim_id = self.entity_id_map[scene_node.id]
             visual_shapes = p.getVisualShapeData(sim_id)
             for shape in visual_shapes:
                 link_id = shape[1]
@@ -222,7 +226,7 @@ class InternalSimulator(object):
                 primitive_shape.color[3] = rgba_color[3]
 
                 scene_node.shapes.append(primitive_shape)
-            self.nodes_map[id] = copy.deepcopy(scene_node)
+            self.nodes_map[scene_node.id] = scene_node
             if static is True:
                 self.static_nodes.append(scene_node)
             else:
@@ -242,12 +246,29 @@ class InternalSimulator(object):
         if result is not None:
             distance = ray_start[2] * result[0][2]
             sim_id = result[0][0]
-            hit_object = self.reverse_entity_id_map[sim_id]
+            hit_object_id = self.reverse_entity_id_map[sim_id]
+            hit_object = self.nodes_map[hit_object_id]
             return True, distance, hit_object
         return False, None, None
 
-    def get_aabb(self, object):
-        pass
+    def get_aabb(self, scene_node):
+        if scene_node.id in self.nodes_map:
+            sim_id = self.entity_id_map[scene_node.id]
+            aabb = p.getAABB(sim_id)
+            return True, aabb
+        return False, None
+
+    def get_overlapping_nodes(self, scene_node, margin=0.0):
+        if scene_node.id in self.nodes_map:
+            nodes_overlapping = []
+            sim_id = self.entity_id_map[scene_node.id]
+            aabb = p.getAABB(sim_id)
+            sim_ids_overlapping = p.getOverlappingObjects(aabb[0], aabb[1])
+            for sim_id in sim_ids_overlapping:
+                object_id = self.reverse_entity_id_map[sim_id]
+                nodes_overlapping.append(self.nodes_map[object_id])
+            return True, nodes_overlapping
+        return False, []
 
     def load_node(self, scene_node, static=False):
         """ Load a scene node in the simulator
@@ -320,9 +341,9 @@ class InternalSimulator(object):
                         mesh_resource = mesh_resource.replace("obj", "urdf")
                         mesh_resource = mesh_resource.replace("file://", "")
 
-                        success, node = self.load_urdf(scene_node.id,
-                                                       mesh_resource,
+                        success, node = self.load_urdf(mesh_resource,
                                                        base_pose,
+                                                       id=scene_node.id,
                                                        label=scene_node.label,
                                                        description=scene_node.description,
                                                        static=static)
@@ -361,7 +382,7 @@ class InternalSimulator(object):
     def get_myself(self):
         """ Fetch the robot scene node
         """
-        node = self.get_entity("myself")
+        node = self.get_entity(self.my_id)
         return node
 
     def get_static_entities(self):
@@ -604,19 +625,21 @@ class InternalSimulator(object):
         if success is True:
             if self.robot_loaded is False:
                 try:
-                    success, _ = self.load_urdf("myself", self.robot_urdf_file_path, pose)
+                    success, node = self.load_urdf(self.robot_urdf_file_path,
+                                                pose,
+                                                label="myself",
+                                                description="myself")
                     rospy.loginfo("[simulation] Robot loaded")
+                    self.my_id = node.id
                     self.robot_loaded = True
                 except Exception as e:
                     rospy.logwarn("[simulation] Exception occured: {}".format(e))
-            try:
-                self.update_constraint("myself", pose)
-            except Exception as e:
-                rospy.logwarn("[simulation] Exception occured: {}".format(e))
+            else:
+                self.update_constraint(self.my_id, pose)
         if self.robot_loaded is True:
             joint_indices = []
             target_positions = []
-            base_link_sim_id = self.entity_id_map["myself"]
+            base_link_sim_id = self.entity_id_map[self.my_id]
             for joint_state_index, joint_name in enumerate(joint_states_msg.name):
                 joint_sim_index = self.joint_id_map[base_link_sim_id][joint_name]
                 info = p.getJointInfo(base_link_sim_id, joint_sim_index, physicsClientId=self.client_simulator_id)

@@ -3,6 +3,8 @@ import rospy
 import cv2
 from ..assignment.linear_assignment import LinearAssignment
 from .monitor import Monitor
+from ...utils.bbox_metrics import overlap
+from ...utils.spatial_relations import isontop, isin, isclose
 from scipy.spatial.distance import euclidean
 
 
@@ -37,7 +39,7 @@ class PhysicsMonitor(Monitor):
         self.position_tolerance = position_tolerance
         self.centroid_assignement = LinearAssignment(centroid_cost, max_distance=None)
 
-    def monitor(self, object_tracks, person_tracks, time=None):
+    def monitor(self, object_tracks, person_tracks, time):
         """ Monitor the physical consistency of the objects and detect human tabletop actions
         """
         self.cleanup_relations()
@@ -47,9 +49,10 @@ class PhysicsMonitor(Monitor):
         corrected_object_tracks = []
 
         for object in object_tracks:
-            if not self.simulator.is_entity_loaded(object.id):
-                self.simulator.load_node(object)
-            self.simulator.reset_entity_pose(object.id, object.pose)
+            if object.is_located() and object.has_shape():
+                if not self.simulator.is_entity_loaded(object.id):
+                    self.simulator.load_node(object)
+                self.simulator.reset_entity_pose(object.id, object.pose)
         # perform prediction
         self.generate_prediction()
 
@@ -102,8 +105,14 @@ class PhysicsMonitor(Monitor):
                         next_object_states[object_id] = ActionStates.RELEASED
 
         corrected_object_tracks = self.simulator.get_not_static_entities()
+        static_objects = self.simulator.get_static_entities()
+        #rospy.loginfo("Computing allocentric relations")
+        self.compute_allocentric_relations(corrected_object_tracks+static_objects, time)
+
         self.previous_object_states = next_object_states
         self.previous_object_tracks_map = object_tracks_map
+
+        #print self.relations
 
         return corrected_object_tracks, self.relations
 
@@ -120,60 +129,45 @@ class PhysicsMonitor(Monitor):
             _, person_indice = matches[0]
             person = person_tracks[person_indice]
             self.trigger_event(person, action, object, time)
-        # else:
-        #     self.trigger_event(object, "moved by himself")
-    #
-    # def test_occlusion(self, object, tracks):
-    #     """ Test occlusion with 2D bbox overlap
-    #     """
-    #     overlap_score = np.zeros(len(tracks))
-    #     for idx, track in enumerate(tracks):
-    #         overlap_score[idx] = overlap(object, track)
-    #     idx = np.argmax(overlap_score)
-    #     object = tracks[idx]
-    #     score = overlap[idx]
-    #     if score > OCCLUSION_THRESHOLD:
-    #         return True, object
-    #     else:
-    #         return False, None
-    #
-    # def test_support(self, object):
-    #     """ Test if an object lie on a support using raycasting
-    #     """
-    #     if object.has_shape() and object.is_located():
-    #         shape = object.shapes[0]
-    #         if shape.is_box():
-    #             z_offset = shape.height()/2.0
-    #         elif shape.is_sphere():
-    #             z_offset = shape.radius()
-    #         elif shape.is_cylinder():
-    #             z_offset = shape.height()/2.0
-    #         else:
-    #             return None, None, None
-    #
-    #         ray_start = object.pose.position()
-    #         ray_start.z -= z_offset
-    #         ray_end = object.pose.position()
-    #         ray_end.z = 0.0 # set to ground
-    #         hited, dist, hit_object = self.simulator.test_raycast(ray_start, ray_end)
-    #         if hited is True:
-    #             return True, dist, hit_object
-    #         else:
-    #             dist = ray_start.z
-    #         return True, dist, None
-    #     return False, None, None
-    #
-    # def test_containment(self, object):
-    #     """ """
-    #     if object.has_shape() and object.is_located():
-    #         shape = object.shapes[0]
-    #         if shape.is_box():
-    #             z_offset = shape.height()/2.0
-    #         elif shape.is_sphere():
-    #             z_offset = shape.radius()
-    #         elif shape.is_cylinder():
-    #             z_offset = shape.height()/2.0
-    #         else:
-    #             return None, None
-    #
-    #     return False, None
+
+    def test_occlusion(self, object, tracks):
+        """ Test occlusion with 2D bbox overlap
+        """
+        overlap_score = np.zeros(len(tracks))
+        for idx, track in enumerate(tracks):
+            overlap_score[idx] = overlap(object, track)
+        idx = np.argmax(overlap_score)
+        object = tracks[idx]
+        score = overlap[idx]
+        if score > OCCLUSION_THRESHOLD:
+            return True, object
+        else:
+            return False, None
+
+    def compute_allocentric_relations(self, objects, time):
+        for obj1 in objects:
+            if obj1.is_located() and obj1.has_shape():
+                for obj2 in objects:
+                    if obj1.id != obj2.id:
+                        if obj2.is_located() and obj2.has_shape():
+                            # get 3d aabb
+                            success1, aabb1 = self.simulator.get_aabb(obj1)
+                            success2, aabb2 = self.simulator.get_aabb(obj2)
+                            if success1 is True and success2 is True:
+                                # evaluate relation
+                                if obj2.label != "background" and obj1.label != "background":
+                                    if isclose(aabb1, aabb2):
+                                        self.start_predicate(obj1, "close", object=obj2, time=time)
+                                    else:
+                                        self.end_predicate(obj1, "close", object=obj2, time=time)
+
+                                if isontop(aabb1, aabb2):
+                                    #rospy.loginfo(obj1.id+ " is on top " + obj2.id)
+                                    self.start_predicate(obj1, "on", object=obj2, time=time)
+                                else:
+                                    self.end_predicate(obj1, "on", object=obj2, time=time)
+
+                                if isin(aabb1, aabb2):
+                                    self.start_predicate(obj1, "in", object=obj2, time=time)
+                                else:
+                                    self.end_predicate(obj1, "in", object=obj2, time=time)
