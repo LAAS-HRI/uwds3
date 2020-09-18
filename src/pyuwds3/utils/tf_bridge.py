@@ -6,10 +6,11 @@ from pyuwds3.types.vector.vector6d import Vector6D
 
 
 class TfBridge(object):
-    """ Utility class to interface with /tf2 """
-    def __init__(self):
+    """ Utility class to interface with tf2 """
+    def __init__(self, prefix=""):
         """ """
         self.tf_buffer = Buffer()
+        self.prefix = prefix
         self.tf_listener = TransformListener(self.tf_buffer)
         self.tf_broadcaster = TransformBroadcaster()
 
@@ -51,9 +52,9 @@ class TfBridge(object):
     def publish_tf_frames(self, tracks, events, header):
         for track in tracks:
             if track.is_located() is True and track.is_confirmed() is True:
-                self.publish_pose_to_tf(track.pose, header.frame_id, track.id, header=header)
+                self.publish_pose_to_tf(track.pose, header.frame_id, self.prefix + track.id, header=header)
         for event in events:
             if event.is_located() is True:
                 frame = event.subject+event.description+event.object
                 pose = Vector6D(x=event.point.x, y=event.point.y, z=event.point.z)
-                self.publish_pose_to_tf(pose, header.frame_id, frame, header=header)
+                self.publish_pose_to_tf(pose, header.frame_id, self.prefix + frame, header=header)

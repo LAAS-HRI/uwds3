@@ -1,5 +1,6 @@
 numpy==1.11.1
 scipy==0.10.0
+pygraphviz
 uuid
 pyyaml
 argparse

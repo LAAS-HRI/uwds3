@@ -1,6 +1,6 @@
 # The paths are relative to the 'cad_models_additional_search_path' param
 # positions are in meters and orientations in radians
-- id: "env"
+- id: ""
   label: "background"
   description: "floor"
   file: "urdf/floor.urdf"
@@ -12,14 +12,14 @@
     x: 0.0
     y: 0.0
     z: 0.0
-- id: "table"
+- id: ""
   label: "table"
   description: "table"
   file: "urdf/table.urdf"
   position:
     x: 0.0
     y: 1.0
-    z: 0.35
+    z: 0.38
   orientation:
     x: 0.0
     y: 0.0

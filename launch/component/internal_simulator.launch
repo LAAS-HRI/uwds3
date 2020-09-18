@@ -22,7 +22,7 @@
 
   <!-- Other parameters -->
   <arg name="publish_viz" default="true"/>
-  <arg name="publish_tf" default="true"/>
+  <arg name="publish_tf" default="false"/>
   <arg name="use_depth" default="false"/>
 
   <node name="internal_simulator" pkg="uwds3" type="internal_simulator_node.py" args="" output="screen" respawn="false">

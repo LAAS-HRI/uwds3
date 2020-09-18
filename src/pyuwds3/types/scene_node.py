@@ -33,6 +33,7 @@ class SceneNode(object):
     def __init__(self,
                  detection=None,
                  label="thing",
+                 description="thing",
                  pose=None,
                  n_init=1,
                  max_lost=10,
@@ -88,7 +89,7 @@ class SceneNode(object):
 
         self.parent = ""
         self.type = type
-        self.description = ""
+        self.description = description
         self.perceived = False
 
         self.p_cov_p = p_cov_p
@@ -466,13 +467,12 @@ class SceneNode(object):
                                 (255, 255, 255),
                                 2)
             if self.mask is not None:
-                pass
-                # contours, hierarchy = cv2.findContours(self.mask.astype("uint8"), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                # roi = image[int(self.bbox.ymin):int(self.bbox.ymax), int(self.bbox.xmin):int(self.bbox.xmax)]
-                # overlay = roi.copy()
-                # cv2.drawContours(overlay, contours, -1, mask_color, 2, cv2.LINE_8, hierarchy, 100)
-                # alpha = 0.6
-                # roi = cv2.addWeighted(overlay, alpha, roi, 1 - alpha, 0, roi)
+                _, contours, hierarchy = cv2.findContours(self.mask.astype("uint8"), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                roi = image[int(self.bbox.ymin):int(self.bbox.ymax), int(self.bbox.xmin):int(self.bbox.xmax)]
+                overlay = roi.copy()
+                cv2.drawContours(overlay, contours, -1, mask_color, 2, cv2.LINE_8, hierarchy, 100)
+                alpha = 0.6
+                roi = cv2.addWeighted(overlay, alpha, roi, 1 - alpha, 0, roi)
             cv2.rectangle(image, (self.bbox.xmin, self.bbox.ymax-26),
                                  (self.bbox.xmax, self.bbox.ymax),
                                  (200, 200, 200), -1)
@@ -487,11 +487,6 @@ class SceneNode(object):
                         0.6,
                         text_color,
                         1)
-            cv2.putText(image,
-                        self.label,
-                        (self.bbox.xmin+5, self.bbox.ymax-8),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.6, text_color, 1)
 
             if "facial_landmarks" in self.features:
                 self.features["facial_landmarks"].draw(image,
