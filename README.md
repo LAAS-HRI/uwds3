@@ -1,7 +1,7 @@
 
 # Underworlds
 
-#### Underworlds is a framework for physical, spatial and semantic reasoning for situation-assessment in the context of Human-Robot collaboration.
+### Underworlds is a framework for physical, spatial and semantic situation-assessment in the context of Human-Robot collaboration.
 
 -----
 
@@ -28,22 +28,6 @@ Main features:
 
 More information in the [documentation](https://github.com/LAAS-HRI/uwds3/wiki).
 
-## Modules available
-
-### Static foreground detector
-
-
-With
-
-```
-roslaunch uwds3 tabletop_object_perception.launch
-```
-
-### Human perception
-
-
-
-
 ## Quick start
 **Note:** We assume that you have ROS installed, otherwise install it by following the instructions [here](https://wiki.ros.org/ROS/Installation).
 
@@ -62,7 +46,6 @@ cd ..
 catkin build # build the project to install the pyuwds3 lib
 ```
 
-
 # Quick launch
 
 In different shells, run the following:
@@ -73,7 +56,7 @@ roslaunch uwds3 human_perception.launch
 roslaunch uwds3 internal_simulator.launch
 ```
 
-**IMPORTANT**: To be able to load the robot meshes in bullet you need to have the description package in the `catkin_ws/src` folder (exept for r2d2 that is composed only by simple primitives). One workaround is to create a symbolic link using the command `ln -s [target_file] [link_name]`.
+**IMPORTANT**: To be able to load the robot meshes in bullet you need to have the description package in the `catkin_ws/src` folder (exept for r2d2 that is composed only by simple primitives).
 
 Open Rviz in another shell with the command `rviz`, and add the following displays:
 * Image display (topic : `human_perception`) # the people detected by the robot
