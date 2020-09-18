@@ -1,11 +1,15 @@
 
 # Underworlds
 
-###### Underworlds is a framework for physical, spatial and semantic reasoning for situation-assessment in the context of Human-Robot collaboration.
+#### Underworlds is a framework for physical, spatial and semantic reasoning for situation-assessment in the context of Human-Robot collaboration.
+
+-----
 
 ![tabletop_objects](img/tabletop_objects.png)
 
-In this example, the robot first detect and track the objects in the scene. Then the objects pose are being corrected by a physics engine in order to compute allocentric. This is corresponding resulting semantic scene graph:
+In this example, the robot first detect and track the objects in the scene. Then the objects pose are being corrected by a physics engine in order to compute allocentric spatial relations.
+
+This is resulting semantic scene graph:
 
 ![tabletop_objects](img/underworlds_scene.png)
 
