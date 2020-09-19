@@ -108,11 +108,11 @@ class OroReaderNode(object):
                 self.kb.safeAddForAgent(agent, [situation.object+" isInHand "+situation.subject])
                 self.held_by[situation.object] = situation.subject
         elif situation.predicate == "place":
-            if situation.object not in self.holding:
+            if situation.object in self.held_by:
                 self.kb.removeForAgent(agent, [situation.object+" isInHand "+situation.subject])
                 del self.held_by[situation.object]
         elif situation.predicate == "release":
-            if situation.object not in self.holding:
+            if situation.object in self.held_by:
                 self.kb.removeForAgent(agent, [situation.object+" isInHand "+situation.subject])
                 del self.held_by[situation.object]
 
