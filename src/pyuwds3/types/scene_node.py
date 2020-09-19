@@ -266,6 +266,9 @@ class SceneNode(object):
         """
         return self.state == SceneNodeState.DELETED
 
+    def is_tentative(self):
+        return self.state == SceneNodeState.TENTATIVE
+
     def is_located(self):
         """ Returns True if is located in 3D space
         """

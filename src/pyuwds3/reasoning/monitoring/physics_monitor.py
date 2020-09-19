@@ -62,7 +62,7 @@ class PhysicsMonitor(Monitor):
                 if object.is_confirmed():
                     simulated_object = self.simulator.get_entity(object.id)
 
-                    object_tracks_map[object.id] = object
+                    object_tracks_map[object.id] = simulated_object
                     # compute scene node input
                     simulated_position = simulated_object.pose.position()
                     perceived_position = object.pose.position()
@@ -108,7 +108,7 @@ class PhysicsMonitor(Monitor):
         corrected_object_tracks = self.simulator.get_not_static_entities()
         static_objects = self.simulator.get_static_entities()
 
-        self.compute_relations(corrected_object_tracks+static_objects, time)
+        self.compute_allocentric_relations(corrected_object_tracks+static_objects, time)
 
         self.previous_object_states = next_object_states
         self.previous_object_tracks_map = object_tracks_map
@@ -143,7 +143,7 @@ class PhysicsMonitor(Monitor):
         else:
             return False, None
 
-    def compute_relations(self, objects, time):
+    def compute_allocentric_relations(self, objects, time):
         for obj1 in objects:
             if obj1.is_located() and obj1.has_shape():
                 for obj2 in objects:
@@ -171,16 +171,3 @@ class PhysicsMonitor(Monitor):
                                     self.start_predicate(obj1, "in", object=obj2, time=time)
                                 else:
                                     self.end_predicate(obj1, "in", object=obj2, time=time)
-                        # evaluate egocentric relation
-                        if obj1.is_perceived() and obj2.is_perceived():
-                            # get 2d bbox
-                            bb1 = obj1.bbox.to_array()
-                            bb2 = obj2.bbox.to_array()
-                            if is_right_of(bb1, bb2):
-                                self.start_predicate(obj1, "right_of", object=obj2, time=time)
-                            else:
-                                self.end_predicate(obj1, "right_of", object=obj2, time=time)
-                            if is_left_of(bb1, bb2):
-                                self.start_predicate(obj1, "left_of", object=obj2, time=time)
-                            else:
-                                self.end_predicate(obj1, "left_of", object=obj2, time=time)

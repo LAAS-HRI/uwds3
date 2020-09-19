@@ -593,6 +593,9 @@ class InternalSimulator(object):
         q = pose.quaternion()
         p.resetBasePositionAndOrientation(base_link_sim_id, t, q, physicsClientId=self.client_simulator_id)
 
+    def update_node(self, node):
+        self.nodes_map[node.id] = node
+
     def is_entity_loaded(self, id):
         """ Returns True if the entity is loaded
         """

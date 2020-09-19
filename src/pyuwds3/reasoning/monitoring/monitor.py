@@ -57,7 +57,6 @@ class Monitor(object):
                 relation = TemporalPredicate(subject.id, description, predicate=predicate)
                 self.relations.append(relation.start(time=time))
                 self.relations_index[subject.id+str(predicate)] = len(self.relations)-1
-                print("Start: "+relation.description)
 
     def end_predicate(self, subject, predicate, object=None, time=None):
         """ End a temporal predicate
@@ -68,11 +67,9 @@ class Monitor(object):
                 relation.description.replace("is", "was")
                 relation.end(time=time)
                 del self.relations_index[subject.id+str(predicate)+object.id]
-                print("End: "+relation.description)
         else:
             if subject.id+str(predicate) in self.relations_index:
                 relation = self.relations[self.relations_index[subject.id+str(predicate)]].end(time=time)
                 relation.description.replace("is", "was")
                 relation.end(time=time)
                 del self.relations_index[subject.id+str(predicate)]
-                print("End: "+relation.description)

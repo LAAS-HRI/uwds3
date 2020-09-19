@@ -63,9 +63,9 @@ class TabletopObjectPerceptionNode(object):
         self.shape_estimator = ShapeEstimator()
         self.object_pose_estimator = ObjectPoseEstimator()
 
-        self.publish_tf = rospy.get_param("~publish_tf", False)
-
+        self.publish_tf = rospy.get_param("~publish_tf", True)
         self.publish_viz = rospy.get_param("~publish_viz", True)
+        self.publish_markers = rospy.get_param("~publish_markers", True)
 
         self.world_publisher = WorldPublisher("tabletop_object_tracks")
         self.view_publisher = ViewPublisher("tabletop_object_perception")
@@ -128,7 +128,7 @@ class TabletopObjectPerceptionNode(object):
 
                 self.world_publisher.publish(all_nodes, events, header)
 
-                if self.publish_viz is True:
+                if self.publish_markers is True:
                     self.marker_publisher.publish(all_nodes, header)
 
                 if self.publish_tf is True:
@@ -186,7 +186,7 @@ class TabletopObjectPerceptionNode(object):
         ########################################################
         # Visualization
         ########################################################
-        if self.publish_tf is True:
+        if self.publish_viz is True:
             self.view_publisher.publish(rgb_image, tracks, time, overlay_image=None, fps=pipeline_fps, view_pose=view_pose, camera=self.robot_camera)
 
         all_nodes = tracks
