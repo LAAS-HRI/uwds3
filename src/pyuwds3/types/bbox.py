@@ -4,7 +4,6 @@ import math
 import uwds3_msgs.msg
 from .vector.vector2d import Vector2D
 from .features import Features
-from .shape.cylinder import Cylinder
 
 
 class BoundingBox(object):

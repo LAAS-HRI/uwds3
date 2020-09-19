@@ -2,7 +2,6 @@ import rospy
 import cv2
 import pybullet as p
 import numpy as np
-import copy
 from sensor_msgs.msg import JointState
 from ...types.scene_node import SceneNode, SceneNodeType
 from tf.transformations import translation_matrix, quaternion_matrix
@@ -131,7 +130,7 @@ class InternalSimulator(object):
         """
         try:
             scene_node = SceneNode(pose=start_pose, is_static=static)
-            if id !="":
+            if id != "":
                 scene_node.id = id
             scene_node.label = label
             scene_node.description = description
@@ -540,21 +539,15 @@ class InternalSimulator(object):
                     # xmin, ymin, w, h = cv2.boundingRect(cv_mask.astype(np.uint8))
                     # cv_mask = cv2.cvtColor(cv_mask.astype(np.uint8), cv2.COLOR_GRAY2BGR)
                     # cv_mask_resized = cv2.resize(cv_mask, (width, height))
-                    # cv2.imwrite("/home/ysallami/Documents/presentation_hri_uwds3/img/perspective_input_mask_image_"+str(sim_id)+".png", cv_mask_resized, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
 
         real_depth_image_resized = cv2.resize(real_depth_image, (width, height))
         # normalized_depth_image = cv2.normalize(depth_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
         # normalized_depth_image_resized = cv2.resize(normalized_depth_image, (width, height))
-        # cv2.imwrite("/home/ysallami/Documents/presentation_hri_uwds3/img/perspective_normalized_z_buffer.png", normalized_depth_image_resized, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
 
         # mask_image_normalized = cv2.normalize(mask_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
         # mask_image_viz = cv2.applyColorMap(mask_image_normalized.astype("uint8"), cv2.COLORMAP_HSV)
         # mask_image_viz_resized = cv2.resize(mask_image_viz, (width, height))
-        # cv2.imwrite("/home/ysallami/Documents/presentation_hri_uwds3/img/perspective_mask_image.png", mask_image_viz_resized, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
-        #
-        # for node in visible_nodes:
-        #     node.draw(bgr_image_resized, (230, 0, 120, 125), 1, view_pose=camera_pose, camera=camera)
-        # cv2.imwrite("/home/ysallami/Documents/presentation_hri_uwds3/img/perspective_rgb_output.png", bgr_image_resized, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+
 
         return rgb_image_resized, real_depth_image_resized, mask_image_resized, visible_nodes
 

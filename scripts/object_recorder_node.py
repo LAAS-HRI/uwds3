@@ -84,7 +84,7 @@ class ObjectRecorderNode(object):
     def run(self):
         while not rospy.is_shutdown():
             rospy.spin()
-
+            
 
 if __name__ == "__main__":
     rospy.init_node("object_recorder", anonymous=False)
