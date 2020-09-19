@@ -18,7 +18,9 @@ class TimelineViewer(object):
         overlay_msg.width = 350
         overlay_msg.text_size = 12
         overlay_msg.fg_color.a = 1.0
-        overlay_msg.bg_color.a = 0.2
+        overlay_msg.fg_color.b = 1.0
+        overlay_msg.fg_color.g = 1.0
+        overlay_msg.bg_color.a = 0.4
 
         for situation in world_msg.world.timeline:
             overlay_msg.text += "\r\n" + situation.description

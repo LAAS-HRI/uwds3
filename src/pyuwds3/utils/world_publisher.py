@@ -11,7 +11,7 @@ class WorldPublisher(object):
         world_msg = WorldStamped()
         world_msg.header = header
         for track in tracks:
-            if track.is_confirmed():
+            if not track.is_tentative():
                 world_msg.world.scene.append(track.to_msg(header))
         for event in events:
             world_msg.world.timeline.append(event.to_msg(header))
