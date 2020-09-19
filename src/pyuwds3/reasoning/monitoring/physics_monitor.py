@@ -4,7 +4,8 @@ import cv2
 from ..assignment.linear_assignment import LinearAssignment
 from .monitor import Monitor
 from ...utils.bbox_metrics import overlap
-from ...utils.spatial_relations import isontop, isin, isclose
+from ...utils.allocentric_spatial_relations import is_on_top, is_in, is_close
+from ...utils.egocentric_spatial_relations import is_right_of, is_left_of
 from scipy.spatial.distance import euclidean
 
 
@@ -106,13 +107,11 @@ class PhysicsMonitor(Monitor):
 
         corrected_object_tracks = self.simulator.get_not_static_entities()
         static_objects = self.simulator.get_static_entities()
-        #rospy.loginfo("Computing allocentric relations")
-        self.compute_allocentric_relations(corrected_object_tracks+static_objects, time)
+
+        self.compute_relations(corrected_object_tracks+static_objects, time)
 
         self.previous_object_states = next_object_states
         self.previous_object_tracks_map = object_tracks_map
-
-        #print self.relations
 
         return corrected_object_tracks, self.relations
 
@@ -130,7 +129,7 @@ class PhysicsMonitor(Monitor):
             person = person_tracks[person_indice]
             self.trigger_event(person, action, object, time)
 
-    def test_occlusion(self, object, tracks):
+    def test_occlusion(self, object, tracks, occlusion_threshold=0.8):
         """ Test occlusion with 2D bbox overlap
         """
         overlap_score = np.zeros(len(tracks))
@@ -139,35 +138,49 @@ class PhysicsMonitor(Monitor):
         idx = np.argmax(overlap_score)
         object = tracks[idx]
         score = overlap[idx]
-        if score > OCCLUSION_THRESHOLD:
+        if score > occlusion_threshold:
             return True, object
         else:
             return False, None
 
-    def compute_allocentric_relations(self, objects, time):
+    def compute_relations(self, objects, time):
         for obj1 in objects:
             if obj1.is_located() and obj1.has_shape():
                 for obj2 in objects:
                     if obj1.id != obj2.id:
+                        # evaluate allocentric relation
                         if obj2.is_located() and obj2.has_shape():
                             # get 3d aabb
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
+
                             if success1 is True and success2 is True:
-                                # evaluate relation
+
                                 if obj2.label != "background" and obj1.label != "background":
-                                    if isclose(aabb1, aabb2):
+                                    if is_close(aabb1, aabb2):
                                         self.start_predicate(obj1, "close", object=obj2, time=time)
                                     else:
                                         self.end_predicate(obj1, "close", object=obj2, time=time)
 
-                                if isontop(aabb1, aabb2):
-                                    #rospy.loginfo(obj1.id+ " is on top " + obj2.id)
+                                if is_on_top(aabb1, aabb2):
                                     self.start_predicate(obj1, "on", object=obj2, time=time)
                                 else:
                                     self.end_predicate(obj1, "on", object=obj2, time=time)
 
-                                if isin(aabb1, aabb2):
+                                if is_in(aabb1, aabb2):
                                     self.start_predicate(obj1, "in", object=obj2, time=time)
                                 else:
                                     self.end_predicate(obj1, "in", object=obj2, time=time)
+                        # evaluate egocentric relation
+                        if obj1.is_perceived() and obj2.is_perceived():
+                            # get 2d bbox
+                            bb1 = obj1.bbox.to_array()
+                            bb2 = obj2.bbox.to_array()
+                            if is_right_of(bb1, bb2):
+                                self.start_predicate(obj1, "right_of", object=obj2, time=time)
+                            else:
+                                self.end_predicate(obj1, "right_of", object=obj2, time=time)
+                            if is_left_of(bb1, bb2):
+                                self.start_predicate(obj1, "left_of", object=obj2, time=time)
+                            else:
+                                self.end_predicate(obj1, "left_of", object=obj2, time=time)
