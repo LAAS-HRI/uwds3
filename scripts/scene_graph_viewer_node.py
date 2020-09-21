@@ -4,7 +4,7 @@
 import rospy
 import cv2
 from cv_bridge import CvBridge
-from sensor_msgs import Image
+from sensor_msgs.msg import Image
 from uwds3_msgs.msg import WorldStamped
 import pygraphviz as pgv
 

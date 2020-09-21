@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <arg name="world_input_topic" default="corrected_tracks"/>
+
+  <node name="scene_graph_viewer" pkg="uwds3" type="scene_graph_viewer_node.py" args="" output="screen" respawn="false">
+    <rosparam subst_value="true">
+      world_input_topic: $(arg world_input_topic)
+    </rosparam>
+  </node>
+</launch>

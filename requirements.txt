@@ -1,5 +1,5 @@
-numpy==1.11.1
-scipy==0.10.0
+numpy>=1.14
+scipy
 pygraphviz
 uuid
 pyyaml
@@ -8,6 +8,6 @@ scikit-image
 scikit-learn
 tqdm
 dlib
+pybullet
 opencv-contrib-python>=4.2
 fasttext
-pybullet

@@ -78,10 +78,10 @@ class BoundingBox(object):
 
     def to_msg(self):
         msg = uwds3_msgs.msg.BoundingBox()
-        msg.xmin = self.xmin
-        msg.ymin = self.ymin
-        msg.xmax = self.xmax
-        msg.ymax = self.ymax
+        msg.xmin = int(self.xmin)
+        msg.ymin = int(self.ymin)
+        msg.xmax = int(self.xmax)
+        msg.ymax = int(self.ymax)
         if self.has_depth():
             msg.has_depth = True
             msg.depth = self.depth
