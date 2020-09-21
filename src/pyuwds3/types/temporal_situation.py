@@ -20,7 +20,7 @@ class TemporalSituation(object):
                  predicate="",
                  object="",
                  confidence=1.0,
-                 expiration=2.0,
+                 expiration=5.0,
                  point=None):
         self.type = type
         self.description = description

@@ -38,6 +38,7 @@ class PhysicsMonitor(Monitor):
         self.previous_object_states = {}
         self.previous_object_tracks_map = {}
         self.position_tolerance = position_tolerance
+        self.content_map = {}
         self.centroid_assignement = LinearAssignment(centroid_cost, max_distance=None)
 
     def monitor(self, object_tracks, person_tracks, time):
