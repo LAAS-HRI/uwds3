@@ -470,7 +470,7 @@ class SceneNode(object):
                                 (255, 255, 255),
                                 2)
             if self.mask is not None:
-                _, contours, hierarchy = cv2.findContours(self.mask.astype("uint8"), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                contours, hierarchy = cv2.findContours(self.mask.astype("uint8"), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 roi = image[int(self.bbox.ymin):int(self.bbox.ymax), int(self.bbox.xmin):int(self.bbox.xmax)]
                 overlay = roi.copy()
                 cv2.drawContours(overlay, contours, -1, mask_color, 2, cv2.LINE_8, hierarchy, 100)

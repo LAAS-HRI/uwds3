@@ -8,15 +8,16 @@ class TemporalSituationType(object):
     """
     PREDICATE = uwds3_msgs.msg.TemporalSituation.PREDICATE
     CAPTION = uwds3_msgs.msg.TemporalSituation.CAPTION
+    ACTION = uwds3_msgs.msg.TemporalSituation.ACTION
 
 
 class TemporalSituation(object):
     """ Represent a temporal situation with a description
     """
     def __init__(self,
-                 type,
-                 subject,
-                 description,
+                 type=0,
+                 subject="",
+                 description="",
                  predicate="",
                  object="",
                  confidence=1.0,
@@ -42,6 +43,10 @@ class TemporalSituation(object):
         """ Returns True if is a caption
         """
         return self.type == TemporalSituationType.CAPTION
+
+    def is_action(self):
+        """ """
+        return self.type == TemporalSituationType.ACTION
 
     def is_event(self):
         """ Returns True if is an event
@@ -144,12 +149,12 @@ class TemporalSituation(object):
 
 class TemporalPredicate(TemporalSituation):
     def __init__(self,
-                 subject,
-                 description,
+                 subject="",
+                 description="",
                  predicate="",
                  object="",
                  confidence=1.0,
-                 expiration=2.0,
+                 expiration=5.0,
                  point=None):
         super(TemporalPredicate, self).__init__(TemporalSituationType.PREDICATE,
                                                 subject,
@@ -163,12 +168,12 @@ class TemporalPredicate(TemporalSituation):
 
 class Event(TemporalPredicate):
     def __init__(self,
-                 subject,
-                 description,
+                 subject="",
+                 description="",
                  predicate="",
                  object="",
                  confidence=1.0,
-                 expiration=2.0,
+                 expiration=5.0,
                  point=None,
                  time=None):
         super(Event, self).__init__(subject,
