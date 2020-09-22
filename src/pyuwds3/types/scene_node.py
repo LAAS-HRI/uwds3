@@ -33,7 +33,7 @@ class SceneNode(object):
     def __init__(self,
                  detection=None,
                  label="thing",
-                 description="thing",
+                 description="",
                  pose=None,
                  n_init=1,
                  max_lost=10,
@@ -89,7 +89,10 @@ class SceneNode(object):
 
         self.parent = ""
         self.type = type
-        self.description = description
+        if description == "":
+            self.description = self.label
+        else:
+            self.description = description
         self.perceived = False
 
         self.p_cov_p = p_cov_p
