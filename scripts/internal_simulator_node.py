@@ -19,7 +19,7 @@ from pyuwds3.reasoning.monitoring.graphic_monitor import GraphicMonitor
 
 >>>>>>> debug
 from pyuwds3.reasoning.monitoring.perspective_monitor import PerspectiveMonitor
-
+from pyuwds3.reasoning.monitoring.heatmap import Heatmap
 
 DEFAULT_SENSOR_QUEUE_SIZE = 3
 
@@ -108,8 +108,10 @@ class InternalSimulatorNode(object):
         if self.use_graphic_monitoring is True:
             self.physics_monitor = GraphicMonitor(self.internal_simulator)
 
-        self.use_perspective_monitoring = rospy.get_param("use_perspective_monitoring", True)
+        self.use_perspective_monitoring = rospy.get_param("~use_perspective_monitoring", True)
         self.use_perspective_monitoring = False
+        self.use_heatmap_monitoring = True
+        self.heatmap_monitor = Heatmap(self.internal_simulator)
         if self.use_perspective_monitoring is True:
             self.perspective_monitor = PerspectiveMonitor(self.internal_simulator, None)
 
