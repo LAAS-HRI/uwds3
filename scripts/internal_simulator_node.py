@@ -12,6 +12,7 @@ from pyuwds3.utils.marker_publisher import MarkerPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.reasoning.simulation.internal_simulator import InternalSimulator
 from pyuwds3.reasoning.monitoring.physics_monitor import PhysicsMonitor
+from pyuwds3.reasoning.monitoring.heatmap import Heatmap
 from pyuwds3.reasoning.monitoring.perspective_monitor import PerspectiveMonitor
 
 
@@ -83,12 +84,15 @@ class InternalSimulatorNode(object):
                                                     self.base_frame_id)
 
         self.other_view_publisher = ViewPublisher("other_view")
-
+        self.use_heatmap_monitoring = False
         self.use_physical_monitoring = rospy.get_param("use_physical_monitoring", True)
         if self.use_physical_monitoring is True:
             self.physics_monitor = PhysicsMonitor(self.internal_simulator)
+            self.use_heatmap_monitoring = True
+            self.heatmap_monitor = Heatmap(self.internal_simulator)
 
         self.use_perspective_monitoring = rospy.get_param("use_perspective_monitoring", True)
+        self.use_perspective_monitoring =False
         if self.use_perspective_monitoring is True:
             self.perspective_monitor = PerspectiveMonitor(self.internal_simulator, None)
 
@@ -143,6 +147,16 @@ class InternalSimulatorNode(object):
                     monitoring_fps = cv2.getTickFrequency() / (cv2.getTickCount()-monitoring_timer)
                     if success:
                         self.other_view_publisher.publish(other_image, other_visible_tracks, header.stamp, fps=monitoring_fps)
+            if self.use_heatmap_monitoring  is True:
+                if (self.frame_count == 3) or True:
+                    # monitoring_timer = cv2.getTickCount()
+                    success, view_pose = self.tf_bridge.get_pose_from_tf(self.global_frame_id, self.camera_frame_id)
+                    # monitoring_fps = cv2.getTickFrequency() / (cv2.getTickCount()-monitoring_timer)
+                    if success:
+                        self.heatmap_monitor.update_heatmaps(view_pose,self.robot_camera)
+                        self.heatmap_monitor.show_heatmap(view_pose,self.robot_camera,header.stamp,1)
+
+                        # self.heatmap_monitor.show_heatmap(view_pose,self.robot_camera,header.stamp, fps=monitoring_fps)
 
             object_tracks = self.ar_tags_tracks + self.object_tracks
             person_tracks = [f for f in self.human_tracks if f.label == "person"]
