@@ -1,0 +1,19 @@
+<launch>
+
+  <!-- <arg name="optitrack_human_topic_names" default="person_01_torso"/> -->
+  <arg name="world2map_x" default ="6.4868"/>
+  <arg name="world2map_y" default ="2.8506"/>
+  <arg name="world2map_z" default ="0"/>
+  <arg name="world2map_roll"  default ="0"/>
+  <arg name="world2map_pitch"  default ="0"/>
+  <arg name="world2map_yaw"  default ="0"/>
+  <node pkg="uwds3" type="mocap_human_localization_node.py" name="mocap_human_localization" output="screen">
+    <rosparam command="load" file="$(find uwds3)/config/mocap/mocap_human_localization_params.yaml" />
+
+    <rosparam subst_value="true">
+
+      <!-- optitrack_human_topic_names: $(arg optitrack_human_topic_names) -->
+
+    </rosparam>
+  </node>
+</launch>
