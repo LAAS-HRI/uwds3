@@ -46,7 +46,7 @@ class MultiObjectTracker(object):
                  p_cov_c=0.85, m_cov_c=0.003,
                  p_cov_a=0.85, m_cov_a=1e-9,
                  p_cov_h=0.85, m_cov_h=1e-9,
-                 p_cov_p=0.08, m_cov_p=5,
+                 p_cov_p=0.08, m_cov_p=3,
                  p_cov_r=0.06, m_cov_r=0.001,
                  use_tracker=True):
 
