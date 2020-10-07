@@ -10,6 +10,7 @@ from sensor_msgs.msg import Image
 from pyuwds3.types.detection import Detection
 from pyuwds3.reasoning.detection.ssd_detector import SSDDetector
 from pyuwds3.reasoning.estimation.facial_landmarks_estimator import FacialLandmarksEstimator
+from pyuwds3.reasoning.estimation.head_pose_estimator import HeadPoseEstimator
 from pyuwds3.reasoning.detection.dlib_face_detector import DlibFaceDetector
 from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, centroid_cost
 
@@ -56,6 +57,11 @@ class GazeRecorderNode(object):
         self.record_faces = rospy.get_param("~record_faces", False)
         self.record_landmarks = rospy.get_param("~record_landmarks", False)
         self.record_eyes = rospy.get_param("~record_eyes", True)
+        self.record_headpose = rospy.get_param("~record_headpose", False)
+        if self.record_headpose is True:
+            self.headpose_record = open(self.output_data_directory+"/headpose_record.txt", "w")
+
+        self.head_pose_estimator = HeadPoseEstimator()
 
         self.face_tracker = MultiObjectTracker(iou_cost,
                                                centroid_cost,
@@ -92,6 +98,8 @@ class GazeRecorderNode(object):
             tracks = self.face_tracker.update(rgb_image, detections)
 
             self.facial_landmarks_estimator.estimate(rgb_image, tracks)
+
+            self.head_pose_estimator.estimate(tracks)
 
             view_image = bgr_image.copy()
 
@@ -143,6 +151,9 @@ class GazeRecorderNode(object):
                     sample_uuid = str(uuid.uuid4()).replace("-", "")
 
                     try:
+                        if self.record_headpose:
+                            if biggest_face.pose is not None:
+                                self.headpose_record.write(biggest_face.position().to_array(), biggest_face.rotation().to_array())
                         if self.record_faces:
                             xmin = int(biggest_face.bbox.xmin)
                             xmax = int(biggest_face.bbox.xmax)
@@ -170,6 +181,7 @@ class GazeRecorderNode(object):
     def run(self):
         while not rospy.is_shutdown():
             rospy.spin()
+        self.headpose_record.close()
 
 
 if __name__ == "__main__":

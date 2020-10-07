@@ -14,14 +14,6 @@ class Features(object):
         self.confidence = confidence
         self.age = 1
 
-    def update(self, data, confidence):
-        """ Update the features using a simple filter
-        """
-        alpha = 1.0 / self.age
-        self.data = self.data + (alpha * confidence * (data - self.data))
-        self.confidence = 1 - alpha
-        self.age += 1
-
     def to_array(self):
         """ Convert to numpy array
         """

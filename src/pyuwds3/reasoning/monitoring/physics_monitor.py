@@ -156,19 +156,18 @@ class PhysicsMonitor(Monitor):
                             success2, aabb2 = self.simulator.get_aabb(obj2)
 
                             if success1 is True and success2 is True:
-
                                 if obj2.label != "background" and obj1.label != "background":
                                     if is_close(aabb1, aabb2):
-                                        self.start_predicate(obj1, "close", object=obj2, time=time)
+                                        self.start_fact(obj1, "close", object=obj2, time=time)
                                     else:
-                                        self.end_predicate(obj1, "close", object=obj2, time=time)
+                                        self.end_fact(obj1, "close", object=obj2, time=time)
 
                                 if is_on_top(aabb1, aabb2):
-                                    self.start_predicate(obj1, "on", object=obj2, time=time)
+                                    self.start_fact(obj1, "on", object=obj2, time=time)
                                 else:
-                                    self.end_predicate(obj1, "on", object=obj2, time=time)
+                                    self.end_fact(obj1, "on", object=obj2, time=time)
 
                                 if is_in(aabb1, aabb2):
-                                    self.start_predicate(obj1, "in", object=obj2, time=time)
+                                    self.start_fact(obj1, "in", object=obj2, time=time)
                                 else:
-                                    self.end_predicate(obj1, "in", object=obj2, time=time)
+                                    self.end_fact(obj1, "in", object=obj2, time=time)

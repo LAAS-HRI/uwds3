@@ -81,11 +81,11 @@ class Camera(object):
         return str(self)
 
     def __str__(self):
-        return "[fov:{:.3}\n\r".format(self.fov()) \
+        return "fov:{:.3}\n\r".format(self.fov()) \
                 + "width:{}\n\r".format(self.width) \
                 + "height:{}\n\r".format(self.height) \
                 + "clipnear:{}\n\r".format(self.clipnear) \
-                + "clipfar:{}]".format(self.clipfar) \
+                + "clipfar:{}".format(self.clipfar) \
 
 
 
@@ -100,9 +100,7 @@ class HumanVisualModel(object):
 
 class HumanCamera(Camera):
     def __init__(self):
-        super(HumanCamera, self).__init__()
-        self.width = HumanVisualModel.WIDTH
-        self.height = HumanVisualModel.HEIGHT
-        self.clipnear = HumanVisualModel.CLIPNEAR
-        self.clipfar = HumanVisualModel.CLIPFAR
-        self.dist_coeffs = np.zeros((4, 1))
+        super(HumanCamera, self).__init__(width=HumanVisualModel.WIDTH,
+                                          height=HumanVisualModel.HEIGHT,
+                                          clipnear=HumanVisualModel.CLIPNEAR,
+                                          clipfar=HumanVisualModel.CLIPFAR)

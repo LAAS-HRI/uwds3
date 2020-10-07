@@ -1,4 +1,4 @@
-from ...types.temporal_situation import TemporalSituationType, TemporalPredicate, Event
+from ...types.situation import SituationType, Fact, Event
 
 
 class Monitor(object):
@@ -23,7 +23,7 @@ class Monitor(object):
         self.relations_index = index
 
     def trigger_event(self, subject, event, object=None, time=None):
-        """ Trigger an event like predicate
+        """ Trigger an event
         """
         if object is not None:
             description = subject.label+"("+subject.id[:6]+") "+event+" "+object.label+"("+object.id[:6]+")"
@@ -35,30 +35,24 @@ class Monitor(object):
             self.relations_index[subject.id+str(event)] = len(self.relations)-1
         self.relations.append(e)
 
-    def update_relation_prob(self, subject, predicate, object, confidence):
-        """ Update the confidence of a relation in the beliefs base
-        """
-        if self.beliefs_base is not None:
-            pass # TODO
-
-    def start_predicate(self, subject, predicate, object=None, time=None):
+    def start_fact(self, subject, predicate, object=None, time=None):
         """ Start a temporal predictate
         """
         if object is not None:
             if subject.id+str(predicate)+object.id not in self.relations_index:
                 description = subject.description+"("+subject.id[:6]+") is "+predicate+" "+object.description+"("+object.id[:6]+")"
-                relation = TemporalPredicate(subject.id, description, predicate=predicate, object=object.id)
+                relation = Fact(subject.id, description, predicate=predicate, object=object.id)
                 relation.start(time=time)
                 self.relations.append(relation)
                 self.relations_index[subject.id+str(predicate)+object.id] = len(self.relations)-1
         else:
             if subject.id+str(predicate) not in self.relations_index:
                 description = subject.description+"("+subject.id[:6]+") is "+predicate
-                relation = TemporalPredicate(subject.id, description, predicate=predicate)
+                relation = Fact(subject.id, description, predicate=predicate)
                 self.relations.append(relation.start(time=time))
                 self.relations_index[subject.id+str(predicate)] = len(self.relations)-1
 
-    def end_predicate(self, subject, predicate, object=None, time=None):
+    def end_fact(self, subject, predicate, object=None, time=None):
         """ End a temporal predicate
         """
         if object is not None:

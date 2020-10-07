@@ -16,6 +16,13 @@ wget https://raw.githubusercontent.com/opencv/opencv_extra/master/testdata/dnn/s
 rm ssd_mobilenet_v2_coco_2018_03_29.tar.gz
 rm -rf ssd_mobilenet_v2_coco_2018_03_29/
 
+# wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v3_large_coco_2020_01_14.tar.gz
+# tar xvzf ssd_mobilenet_v3_large_coco_2020_01_14.tar.gz
+# mv ssd_mobilenet_v3_large_coco_2020_01_14/frozen_inference_graph.pb ssd_mobilenet_v3_large_coco_2020_01_14.pb
+# python tf_text_graph_ssd.py --input ssd_mobilenet_v3_large_coco_2020_01_14.pb --output ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt --config ssd_mobilenet_v3_large_coco_2020_01_14/pipeline.config
+# rm -rf ssd_mobilenet_v3_large_coco_2020_01_14
+# rm -rf ssd_mobilenet_v3_large_coco_2020_01_14.tar.gz
+
 wget http://download.tensorflow.org/models/object_detection/mask_rcnn_inception_v2_coco_2018_01_28.tar.gz
 tar xvzf mask_rcnn_inception_v2_coco_2018_01_28.tar.gz
 mv mask_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb mask_rcnn_inception_v2_coco_2018_01_28.pb

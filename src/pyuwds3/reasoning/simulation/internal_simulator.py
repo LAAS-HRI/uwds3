@@ -2,6 +2,7 @@ import rospy
 import cv2
 import pybullet as p
 import numpy as np
+from scipy.spatial.distance import euclidean
 from sensor_msgs.msg import JointState
 from ...types.scene_node import SceneNode, SceneNodeType
 from tf.transformations import translation_matrix, quaternion_matrix
@@ -241,9 +242,10 @@ class InternalSimulator(object):
         """
         ray_start = start_position.to_array().flatten()
         ray_end = end_position.to_array().flatten()
+        ray_dist = euclidean(ray_start, ray_end)
         result = p.rayTest(ray_start, ray_end)
         if result is not None:
-            distance = ray_start[2] * result[0][2]
+            distance = ray_dist * result[0][2]
             sim_id = result[0][0]
             hit_object_id = self.reverse_entity_id_map[sim_id]
             hit_object = self.nodes_map[hit_object_id]
