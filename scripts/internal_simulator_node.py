@@ -12,7 +12,12 @@ from pyuwds3.utils.marker_publisher import MarkerPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.reasoning.simulation.internal_simulator import InternalSimulator
 from pyuwds3.reasoning.monitoring.physics_monitor import PhysicsMonitor
+<<<<<<< HEAD
 from pyuwds3.reasoning.monitoring.heatmap import Heatmap
+=======
+from pyuwds3.reasoning.monitoring.graphic_monitor import GraphicMonitor
+
+>>>>>>> debug
 from pyuwds3.reasoning.monitoring.perspective_monitor import PerspectiveMonitor
 
 
@@ -35,25 +40,29 @@ class InternalSimulatorNode(object):
         self.global_frame_id = rospy.get_param("~global_frame_id", "odom")
         self.base_frame_id = rospy.get_param("~base_frame_id", "odom")
 
-        self.use_ar_tags = rospy.get_param("use_ar_tags", True)
+        self.use_ar_tags = rospy.get_param("~use_ar_tags", False)
         self.ar_tags_topic = rospy.get_param("ar_tags_topic", "ar_tracks")
         if self.use_ar_tags is True:
             self.ar_tags_tracks = []
             self.ar_tags_sub = rospy.Subscriber(self.ar_tags_topic, WorldStamped, self.ar_tags_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
+<<<<<<< HEAD
         self.use_motion_capture = rospy.get_param("use_motion_capture", FALSE)
+=======
+        self.use_motion_capture = rospy.get_param("use_motion_capture", False)
+>>>>>>> debug
         self.motion_capture_topic = rospy.get_param("motion_capture_topic", "motion_capture_tracks")
         if self.use_motion_capture is True:
             self.motion_capture_tracks = []
             self.motion_capture_sub = rospy.Subscriber(self.motion_capture_topic, WorldStamped, self.motion_capture_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
-        self.use_object_perception = rospy.get_param("use_object_perception", True)
+        self.use_object_perception = rospy.get_param("~use_object_perception", True)
         self.object_perception_topic = rospy.get_param("object_perception_topic", "tabletop_object_tracks")
         if self.use_object_perception is True:
             self.object_tracks = []
             self.object_sub = rospy.Subscriber(self.object_perception_topic, WorldStamped, self.object_perception_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
-        self.use_human_perception = rospy.get_param("use_human_perception", True)
+        self.use_human_perception = rospy.get_param("~use_human_perception", True)
         self.human_perception_topic = rospy.get_param("human_perception_topic", "human_tracks")
         if self.use_human_perception is True:
             self.human_tracks = []
@@ -79,6 +88,7 @@ class InternalSimulatorNode(object):
         static_entities_config_filename = rospy.get_param("~static_entities_config_filename", "")
         robot_urdf_file_path = rospy.get_param("~robot_urdf_file_path", "")
 
+        print self.global_frame_id
         self.internal_simulator = InternalSimulator(use_simulation_gui,
                                                     simulation_config_filename,
                                                     cad_models_additional_search_path,
@@ -92,7 +102,7 @@ class InternalSimulatorNode(object):
         self.use_physical_monitoring = rospy.get_param("use_physical_monitoring", True)
         if self.use_physical_monitoring is True:
             self.physics_monitor = PhysicsMonitor(self.internal_simulator)
-        self.use_graphic_monitoring=rospy.get_param("use_graphic_monitoring",False)
+        self.use_graphic_monitoring=rospy.get_param("~use_graphic_monitoring",False)
         if self.use_graphic_monitoring is True:
             self.physics_monitor = GraphicMonitor(self.internal_simulator)
 
@@ -104,6 +114,7 @@ class InternalSimulatorNode(object):
         self.rgb_camera_info_topic = rospy.get_param("~rgb_camera_info_topic", "/camera/rgb/camera_info")
         rospy.loginfo("[internal_simulator] Subscribing to '/{}' topic...".format(self.rgb_camera_info_topic))
         self.camera_info_subscriber = rospy.Subscriber(self.rgb_camera_info_topic, CameraInfo, self.camera_info_callback)
+
 
     def object_perception_callback(self, world_msg):
         object_tracks = []

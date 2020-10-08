@@ -618,42 +618,43 @@ class InternalSimulator(object):
         """
         """
         success, pose = self.tf_bridge.get_pose_from_tf(self.global_frame_id, self.base_frame_id)
-        if success is True:
-            if self.robot_loaded is False:
-                try:
-                    success, node = self.load_urdf(self.robot_urdf_file_path,
-                                                pose,
-                                                label="myself",
-                                                description="myself")
-                    rospy.loginfo("[simulation] Robot loaded")
-                    self.my_id = node.id
-                    self.robot_loaded = True
-                except Exception as e:
-                    rospy.logwarn("[simulation] Exception occured: {}".format(e))
-            else:
-                self.update_constraint(self.my_id, pose)
-        if self.robot_loaded is True:
-            joint_indices = []
-            target_positions = []
-            base_link_sim_id = self.entity_id_map[self.my_id]
-            for joint_state_index, joint_name in enumerate(joint_states_msg.name):
-                joint_sim_index = self.joint_id_map[base_link_sim_id][joint_name]
-                info = p.getJointInfo(base_link_sim_id, joint_sim_index, physicsClientId=self.client_simulator_id)
-                joint_name_sim = info[1]
-                assert(joint_name == joint_name_sim)
-                joint_position = joint_states_msg.position[joint_state_index]
-                state = p.getJointState(base_link_sim_id, joint_sim_index)
-                current_position = state[0]
-                if abs(joint_position - current_position) >= self.position_tolerance:
-                    joint_indices.append(joint_sim_index)
-                    target_positions.append(joint_position)
-                if len(target_positions) > 0:
-                    self.robot_moving = True
-                    p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_DISABLE_SLEEPING)
-                    p.setJointMotorControlArray(base_link_sim_id,
-                                                joint_indices,
-                                                controlMode=p.POSITION_CONTROL,
-                                                targetPositions=target_positions)
-                else:
-                    self.robot_moving = False
-                    p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
+        #
+        # if success is True:
+        #     if self.robot_loaded is False:
+        #         try:
+        #             success, node = self.load_urdf(self.robot_urdf_file_path,
+        #                                         pose,
+        #                                         label="myself",
+        #                                         description="myself")
+        #             rospy.loginfo("[simulation] Robot loaded")
+        #             self.my_id = node.id
+        #             self.robot_loaded = True
+        #         except Exception as e:
+        #             rospy.logwarn("[simulation] Exception occured: {}".format(e))
+        #     else:
+        #         self.update_constraint(self.my_id, pose)
+        # if self.robot_loaded is True:
+        #     joint_indices = []
+        #     target_positions = []
+        #     base_link_sim_id = self.entity_id_map[self.my_id]
+        #     for joint_state_index, joint_name in enumerate(joint_states_msg.name):
+        #         joint_sim_index = self.joint_id_map[base_link_sim_id][joint_name]
+        #         info = p.getJointInfo(base_link_sim_id, joint_sim_index, physicsClientId=self.client_simulator_id)
+        #         joint_name_sim = info[1]
+        #         assert(joint_name == joint_name_sim)
+        #         joint_position = joint_states_msg.position[joint_state_index]
+        #         state = p.getJointState(base_link_sim_id, joint_sim_index)
+        #         current_position = state[0]
+        #         if abs(joint_position - current_position) >= self.position_tolerance:
+        #             joint_indices.append(joint_sim_index)
+        #             target_positions.append(joint_position)
+        #         if len(target_positions) > 0:
+        #             self.robot_moving = True
+        #             p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_DISABLE_SLEEPING)
+        #             p.setJointMotorControlArray(base_link_sim_id,
+        #                                         joint_indices,
+        #                                         controlMode=p.POSITION_CONTROL,
+        #                                         targetPositions=target_positions)
+        #         else:
+        #             self.robot_moving = False
+        #             p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
