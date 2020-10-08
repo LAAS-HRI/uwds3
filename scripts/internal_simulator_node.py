@@ -41,7 +41,7 @@ class InternalSimulatorNode(object):
             self.ar_tags_tracks = []
             self.ar_tags_sub = rospy.Subscriber(self.ar_tags_topic, WorldStamped, self.ar_tags_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
-        self.use_motion_capture = rospy.get_param("use_motion_capture", True)
+        self.use_motion_capture = rospy.get_param("use_motion_capture", FALSE)
         self.motion_capture_topic = rospy.get_param("motion_capture_topic", "motion_capture_tracks")
         if self.use_motion_capture is True:
             self.motion_capture_tracks = []
