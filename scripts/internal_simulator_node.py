@@ -59,6 +59,10 @@ class InternalSimulatorNode(object):
             self.human_tracks = []
             self.human_sub = rospy.Subscriber(self.human_perception_topic, WorldStamped, self.human_perception_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
+
+
+
+
         self.publish_tf = rospy.get_param("~publish_tf", False)
         self.publish_viz = rospy.get_param("~publish_viz", True)
         self.publish_markers = rospy.get_param("~publish_markers", True)
@@ -84,12 +88,13 @@ class InternalSimulatorNode(object):
                                                     self.base_frame_id)
 
         self.other_view_publisher = ViewPublisher("other_view")
-        self.use_heatmap_monitoring = False
+        self.use_heatmap_monitoring = True
         self.use_physical_monitoring = rospy.get_param("use_physical_monitoring", True)
         if self.use_physical_monitoring is True:
             self.physics_monitor = PhysicsMonitor(self.internal_simulator)
-            self.use_heatmap_monitoring = True
-            self.heatmap_monitor = Heatmap(self.internal_simulator)
+        self.use_graphic_monitoring=rospy.get_param("use_graphic_monitoring",False)
+        if self.use_graphic_monitoring is True:
+            self.physics_monitor = GraphicMonitor(self.internal_simulator)
 
         self.use_perspective_monitoring = rospy.get_param("use_perspective_monitoring", True)
         self.use_perspective_monitoring =False
