@@ -26,6 +26,7 @@ class TabletopObjectPerceptionNode(object):
         """
 
         self.tf_bridge = TfBridge()
+        self.cv_bridge = CvBridge()
 
         self.n_frame = rospy.get_param("~n_frame", 4)
         self.frame_count = 0
@@ -42,7 +43,6 @@ class TabletopObjectPerceptionNode(object):
         self.max_lost = rospy.get_param("~max_lost", 4)
         self.max_age = rospy.get_param("~max_age", 12)
 
-        self.bridge = CvBridge()
         self.robot_camera = None
         self.camera_info = None
 
@@ -71,9 +71,9 @@ class TabletopObjectPerceptionNode(object):
         self.publish_debug_topics = rospy.get_param("~publish_debug_topics", True)
 
         if self.publish_debug_topics is True:
-            self.motion_pub = rospy.Publisher("motion_mask", Image, queue_size=1)
-            self.foreground_pub = rospy.Publisher("foreground_mask", Image, queue_size=1)
-            self.static_foreground_pub = rospy.Publisher("static_foreground_mask", Image, queue_size=1)
+            self.motion_mask_pub = rospy.Publisher("motion_mask", Image, queue_size=1)
+            self.foreground_mask_pub = rospy.Publisher("foreground_mask", Image, queue_size=1)
+            self.static_foreground_mask_pub = rospy.Publisher("static_foreground_mask", Image, queue_size=1)
 
         self.world_publisher = WorldPublisher("tabletop_object_tracks")
         self.view_publisher = ViewPublisher("tabletop_object_perception")
@@ -117,10 +117,10 @@ class TabletopObjectPerceptionNode(object):
         if self.robot_camera is not None:
             header = bgr_image_msg.header
             header.frame_id = self.global_frame_id
-            bgr_image = self.bridge.imgmsg_to_cv2(bgr_image_msg, "bgr8")
+            bgr_image = self.cv_bridge.imgmsg_to_cv2(bgr_image_msg, "bgr8")
             rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
             if depth_image_msg is not None:
-                depth_image = self.bridge.imgmsg_to_cv2(depth_image_msg)
+                depth_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg)
             else:
                 depth_image = None
 
@@ -198,7 +198,15 @@ class TabletopObjectPerceptionNode(object):
             self.view_publisher.publish(rgb_image, tracks, time, overlay_image=None, fps=pipeline_fps, view_pose=view_pose, camera=self.robot_camera)
 
         if self.publish_debug_topics is True:
-            pass
+            motion_mask = self.foreground_detector.get_motion_mask()
+            foreground_mask = self.foreground_detector.get_foreground_mask()
+            static_foreground_mask = self.foreground_detector.get_static_foreground_mask()
+            if motion_mask is not None:
+                self.motion_mask_pub.publish(self.cv_bridge.cv2_to_imgmsg(motion_mask))
+            if foreground_mask is not None:
+                self.foreground_mask_pub.publish(self.cv_bridge.cv2_to_imgmsg(foreground_mask))
+            if static_foreground_mask is not None:
+                self.static_foreground_mask_pub.publish(self.cv_bridge.cv2_to_imgmsg(static_foreground_mask))
 
         all_nodes = tracks
         return all_nodes, self.events

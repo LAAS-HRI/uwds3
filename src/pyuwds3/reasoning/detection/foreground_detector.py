@@ -7,8 +7,8 @@ from sensor_msgs.msg import Image
 #from cv_bridge import CvBridge
 
 
-LONGTERM_LEARNING_RATE = 1e-6
-SHORTTERM_LEARNING_RATE = 0.02
+LONGTERM_LEARNING_RATE = 5e-5
+SHORTTERM_LEARNING_RATE = 0.5
 
 
 class ForegroundDetector(object):
@@ -20,20 +20,14 @@ class ForegroundDetector(object):
         self.initialize()
         self.max_overlap = max_overlap
         self.kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        #self.bridge = CvBridge()
         self.motion_mask = None
         self.foreground_mask = None
         self.static_foreground_mask = None
-        # self.debug_topics = debug_topics
-        # if self.debug_topics is True:
-        #     self.moving_pub = rospy.Publisher("moving_foreground_mask", Image, queue_size=1)
-        #     self.static_pub = rospy.Publisher("static_foreground_mask", Image, queue_size=1)
-        #     self.foreground_pub = rospy.Publisher("foreground_mask", Image, queue_size=1)
 
     def initialize(self):
         """ Initialize the detector (reset the background)
         """
-        self.long_term_detector = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=130, detectShadows=True)
+        self.long_term_detector = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=200, detectShadows=True)
         self.short_term_detector = cv2.createBackgroundSubtractorMOG2(history=200, varThreshold=50, detectShadows=False)
 
     def detect(self, rgb_image, depth_image=None, table_mask=None):
@@ -57,6 +51,7 @@ class ForegroundDetector(object):
         foreground_mask = cv2.dilate(foreground_mask, self.kernel)
 
         motion_mask = self.short_term_detector.apply(bgr_image_cropped, learningRate=SHORTTERM_LEARNING_RATE)
+        motion_mask[motion_mask != 255] = 0 # shadows suppression
         motion_mask = cv2.morphologyEx(motion_mask, cv2.MORPH_CLOSE, self.kernel)
         motion_mask = cv2.morphologyEx(motion_mask, cv2.MORPH_OPEN, self.kernel)
         motion_mask = cv2.dilate(motion_mask, self.kernel)
@@ -69,10 +64,6 @@ class ForegroundDetector(object):
         self.motion_mask = motion_mask
         self.foreground_mask = foreground_mask
         self.static_foreground_mask = static_foreground_mask_full
-        # if self.debug_topics is True:
-        #     self.moving_pub.publish(self.bridge.cv2_to_imgmsg(motion_mask))
-        #     self.static_pub.publish(self.bridge.cv2_to_imgmsg(foreground_mask))
-        #     self.foreground_pub.publish(self.bridge.cv2_to_imgmsg(static_foreground_mask_full))
 
         # find the contours
         contours, _ = cv2.findContours(static_foreground_mask_full, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
