@@ -40,17 +40,21 @@ class InternalSimulatorNode(object):
         self.global_frame_id = rospy.get_param("~global_frame_id", "odom")
         self.base_frame_id = rospy.get_param("~base_frame_id", "odom")
 
-        self.use_ar_tags = rospy.get_param("~use_ar_tags", False)
+        self.use_ar_tags = rospy.get_param("~use_ar_tags", True)
         self.ar_tags_topic = rospy.get_param("ar_tags_topic", "ar_tracks")
         if self.use_ar_tags is True:
             self.ar_tags_tracks = []
             self.ar_tags_sub = rospy.Subscriber(self.ar_tags_topic, WorldStamped, self.ar_tags_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.use_motion_capture = rospy.get_param("use_motion_capture", FALSE)
 =======
         self.use_motion_capture = rospy.get_param("use_motion_capture", False)
 >>>>>>> debug
+=======
+        self.use_motion_capture = rospy.get_param("use_motion_capture", True)
+>>>>>>> work on graphic monitor and some debug
         self.motion_capture_topic = rospy.get_param("motion_capture_topic", "motion_capture_tracks")
         if self.use_motion_capture is True:
             self.motion_capture_tracks = []
@@ -74,7 +78,7 @@ class InternalSimulatorNode(object):
 
         self.publish_tf = rospy.get_param("~publish_tf", False)
         self.publish_viz = rospy.get_param("~publish_viz", True)
-        self.publish_markers = rospy.get_param("~publish_markers", True)
+        # self.publish_markers = rospy.get_param("~publish_markers", True)
 
         self.world_publisher = WorldPublisher("corrected_tracks")
         self.marker_publisher = MarkerPublisher("corrected_markers")
@@ -87,8 +91,6 @@ class InternalSimulatorNode(object):
         cad_models_additional_search_path = rospy.get_param("~cad_models_additional_search_path", "")
         static_entities_config_filename = rospy.get_param("~static_entities_config_filename", "")
         robot_urdf_file_path = rospy.get_param("~robot_urdf_file_path", "")
-
-        print self.global_frame_id
         self.internal_simulator = InternalSimulator(use_simulation_gui,
                                                     simulation_config_filename,
                                                     cad_models_additional_search_path,
@@ -102,12 +104,13 @@ class InternalSimulatorNode(object):
         self.use_physical_monitoring = rospy.get_param("use_physical_monitoring", True)
         if self.use_physical_monitoring is True:
             self.physics_monitor = PhysicsMonitor(self.internal_simulator)
-        self.use_graphic_monitoring=rospy.get_param("~use_graphic_monitoring",False)
+        self.use_graphic_monitoring=rospy.get_param("~use_graphic_monitoring",42)
         if self.use_graphic_monitoring is True:
+
             self.physics_monitor = GraphicMonitor(self.internal_simulator)
 
         self.use_perspective_monitoring = rospy.get_param("use_perspective_monitoring", True)
-        self.use_perspective_monitoring =False
+        self.use_perspective_monitoring = False
         if self.use_perspective_monitoring is True:
             self.perspective_monitor = PerspectiveMonitor(self.internal_simulator, None)
 
@@ -149,8 +152,8 @@ class InternalSimulatorNode(object):
             self.robot_camera = Camera().from_msg(msg,
                                                   clipnear=self.robot_camera_clipnear,
                                                   clipfar=self.robot_camera_clipfar)
-        if self.internal_simulator.is_robot_loaded() is True:
 
+        if self.internal_simulator.is_robot_loaded() is True:
             header = msg.header
             header.frame_id = self.global_frame_id
             self.frame_count %= self.n_frame

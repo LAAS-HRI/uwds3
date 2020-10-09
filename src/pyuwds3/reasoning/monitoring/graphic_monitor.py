@@ -37,6 +37,7 @@ class GraphicMonitor(Monitor):
     def monitor(self, object_tracks, person_tracks, time):
         """ Monitor the physical consistency of the objects and detect human tabletop actions
         """
+        print("ppppppppppppppppppppppppppppppppppppppppppppppppppppppppp")
         self.cleanup_relations()
 
         next_object_states = {}

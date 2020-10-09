@@ -12,7 +12,7 @@
   <arg name="base_frame_id" default="base_footprint"/>
 
   <!-- Simulation parameters -->
-  <arg name="use_simulation_gui" default="false"/>
+  <arg name="use_simulation_gui" default="true"/>
   <arg name="simulation_config_filename" default="$(find uwds3)/config/simulation/pr2_config.yaml"/>
   <arg name="cad_models_additional_search_path" default="$(find uwds3)/models/cad_models"/>
   <!-- <arg name="static_entities_config_filename" default="$(find uwds3)/config/simulation/empty_floor.yaml"/> -->
@@ -22,7 +22,7 @@
 
   <!-- Other parameters -->
   <arg name="publish_viz" default="true"/>
-  <arg name="publish_tf" default="false"/>
+  <arg name="publish_tf" default="true"/>
   <arg name="use_depth" default="false"/>
 
   <node name="internal_simulator" pkg="uwds3" type="internal_simulator_node.py" args="" output="screen" respawn="false">
