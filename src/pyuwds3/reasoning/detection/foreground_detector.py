@@ -4,7 +4,7 @@ import numpy as np
 import rospy
 from pyuwds3.types.detection import Detection
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
+#from cv_bridge import CvBridge
 
 
 LONGTERM_LEARNING_RATE = 1e-6
@@ -14,18 +14,21 @@ SHORTTERM_LEARNING_RATE = 0.02
 class ForegroundDetector(object):
     """ Foreground detector for unknown object in interactive tabletop scenario with fixed camera
     """
-    def __init__(self, max_overlap=0.3, debug_topics=True):
+    def __init__(self, max_overlap=0.3):
         """ Detector constructor
         """
         self.initialize()
         self.max_overlap = max_overlap
         self.kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        self.bridge = CvBridge()
-        self.debug_topics = debug_topics
-        if self.debug_topics is True:
-            self.moving_pub = rospy.Publisher("moving_foreground_mask", Image, queue_size=1)
-            self.static_pub = rospy.Publisher("static_foreground_mask", Image, queue_size=1)
-            self.foreground_pub = rospy.Publisher("foreground_mask", Image, queue_size=1)
+        #self.bridge = CvBridge()
+        self.motion_mask = None
+        self.foreground_mask = None
+        self.static_foreground_mask = None
+        # self.debug_topics = debug_topics
+        # if self.debug_topics is True:
+        #     self.moving_pub = rospy.Publisher("moving_foreground_mask", Image, queue_size=1)
+        #     self.static_pub = rospy.Publisher("static_foreground_mask", Image, queue_size=1)
+        #     self.foreground_pub = rospy.Publisher("foreground_mask", Image, queue_size=1)
 
     def initialize(self):
         """ Initialize the detector (reset the background)
@@ -40,7 +43,7 @@ class ForegroundDetector(object):
         output_dets = []
 
         h, w, _ = rgb_image.shape
-        foreground_mask_full = np.zeros((h, w), dtype=np.uint8)
+        static_foreground_mask_full = np.zeros((h, w), dtype=np.uint8)
 
         bgr_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
 
@@ -60,15 +63,19 @@ class ForegroundDetector(object):
 
         not_moving_mask = cv2.bitwise_not(motion_mask)
         static_foreground_mask = cv2.bitwise_and(foreground_mask, not_moving_mask)
-        foreground_mask_full[int(h/2.0):h, 0:int(w)] = static_foreground_mask
+        static_foreground_mask_full[int(h/2.0):h, 0:int(w)] = static_foreground_mask
 
-        if self.debug_topics is True:
-            self.moving_pub.publish(self.bridge.cv2_to_imgmsg(motion_mask))
-            self.static_pub.publish(self.bridge.cv2_to_imgmsg(foreground_mask))
-            self.foreground_pub.publish(self.bridge.cv2_to_imgmsg(foreground_mask_full))
+
+        self.motion_mask = motion_mask
+        self.foreground_mask = foreground_mask
+        self.static_foreground_mask = static_foreground_mask_full
+        # if self.debug_topics is True:
+        #     self.moving_pub.publish(self.bridge.cv2_to_imgmsg(motion_mask))
+        #     self.static_pub.publish(self.bridge.cv2_to_imgmsg(foreground_mask))
+        #     self.foreground_pub.publish(self.bridge.cv2_to_imgmsg(static_foreground_mask_full))
 
         # find the contours
-        contours, _ = cv2.findContours(foreground_mask_full, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(static_foreground_mask_full, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         for c in contours:
             peri = cv2.arcLength(c, True)
@@ -93,10 +100,19 @@ class ForegroundDetector(object):
                     depth = None
             else:
                 depth = None
-            mask = foreground_mask_full[int(ymin):int(ymax), int(xmin):int(xmax)]
+            mask = static_foreground_mask_full[int(ymin):int(ymax), int(xmin):int(xmax)]
             output_dets.append(Detection(int(xmin), int(ymin), int(xmax), int(ymax), "thing", 1.0, mask=mask, depth=depth))
 
         return output_dets
+
+    def get_motion_mask(self):
+        return self.motion_mask
+
+    def get_foreground_mask(self):
+        return self.foreground_mask
+
+    def get_static_foreground_mask(self):
+        return self.static_foreground_mask
 
     def non_max_suppression(self, boxes, max_bbox_overlap):
         """ Perform non maximum suppression

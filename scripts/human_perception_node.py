@@ -101,7 +101,8 @@ class HumanPerceptionNode(object):
                                                  None,
                                                  self.n_init,
                                                  self.max_lost,
-                                                 self.max_age)
+                                                 self.max_age,
+                                                 use_tracker=False)
 
         self.shape_estimator = ShapeEstimator()
         self.object_pose_estimator = ObjectPoseEstimator()

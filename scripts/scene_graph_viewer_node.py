@@ -21,9 +21,10 @@ class SceneGraphViewerNode(object):
         G = pgv.AGraph(strict=False, directed=True)
 
         for node in world_msg.world.scene:
-            node_name = node.description+"("+node.id[:6]+")"
-            nodes_names_map[node.id] = node_name
-            G.add_node(node_name)
+            if node.label != "face":
+                node_name = node.description+"("+node.id[:6]+")"
+                nodes_names_map[node.id] = node_name
+                G.add_node(node_name)
 
         for situation in world_msg.world.timeline:
             if situation.object_id != "":
@@ -31,10 +32,13 @@ class SceneGraphViewerNode(object):
                 object_name = nodes_names_map[situation.object_id]
                 G.add_edge(subject_name, object_name, label=situation.predicate)
 
-        G.layout(prog='dot')
-        G.draw("/tmp/underworlds_scene.png")
-        scene_graph_img = cv2.imread("/tmp/underworlds_scene.png", flags=cv2.IMREAD_COLOR)
-        self.scene_graph_pub.publish(self.cv_bridge.cv2_to_imgmsg(scene_graph_img, "bgr8"))
+        try:
+            G.layout(prog='dot')
+            G.draw("/tmp/underworlds_scene.png")
+            scene_graph_img = cv2.imread("/tmp/underworlds_scene.png", flags=cv2.IMREAD_COLOR)
+            self.scene_graph_pub.publish(self.cv_bridge.cv2_to_imgmsg(scene_graph_img, "bgr8"))
+        except Exception as e:
+            rospy.logwarn(str(e))
 
     def run(self):
         while not rospy.is_shutdown():

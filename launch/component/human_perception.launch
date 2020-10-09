@@ -33,11 +33,11 @@
   <arg name="facial_features_model_filename" default="$(find uwds3)/models/features/nn4.small2.v1.t7"/>
 
   <!-- Tracker parameters -->
-  <arg name="n_init" default="1"/>
+  <arg name="n_init" default="8"/>
   <arg name="n_frame" default="4"/>
-  <arg name="max_lost" default="22"/>
-  <arg name="max_age" default="64"/>
-  <arg name="max_iou_distance" default="0.98"/>
+  <arg name="max_lost" default="5"/>
+  <arg name="max_age" default="60"/>
+  <arg name="max_iou_distance" default="0.9"/>
 
   <!-- Other parameters -->
   <arg name="publish_viz" default="true"/>

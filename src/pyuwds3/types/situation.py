@@ -104,7 +104,6 @@ class Situation(object):
         self.predicate = msg.predicate
         self.subject = msg.subject_id
         self.object = msg.object_id
-        self.confidence = msg.confidence
         if msg.start == rospy.Time(0):
             self.start_time = None
         else:
@@ -129,7 +128,6 @@ class Situation(object):
         msg.predicate = self.predicate
         msg.subject_id = self.subject
         msg.object_id = self.object
-        msg.confidence = self.confidence
         if self.start_time is not None:
             msg.start = self.start_time
         if self.end_time is not None:
@@ -164,7 +162,7 @@ class Fact(Situation):
                  action=False):
         super(Fact, self).__init__(type=SituationType.FACT,
                                    subject=subject,
-                                   descriptin=description,
+                                   description=description,
                                    object=object,
                                    predicate=predicate,
                                    confidence=confidence,

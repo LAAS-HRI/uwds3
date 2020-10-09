@@ -12,9 +12,10 @@ from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.reasoning.estimation.object_pose_estimator import ObjectPoseEstimator
+from pyuwds3.reasoning.estimation.color_features_estimator import ColorFeaturesEstimator
 from pyuwds3.reasoning.estimation.shape_estimator import ShapeEstimator
 from pyuwds3.reasoning.detection.foreground_detector import ForegroundDetector
-from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, centroid_cost
+from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, centroid_cost, color_cost
 
 DEFAULT_SENSOR_QUEUE_SIZE = 5
 
@@ -36,7 +37,7 @@ class TabletopObjectPerceptionNode(object):
         self.n_init = rospy.get_param("~n_init", 1)
 
         self.max_iou_distance = rospy.get_param("~max_iou_distance", 0.98)
-        self.max_face_distance = rospy.get_param("~max_face_distance", 0.2)
+        self.max_color_distance = rospy.get_param("~max_color_distance", 0.2)
 
         self.max_lost = rospy.get_param("~max_lost", 4)
         self.max_age = rospy.get_param("~max_age", 12)
@@ -52,20 +53,27 @@ class TabletopObjectPerceptionNode(object):
         self.robot_camera_clipfar = rospy.get_param("~robot_camera_clipfar", 25.0)
 
         self.object_tracker = MultiObjectTracker(iou_cost,
-                                                 centroid_cost,
+                                                 color_cost,
                                                  self.max_iou_distance,
-                                                 None,
+                                                 self.max_color_distance,
                                                  self.n_init,
                                                  self.max_lost,
                                                  self.max_age,
                                                  use_tracker=True)
 
         self.shape_estimator = ShapeEstimator()
+        self.color_features_estimator = ColorFeaturesEstimator()
         self.object_pose_estimator = ObjectPoseEstimator()
 
         self.publish_tf = rospy.get_param("~publish_tf", True)
         self.publish_viz = rospy.get_param("~publish_viz", True)
         self.publish_markers = rospy.get_param("~publish_markers", True)
+        self.publish_debug_topics = rospy.get_param("~publish_debug_topics", True)
+
+        if self.publish_debug_topics is True:
+            self.motion_pub = rospy.Publisher("motion_mask", Image, queue_size=1)
+            self.foreground_pub = rospy.Publisher("foreground_mask", Image, queue_size=1)
+            self.static_foreground_pub = rospy.Publisher("static_foreground_mask", Image, queue_size=1)
 
         self.world_publisher = WorldPublisher("tabletop_object_tracks")
         self.view_publisher = ViewPublisher("tabletop_object_perception")
@@ -156,7 +164,7 @@ class TabletopObjectPerceptionNode(object):
         ####################################################################
         features_timer = cv2.getTickCount()
 
-        #self.color_features_estimator.estimate(rgb_image, detections)
+        self.color_features_estimator.estimate(rgb_image, detections)
 
         features_fps = cv2.getTickFrequency() / (cv2.getTickCount()-features_timer)
         ######################################################
@@ -188,6 +196,9 @@ class TabletopObjectPerceptionNode(object):
         ########################################################
         if self.publish_viz is True:
             self.view_publisher.publish(rgb_image, tracks, time, overlay_image=None, fps=pipeline_fps, view_pose=view_pose, camera=self.robot_camera)
+
+        if self.publish_debug_topics is True:
+            pass
 
         all_nodes = tracks
         return all_nodes, self.events

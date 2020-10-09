@@ -39,6 +39,8 @@ class HumanPerspectiveMonitor(Monitor):
 
         next_object_states = {}
         previously_visible_tracks_map = {}
+        success = False
+        assign_body = False
 
         visibles_tracks = []
         closest_face = None
@@ -51,32 +53,46 @@ class HumanPerspectiveMonitor(Monitor):
                         min_depth = t.bbox.depth
                         closest_face = t
 
-        if closest_face != self.monitored_face:
-            # new face monitored
-            if len(person_tracks) > 0:
-                matches, unmatched_objects, unmatched_person = self.overlap_assignement.match(person_tracks, [closest_face])
-                if len(matches > 0):
-                    _, person_indice = matches[0]
-                    person = person_tracks[person_indice]
-                    self.monitored_person = person
-                    self.monitored_face = closest_face
-        else:
+        if closest_face is not None:
+            if self.monitored_face is None:
+                # new face monitored
+                assign_body = True
+            else:
+                if closest_face.id != self.monitored_face.id:
+                    assign_body = True
+
+            if assign_body is True:
+                #rospy.logwarn("new face {} monitored".format(closest_face.id))
+                if len(person_tracks) > 0:
+                    matches, unmatched_objects, unmatched_person = self.overlap_assignement.match(person_tracks, [closest_face])
+                    if len(matches > 0):
+                        #rospy.logwarn("assign body to face")
+                        _, person_indice = matches[0]
+                        person = person_tracks[person_indice]
+                        self.monitored_person = person
+                    else:
+                        #rospy.logwarn("cannot assign body to face")
+                        closest_face = None
+
             if closest_face is not None:
                 rgb_image, depth_image, mask_image, visibles_tracks = self.simulator.get_camera_view(closest_face.pose, closest_face.camera, rendering_ratio=self.rendering_ratio)
-
+                success = True
                 for track in visibles_tracks:
                     next_object_states[track.id] = ObjectState.VISIBLE
                     previously_visible_tracks_map[track.id] = track
                     if track.id not in self.previous_object_states.keys():
+                        #rospy.logwarn("start {} is visible by {}".format(track.description, self.monitored_person.description))
                         self.start_fact(track, "visible_by", object=self.monitored_person, time=time)
 
         for track_id in self.previous_object_states.keys():
             if track_id in self.previous_previously_visible_tracks_map:
                 track = self.previous_previously_visible_tracks_map[track_id]
                 if track_id not in next_object_states:
-                    self.end_fact(object, "visible_by", object=self.monitored_person, time=time)
+                    self.end_fact(track, "visible_by", object=self.monitored_person, time=time)
+                    #rospy.logwarn("end {} is visible by {}".format(track.description, self.monitored_person.description))
 
+        self.monitored_face = closest_face
         self.previous_object_states = next_object_states
         self.previous_previously_visible_tracks_map = previously_visible_tracks_map
 
-        return visibles_tracks, self.relations
+        return success, rgb_image, visibles_tracks, self.relations

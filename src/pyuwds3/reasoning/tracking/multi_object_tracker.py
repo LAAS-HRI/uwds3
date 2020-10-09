@@ -23,7 +23,7 @@ def centroid_cost(detection, track):
 
 def color_cost(detection, track):
     """Returns the color cost"""
-    return euclidean(detection.features["color"].data,
+    return cosine(detection.features["color"].data,
                      track.features["color"].data)
 
 
@@ -44,8 +44,8 @@ class MultiObjectTracker(object):
                  max_lost,
                  max_age,
                  p_cov_c=0.85, m_cov_c=0.003,
-                 p_cov_a=0.85, m_cov_a=1e-9,
-                 p_cov_h=0.85, m_cov_h=1e-9,
+                 p_cov_a=1.0, m_cov_a=1e-37,
+                 p_cov_h=1.0, m_cov_h=1e-37,
                  p_cov_p=0.08, m_cov_p=3,
                  p_cov_r=0.06, m_cov_r=0.001,
                  use_tracker=True):

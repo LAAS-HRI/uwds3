@@ -12,7 +12,7 @@ from pyuwds3.utils.marker_publisher import MarkerPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.reasoning.simulation.internal_simulator import InternalSimulator
 from pyuwds3.reasoning.monitoring.physics_monitor import PhysicsMonitor
-from pyuwds3.reasoning.monitoring.perspective_monitor import PerspectiveMonitor
+from pyuwds3.reasoning.monitoring.human_perspective_monitor import HumanPerspectiveMonitor
 
 
 DEFAULT_SENSOR_QUEUE_SIZE = 3
@@ -90,7 +90,10 @@ class InternalSimulatorNode(object):
 
         self.use_perspective_monitoring = rospy.get_param("use_perspective_monitoring", True)
         if self.use_perspective_monitoring is True:
-            self.perspective_monitor = PerspectiveMonitor(self.internal_simulator, None)
+            self.perspective_monitor = HumanPerspectiveMonitor(self.internal_simulator, None)
+
+        self.perspective_facts = []
+        self.physics_facts = []
 
         self.rgb_camera_info_topic = rospy.get_param("~rgb_camera_info_topic", "/camera/rgb/camera_info")
         rospy.loginfo("[internal_simulator] Subscribing to '/{}' topic...".format(self.rgb_camera_info_topic))
@@ -130,7 +133,6 @@ class InternalSimulatorNode(object):
                                                   clipnear=self.robot_camera_clipnear,
                                                   clipfar=self.robot_camera_clipfar)
         if self.internal_simulator.is_robot_loaded() is True:
-
             header = msg.header
             header.frame_id = self.global_frame_id
             self.frame_count %= self.n_frame
@@ -139,7 +141,8 @@ class InternalSimulatorNode(object):
                 if self.frame_count == 3:
                     monitoring_timer = cv2.getTickCount()
                     face_tracks = [f for f in self.human_tracks if f.label == "face"]
-                    success, other_image, other_visible_tracks, self.events = self.perspective_monitor.monitor_others(face_tracks)
+                    person_tracks = [f for f in self.human_tracks if f.label == "person"]
+                    success, other_image, other_visible_tracks, self.perspective_facts = self.perspective_monitor.monitor(face_tracks, person_tracks, header.stamp)
                     monitoring_fps = cv2.getTickFrequency() / (cv2.getTickCount()-monitoring_timer)
                     if success:
                         self.other_view_publisher.publish(other_image, other_visible_tracks, header.stamp, fps=monitoring_fps)
@@ -147,11 +150,13 @@ class InternalSimulatorNode(object):
             object_tracks = self.ar_tags_tracks + self.object_tracks
             person_tracks = [f for f in self.human_tracks if f.label == "person"]
 
-            corrected_object_tracks, action_events = self.physics_monitor.monitor(object_tracks, person_tracks, header.stamp)
+            corrected_object_tracks, self.physics_facts = self.physics_monitor.monitor(object_tracks, person_tracks, header.stamp)
 
             corrected_tracks = self.internal_simulator.get_static_entities() + self.human_tracks + corrected_object_tracks
 
-            self.world_publisher.publish(corrected_tracks, action_events, header)
+            events = self.physics_facts + self.perspective_facts
+
+            self.world_publisher.publish(corrected_tracks, events, header)
 
             if self.publish_tf is True:
                 self.tf_bridge.publish_tf_frames(corrected_tracks, action_events, header)

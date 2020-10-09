@@ -23,7 +23,7 @@ class SSDDetector(object):
 
     def detect(self, rgb_image, depth_image=None):
         """ """
-        frame_resized = cv2.resize(rgb_image, self.input_size, interpolation=cv2.INTER_AREA)
+        frame_resized = cv2.resize(rgb_image, self.input_size)#, interpolation=cv2.INTER_AREA)
 
         self.model.setInput(cv2.dnn.blobFromImage(frame_resized, swapRB=self.swapRB))
 
