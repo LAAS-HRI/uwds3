@@ -34,15 +34,25 @@ class Vector3D(object):
                         z=self.z+vector.z)
 
     def __sub__(self, vector):
-        """Subtracts the given 3D vector"""
+        """Substracts the given 3D vector"""
         assert len(vector) == 3
         return Vector3D(x=self.x-vector.x,
                         y=self.y-vector.y,
                         z=self.z-vector.z)
 
+    def __eq__(self, vector):
+        return vector.x == self.x and vector.y == self.y and vector.z == self.z
+
     def to_msg(self):
         """Converts to ROS message"""
         return geometry_msgs.msg.Vector3(x=self.x, y=self.y, z=self.z)
+
+    def from_msg(self, msg):
+        """Converts to ROS message"""
+        self.x = msg.x
+        self.y = msg.y
+        self.z = msg.z
+        return self
 
     def __str__(self):
         return("{}".format(self.to_array()))

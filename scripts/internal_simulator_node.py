@@ -13,7 +13,11 @@ from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.reasoning.simulation.internal_simulator import InternalSimulator
 from pyuwds3.reasoning.monitoring.physics_monitor import PhysicsMonitor
 from pyuwds3.reasoning.monitoring.human_perspective_monitor import HumanPerspectiveMonitor
-
+from pyuwds3.utils.egocentric_spatial_relations import is_right_of, is_left_of, is_behind
+from pyuwds3.types.vector.vector6d import Vector6D
+from pyuwds3.types.vector.vector3d import Vector3D
+from pyuwds3.types.situation import Fact
+from uwds3_msgs.srv import GetPerspective
 
 DEFAULT_SENSOR_QUEUE_SIZE = 3
 
@@ -92,12 +96,40 @@ class InternalSimulatorNode(object):
         if self.use_perspective_monitoring is True:
             self.perspective_monitor = HumanPerspectiveMonitor(self.internal_simulator, None)
 
+        rospy.Service("/uwds3/get_perspective", GetPerspective, self.handle_perspective_taking)
+
         self.perspective_facts = []
         self.physics_facts = []
 
         self.rgb_camera_info_topic = rospy.get_param("~rgb_camera_info_topic", "/camera/rgb/camera_info")
         rospy.loginfo("[internal_simulator] Subscribing to '/{}' topic...".format(self.rgb_camera_info_topic))
         self.camera_info_subscriber = rospy.Subscriber(self.rgb_camera_info_topic, CameraInfo, self.camera_info_callback)
+
+    def handle_perspective_taking(self, req):
+        camera = HumanCamera()
+        view_pose = Vector6D().from_msg(req.point_of_view.pose)
+        egocentric_relations = []
+        allocentric_relations = []
+        if req.use_target is True:
+            target_point = Vector3D().from_msg(req.target.point)
+            _, _, _, visible_nodes = self.internal_simulator.get_camera_view(view_pose, camera, target=target_point)
+        else:
+            _, _, _, visible_nodes = self.internal_simulator.get_camera_view(view_pose, camera)
+        for node1 in visible_nodes:
+            for node2 in visible_nodes:
+                if node1 != node2:
+                    bbox1 = node1.bbox
+                    bbox2 = node2.bbox
+                    if is_right_of(bbox1, bbox2) is True:
+                        description = subject.description+"("+subject.id[:6]+") is right of "+object.description+"("+object.id[:6]+")"
+                        egocentric_relations.append(Fact(node1.id, description, predicate="right_of", node2.id))
+                    if is_left_of(bbox1, bbox2) is True:
+                        description = subject.description+"("+subject.id[:6]+") is left of "+object.description+"("+object.id[:6]+")"
+                        egocentric_relations.append(Fact(node1.id, description, predicate="left_of", node2.id))
+                    if is_behind(bbox1, bbox2) is True:
+                        description = subject.description+"("+subject.id[:6]+") is behind "+object.description+"("+object.id[:6]+")"
+                        egocentric_relations.append(Fact(node1.id, description, predicate="behind", node2.id))
+        return visible_nodes, egocentric_relations, True, ""
 
     def object_perception_callback(self, world_msg):
         object_tracks = []

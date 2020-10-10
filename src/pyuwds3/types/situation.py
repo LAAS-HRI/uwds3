@@ -138,10 +138,7 @@ class Situation(object):
         return msg
 
     def __eq__(self, other):
-        if other.subject == self.subject:
-            if other.object == self.object:
-                return other.description == self.description
-        return False
+        return self.id == other.id
 
     def __str(self):
         return self.description
