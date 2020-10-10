@@ -17,6 +17,7 @@ from pyuwds3.utils.egocentric_spatial_relations import is_right_of, is_left_of, 
 from pyuwds3.types.vector.vector6d import Vector6D
 from pyuwds3.types.vector.vector3d import Vector3D
 from pyuwds3.types.situation import Fact
+from pyuwds3.types.camera import HumanCamera
 from uwds3_msgs.srv import GetPerspective
 
 DEFAULT_SENSOR_QUEUE_SIZE = 3
@@ -109,7 +110,6 @@ class InternalSimulatorNode(object):
         camera = HumanCamera()
         view_pose = Vector6D().from_msg(req.point_of_view.pose)
         egocentric_relations = []
-        allocentric_relations = []
         if req.use_target is True:
             target_point = Vector3D().from_msg(req.target.point)
             _, _, _, visible_nodes = self.internal_simulator.get_camera_view(view_pose, camera, target=target_point)
@@ -121,14 +121,14 @@ class InternalSimulatorNode(object):
                     bbox1 = node1.bbox
                     bbox2 = node2.bbox
                     if is_right_of(bbox1, bbox2) is True:
-                        description = subject.description+"("+subject.id[:6]+") is right of "+object.description+"("+object.id[:6]+")"
-                        egocentric_relations.append(Fact(node1.id, description, predicate="right_of", node2.id))
+                        description = node1.description+"("+node1.id[:6]+") is right of "+node2.description+"("+node2.id[:6]+")"
+                        egocentric_relations.append(Fact(node1.id, description, predicate="right_of", object=node2.id))
                     if is_left_of(bbox1, bbox2) is True:
-                        description = subject.description+"("+subject.id[:6]+") is left of "+object.description+"("+object.id[:6]+")"
-                        egocentric_relations.append(Fact(node1.id, description, predicate="left_of", node2.id))
+                        description = node1.description+"("+node1.id[:6]+") is left of "+node2.description+"("+node2.id[:6]+")"
+                        egocentric_relations.append(Fact(node1.id, description, predicate="left_of", object=node2.id))
                     if is_behind(bbox1, bbox2) is True:
-                        description = subject.description+"("+subject.id[:6]+") is behind "+object.description+"("+object.id[:6]+")"
-                        egocentric_relations.append(Fact(node1.id, description, predicate="behind", node2.id))
+                        description = node1.description+"("+node1.id[:6]+") is behind "+node2.description+"("+node2.id[:6]+")"
+                        egocentric_relations.append(Fact(node1.id, description, predicate="behind", object=node2.id))
         return visible_nodes, egocentric_relations, True, ""
 
     def object_perception_callback(self, world_msg):
