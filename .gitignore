@@ -2,7 +2,7 @@ models/detection/
 models/features/
 models/estimation/shape_predictor_68_face_landmarks.dat
 models/word_embeddings
-
+models/cad_models/urdf/pr2_description/
 data/*
 
 *.pb
