@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <!-- Camera parameters -->
+  <arg name="rgb_image_topic" default="kinect2/qhd/image_color_rect"/>
+  <arg name="rgb_camera_info_topic" default="kinect2/qhd/camera_info"/>
+  <arg name="depth_image_topic" default="kinect2/qhd/image_depth_rect"/>
+  <arg name="depth_camera_info_topic" default="kinect2/qhd/camera_info"/>
+
+  <arg name="global_frame_id" default="map"/>
+
+  <arg name="enable_cuda" default="false"/>
+  <arg name="use_mask_rcnn" default="false"/>
+
+  <arg name="object_detector_weights_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb" unless="$(arg use_mask_rcnn)"/>
+  <arg name="object_detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pbtxt" unless="$(arg use_mask_rcnn)"/>
+  <arg name="object_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_object_config.yaml" unless="$(arg use_mask_rcnn)"/>
+
+  <arg name="object_detector_weights_filename" default="$(find uwds3)/models/detection/mask_rcnn_inception_v2_coco_2018_01_28.pb" if="$(arg use_mask_rcnn)"/>
+  <arg name="object_detector_model_filename" default="$(find uwds3)/models/detection/mask_rcnn_inception_v2_coco_2018_01_28.pbtxt" if="$(arg use_mask_rcnn)"/>
+  <arg name="object_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_object_config.yaml" if="$(arg use_mask_rcnn)"/>
+
+  <!-- Tracker parameters -->
+  <arg name="n_init" default="10"/>
+  <arg name="n_frame" default="3"/>
+  <arg name="max_lost" default="15"/>
+  <arg name="max_age" default="60"/>
+  <arg name="max_iou_distance" default="0.98"/>
+  <arg name="max_color_distance" default="0.3"/>
+
+  <!-- Other parameters -->
+  <arg name="publish_viz" default="true"/>
+  <arg name="publish_tf" default="true"/>
+  <arg name="publish_markers" default="true"/>
+  <arg name="publish_debug_topics" default="false"/>
+
+  <arg name="use_depth" default="false"/>
+
+  <node name="object_perception" pkg="uwds3" type="object_perception_node.py" args="" output="screen" respawn="false">
+    <rosparam subst_value="true">
+
+      rgb_image_topic: $(arg rgb_image_topic)
+      rgb_camera_info_topic: $(arg rgb_camera_info_topic)
+
+      depth_image_topic: $(arg depth_image_topic)
+      depth_camera_info_topic: $(arg depth_camera_info_topic)
+
+      global_frame_id: $(arg global_frame_id)
+
+      enable_cuda: $(arg enable_cuda)
+      use_mask_rcnn: $(arg use_mask_rcnn)
+
+      object_detector_weights_filename: $(arg object_detector_weights_filename)
+      object_detector_model_filename: $(arg object_detector_model_filename)
+      object_detector_config_filename: $(arg object_detector_config_filename)
+
+      publish_viz: $(arg publish_viz)
+      publish_tf: $(arg publish_tf)
+      publish_markers: $(arg publish_markers)
+      publish_debug_topics: $(arg publish_debug_topics)
+
+      use_depth: $(arg use_depth)
+
+      n_init: $(arg n_init)
+      n_frame: $(arg n_frame)
+      max_iou_distance: $(arg max_iou_distance)
+      max_lost: $(arg max_lost)
+      max_age: $(arg max_age)
+    </rosparam>
+  </node>
+
+</launch>

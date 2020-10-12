@@ -5,4 +5,4 @@
 1:
   label: "face"
   activated: True
-  confidence_threshold: 0.8
+  confidence_threshold: 0.65

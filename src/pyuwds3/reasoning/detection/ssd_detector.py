@@ -8,7 +8,7 @@ from pyuwds3.types.detection import Detection
 class SSDDetector(object):
     """
     """
-    def __init__(self, weights, model, config_file_path, input_size=(300, 300), max_overlap_ratio=0.3, swapRB=False, enable_cuda=True):
+    def __init__(self, weights, model, config_file_path, input_size=(300, 300), max_overlap_ratio=0.1, swapRB=False, enable_cuda=True):
         """
         """
         with open(config_file_path, "r") as f:
@@ -23,7 +23,7 @@ class SSDDetector(object):
 
     def detect(self, rgb_image, depth_image=None):
         """ """
-        frame_resized = cv2.resize(rgb_image, self.input_size)#, interpolation=cv2.INTER_AREA)
+        frame_resized = cv2.resize(rgb_image, self.input_size)
 
         self.model.setInput(cv2.dnn.blobFromImage(frame_resized, swapRB=self.swapRB))
 

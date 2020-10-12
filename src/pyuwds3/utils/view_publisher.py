@@ -6,7 +6,7 @@ import threading
 
 
 class ViewPublisher(object):
-    def __init__(self, topic_name, queue_size=5):
+    def __init__(self, topic_name, queue_size=1):
         self.bridge = CvBridge()
         self.publisher = rospy.Publisher(topic_name, Image, queue_size=queue_size)
 
@@ -29,7 +29,7 @@ class ViewPublisher(object):
                  events=events,
                  overlay_image=overlay_image,
                  fps=fps).start()
-                 
+
 
 class myThread(threading.Thread):
     def __init__(self,

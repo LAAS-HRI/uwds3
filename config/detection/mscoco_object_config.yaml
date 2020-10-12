@@ -1,324 +1,324 @@
 0:
   label : 'background'
-  activated : True
-  confidence_threshold : 0.5
+  activated : False
+  confidence_threshold : 0.2
 1:
   label : 'person'
-  activated : True
-  confidence_threshold : 0.5
+  activated : False
+  confidence_threshold : 0.8
 2:
   label : 'bicycle'
   activated : False
-  confidence_threshold : 0.5
+  confidence_threshold : 0.2
 3:
   label : 'car'
   activated : False
-  confidence_threshold : 0.5
+  confidence_threshold : 0.2
 4:
   label : 'motorcycle'
   activated : False
-  confidence_threshold : 0.5
+  confidence_threshold : 0.2
 5:
   label : 'airplane'
   activated : False
-  confidence_threshold : 0.5
+  confidence_threshold : 0.2
 6:
   label : 'bus'
   activated : False
-  confidence_threshold : 0.5
+  confidence_threshold : 0.2
 7:
   label : 'train'
   activated : False
-  confidence_threshold : 0.5
+  confidence_threshold : 0.2
 8:
   label : 'truck'
   activated : False
-  confidence_threshold : 0.5
+  confidence_threshold : 0.2
 9:
   label : 'boat'
   activated : False
-  confidence_threshold : 0.5
+  confidence_threshold : 0.2
 10:
   label : 'traffic_light'
   activated : False
-  confidence_threshold : 0.5
+  confidence_threshold : 0.2
 11:
   label : 'fire_hydrant'
   activated : False
-  confidence_threshold : 0.5
-12:
+  confidence_threshold : 0.2
+13:
   label : 'stop_sign'
   activated : False
-  confidence_threshold : 0.5
-13:
+  confidence_threshold : 0.2
+14:
   label : 'parking_meter'
   activated : False
-  confidence_threshold : 0.5
-14:
+  confidence_threshold : 0.2
+15:
   label : 'bench'
   activated : False
-  confidence_threshold : 0.5
-15:
+  confidence_threshold : 0.2
+16:
   label : 'bird'
   activated : False
-  confidence_threshold : 0.5
-16:
+  confidence_threshold : 0.2
+17:
   label : 'cat'
   activated : False
-  confidence_threshold : 0.5
-17:
+  confidence_threshold : 0.2
+18:
   label : 'dog'
   activated : False
-  confidence_threshold : 0.5
-18:
+  confidence_threshold : 0.2
+19:
   label : 'horse'
   activated : False
-  confidence_threshold : 0.5
-19:
+  confidence_threshold : 0.2
+20:
   label : 'sheep'
   activated : False
-  confidence_threshold : 0.5
-20:
+  confidence_threshold : 0.2
+21:
   label : 'cow'
   activated : False
-  confidence_threshold : 0.5
-21:
+  confidence_threshold : 0.2
+22:
   label : 'elephant'
   activated : False
-  confidence_threshold : 0.5
-22:
+  confidence_threshold : 0.2
+23:
   label : 'bear'
   activated : False
-  confidence_threshold : 0.5
-23:
+  confidence_threshold : 0.2
+24:
   label : 'zebra'
   activated : False
-  confidence_threshold : 0.5
-24:
+  confidence_threshold : 0.2
+25:
   label : 'giraffe'
   activated : False
-  confidence_threshold : 0.5
-25:
+  confidence_threshold : 0.2
+26:
   label : 'backpack'
   activated : False
-  confidence_threshold : 0.5
-26:
+  confidence_threshold : 0.2
+27:
   label : 'umbrella'
   activated : False
-  confidence_threshold : 0.5
-27:
+  confidence_threshold : 0.2
+31:
   label : 'handbag'
   activated : False
-  confidence_threshold : 0.5
-28:
+  confidence_threshold : 0.2
+32:
   label : 'tie'
   activated : False
-  confidence_threshold : 0.5
-29:
+  confidence_threshold : 0.2
+33:
   label : 'suitcase'
   activated : False
-  confidence_threshold : 0.5
-30:
+  confidence_threshold : 0.2
+34:
   label : 'frisbee'
   activated : False
-  confidence_threshold : 0.5
-31:
+  confidence_threshold : 0.2
+35:
   label : 'skis'
   activated : False
-  confidence_threshold : 0.5
-32:
+  confidence_threshold : 0.2
+36:
   label : 'snowboard'
   activated : False
-  confidence_threshold : 0.5
-33:
+  confidence_threshold : 0.2
+37:
   label : 'sports_ball'
   activated : False
-  confidence_threshold : 0.5
-34:
+  confidence_threshold : 0.2
+38:
   label : 'kite'
   activated : False
-  confidence_threshold : 0.5
-35:
+  confidence_threshold : 0.2
+39:
   label : 'baseball_bat'
   activated : False
-  confidence_threshold : 0.5
-36:
+  confidence_threshold : 0.2
+40:
   label : 'baseball_glove'
   activated : False
-  confidence_threshold : 0.5
-37:
+  confidence_threshold : 0.2
+41:
   label : 'skateboard'
   activated : False
-  confidence_threshold : 0.5
-38:
+  confidence_threshold : 0.2
+42:
   label : 'surfboard'
   activated : False
-  confidence_threshold : 0.5
-39:
+  confidence_threshold : 0.2
+43:
   label : 'tennis_racket'
   activated : False
-  confidence_threshold : 0.5
-40:
+  confidence_threshold : 0.2
+44:
   label : 'bottle'
-  activated : False
-  confidence_threshold : 0.5
-41:
+  activated : True
+  confidence_threshold : 0.2
+46:
   label : 'wine_glass'
-  activated : False
-  confidence_threshold : 0.5
-42:
+  activated : True
+  confidence_threshold : 0.2
+47:
   label : 'cup'
-  activated : False
-  confidence_threshold : 0.5
-43:
+  activated : True
+  confidence_threshold : 0.3
+48:
   label : 'fork'
   activated : False
-  confidence_threshold : 0.5
-44:
+  confidence_threshold : 0.2
+49:
   label : 'knife'
   activated : False
-  confidence_threshold : 0.5
-45:
+  confidence_threshold : 0.2
+50:
   label : 'spoon'
   activated : False
-  confidence_threshold : 0.5
-46:
+  confidence_threshold : 0.2
+51:
   label : 'bowl'
   activated : False
-  confidence_threshold : 0.5
-47:
+  confidence_threshold : 0.2
+52:
   label : 'banana'
-  activated : False
-  confidence_threshold : 0.5
-48:
+  activated : True
+  confidence_threshold : 0.4
+53:
   label : 'apple'
   activated : False
-  confidence_threshold : 0.5
-49:
+  confidence_threshold : 0.2
+54:
   label : 'sandwich'
   activated : False
-  confidence_threshold : 0.5
-50:
+  confidence_threshold : 0.2
+55:
   label : 'orange'
   activated : False
-  confidence_threshold : 0.5
-51:
+  confidence_threshold : 0.2
+56:
   label : 'broccoli'
   activated : False
-  confidence_threshold : 0.5
-52:
+  confidence_threshold : 0.2
+57:
   label : 'carrot'
   activated : False
-  confidence_threshold : 0.5
-53:
+  confidence_threshold : 0.2
+58:
   label : 'hot_dog'
   activated : False
-  confidence_threshold : 0.5
-54:
+  confidence_threshold : 0.2
+59:
   label : 'pizza'
   activated : False
-  confidence_threshold : 0.5
-55:
+  confidence_threshold : 0.2
+60:
   label : 'donut'
   activated : False
-  confidence_threshold : 0.5
-56:
+  confidence_threshold : 0.2
+61:
   label : 'cake'
   activated : False
-  confidence_threshold : 0.5
-57:
+  confidence_threshold : 0.2
+62:
   label : 'chair'
   activated : False
-  confidence_threshold : 0.5
-58:
+  confidence_threshold : 0.2
+63:
   label : 'couch'
   activated : False
-  confidence_threshold : 0.5
-59:
+  confidence_threshold : 0.2
+64:
   label : 'potted_plant'
   activated : False
-  confidence_threshold : 0.5
-60:
+  confidence_threshold : 0.2
+65:
   label : 'bed'
   activated : False
-  confidence_threshold : 0.5
-61:
+  confidence_threshold : 0.2
+67:
   label : 'dining_table'
   activated : False
-  confidence_threshold : 0.5
-62:
+  confidence_threshold : 0.2
+70:
   label : 'toilet'
   activated : False
-  confidence_threshold : 0.5
-63:
+  confidence_threshold : 0.2
+72:
   label : 'tv'
   activated : False
-  confidence_threshold : 0.5
-64:
+  confidence_threshold : 0.2
+73:
   label : 'laptop'
   activated : False
-  confidence_threshold : 0.5
-65:
+  confidence_threshold : 0.2
+74:
   label : 'mouse'
   activated : False
-  confidence_threshold : 0.5
-66:
+  confidence_threshold : 0.2
+75:
   label : 'remote'
   activated : False
-  confidence_threshold : 0.5
-67:
+  confidence_threshold : 0.2
+76:
   label : 'keyboard'
   activated : False
-  confidence_threshold : 0.5
-68:
+  confidence_threshold : 0.2
+77:
   label : 'cell_phone'
   activated : False
-  confidence_threshold : 0.5
-69:
+  confidence_threshold : 0.2
+78:
   label : 'microwave'
   activated : False
-  confidence_threshold : 0.5
-70:
+  confidence_threshold : 0.2
+79:
   label : 'oven'
   activated : False
-  confidence_threshold : 0.5
-71:
+  confidence_threshold : 0.2
+80:
   label : 'toaster'
   activated : False
-  confidence_threshold : 0.5
-72:
+  confidence_threshold : 0.2
+81:
   label : 'sink'
   activated : False
-  confidence_threshold : 0.5
-73:
+  confidence_threshold : 0.2
+82:
   label : 'refrigerator'
   activated : False
-  confidence_threshold : 0.5
-74:
+  confidence_threshold : 0.2
+84:
   label : 'book'
   activated : False
-  confidence_threshold : 0.5
-75:
+  confidence_threshold : 0.2
+85:
   label : 'clock'
   activated : False
-  confidence_threshold : 0.5
-76:
+  confidence_threshold : 0.2
+86:
   label : 'vase'
   activated : False
-  confidence_threshold : 0.5
-77:
+  confidence_threshold : 0.2
+87:
   label : 'scissors'
   activated : False
-  confidence_threshold : 0.5
-78:
+  confidence_threshold : 0.2
+88:
   label : 'teddy_bear'
   activated : False
-  confidence_threshold : 0.5
-79:
+  confidence_threshold : 0.2
+89:
   label : 'hair_drier'
   activated : False
-  confidence_threshold : 0.5
-80:
+  confidence_threshold : 0.2
+90:
   label : 'toothbrush'
   activated : False
-  confidence_threshold : 0.5
+  confidence_threshold : 0.2

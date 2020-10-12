@@ -1,0 +1,8 @@
+0:
+  label : 'background'
+  activated : False
+  confidence_threshold : 0.2
+1:
+  label : 'person'
+  activated : True
+  confidence_threshold : 0.65

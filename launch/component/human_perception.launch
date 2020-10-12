@@ -15,13 +15,14 @@
 
   <arg name="person_detector_weights_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pb" unless="$(arg use_mask_rcnn)"/>
   <arg name="person_detector_model_filename" default="$(find uwds3)/models/detection/ssd_mobilenet_v2_coco_2018_03_29.pbtxt" unless="$(arg use_mask_rcnn)"/>
-  <arg name="person_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_config.yaml" unless="$(arg use_mask_rcnn)"/>
+  <arg name="person_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_person_config.yaml" unless="$(arg use_mask_rcnn)"/>
 
   <arg name="person_detector_weights_filename" default="$(find uwds3)/models/detection/mask_rcnn_inception_v2_coco_2018_01_28.pb" if="$(arg use_mask_rcnn)"/>
   <arg name="person_detector_model_filename" default="$(find uwds3)/models/detection/mask_rcnn_inception_v2_coco_2018_01_28.pbtxt" if="$(arg use_mask_rcnn)"/>
-  <arg name="person_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_config.yaml" if="$(arg use_mask_rcnn)"/>
+  <arg name="person_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_person_config.yaml" if="$(arg use_mask_rcnn)"/>
 
   <!-- Face detector model parameters -->
+  <arg name="use_dlib_frontal_face_detector" default="false"/>
   <arg name="face_detector_weights_filename" default="$(find uwds3)/models/detection/opencv_face_detector_uint8.pb"/>
   <arg name="face_detector_model_filename" default="$(find uwds3)/models/detection/opencv_face_detector.pbtxt"/>
   <arg name="face_detector_config_filename" default="$(find uwds3)/config/detection/face_config.yaml"/>
@@ -62,6 +63,7 @@
       person_detector_model_filename: $(arg person_detector_model_filename)
       person_detector_config_filename: $(arg person_detector_config_filename)
 
+      use_dlib_frontal_face_detector: $(arg use_dlib_frontal_face_detector)
       face_detector_weights_filename: $(arg face_detector_weights_filename)
       face_detector_model_filename: $(arg face_detector_model_filename)
       face_detector_config_filename: $(arg face_detector_config_filename)
