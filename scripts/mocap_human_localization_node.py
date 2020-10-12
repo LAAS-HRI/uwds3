@@ -24,7 +24,7 @@ class MocapHumanLocalization(object):
         self.tf_bridge = TfBridge()
         self.tfOptitrack2Humans_ ={}
         self.subscribedNodeNames =rospy.get_param("~optitrack_human_topic_names",None)
-        print self.subscribedNodeNames
+        # print self.subscribedNodeNames
         # self.subscribedNodeNames={"Neophasia": 1}
 
         self.personSubs =[]
@@ -44,7 +44,7 @@ class MocapHumanLocalization(object):
             for key in self.subscribedNodeNames.keys():
                 fullTopicName = HUMAN_SUB_PREPEND + key
 
-                print fullTopicName
+                #print fullTopicName
                 self.personSubs.append(rospy.Subscriber(
                         fullTopicName,
                         or_pose_estimator_state,
@@ -61,18 +61,18 @@ class MocapHumanLocalization(object):
         #         ,
         #         self.subscribedNodeNames["Helmet_3"]
         #         )
-        print self.subscribedNodeNames
+        #print self.subscribedNodeNames
     def world_publisher_timer_callback(self,timer):
         self.world_publisher.publish(self.tfOptitrack2Humans_.values(),[],self.header)
 
         self.tfOptitrack2Humans_.values()[0].shapes.append(Sphere(d=.1, r=.5))
-        print self.tfOptitrack2Humans_.values()[0].shapes[0].width()
-        # print self.header
+        #print self.tfOptitrack2Humans_.values()[0].shapes[0].width()
+        # #print self.header
         self.marker_publisher.publish(self.tfOptitrack2Humans_.values(),self.header)
-        # print self.tfOptitrack2Humans_.values()[0].pose
+        # #print self.tfOptitrack2Humans_.values()[0].pose
 
     def updateMocapPersonPose_callback(self,msg,humanId):
-        print(len(msg.pos))
+        # print(len(msg.pos))
         if len(msg.pos) >0:
             pose_received = Vector6DStable( msg.pos[0].x,msg.pos[0].y,msg.pos[0].z)
             pose_received.from_quaternion(  0, #msg.att[0].qx,
