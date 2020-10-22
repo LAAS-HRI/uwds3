@@ -2,8 +2,6 @@ import cv2
 import rospy
 from ...types.shape.sphere import Sphere
 from ...types.shape.cylinder import Cylinder
-from sklearn.cluster import KMeans
-from collections import Counter
 import numpy as np
 
 K = 4
@@ -54,10 +52,13 @@ class ShapeEstimator(object):
         cropped_image = cv2.resize(cropped_image, (10, 10))
         np_pixels = cropped_image.shape[0] * cropped_image.shape[1]
         cropped_image = cropped_image.reshape((np_pixels, 3))
-        clt = KMeans(n_clusters=K)
-        labels = clt.fit_predict(cropped_image)
-        label_counts = Counter(labels)
-        dominant_color = clt.cluster_centers_[label_counts.most_common(1)[0][0]]/255.0
+
+        data = cropped_image.reshape((-1, 3))
+        data = np.float32(data)
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+        ret, label, centers = cv2.kmeans(data,K,None,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
+        dominant_color = centers[0].astype(np.int32)/255.0
+
         color = np.ones(4)
         color[0] = dominant_color[0]
         color[1] = dominant_color[1]

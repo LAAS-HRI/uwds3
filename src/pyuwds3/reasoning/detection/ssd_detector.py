@@ -4,11 +4,12 @@ import math
 import yaml
 from pyuwds3.types.detection import Detection
 
+MAX_DEPTH = 3.0
 
 class SSDDetector(object):
     """
     """
-    def __init__(self, weights, model, config_file_path, input_size=(300, 300), max_overlap_ratio=0.1, swapRB=False, enable_cuda=True):
+    def __init__(self, weights, model, config_file_path, input_size=(300, 300), mean=(0.0, 0.0, 0.0), scalefactor=1.0, max_overlap_ratio=0.1, swapRB=False, enable_cuda=True):
         """
         """
         with open(config_file_path, "r") as f:
@@ -19,13 +20,15 @@ class SSDDetector(object):
             self.model.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
         self.input_size = input_size
         self.max_overlap_ratio = max_overlap_ratio
+        self.mean = mean
+        self.scalefactor = scalefactor
         self.swapRB = swapRB
 
     def detect(self, rgb_image, depth_image=None):
         """ """
-        frame_resized = cv2.resize(rgb_image, self.input_size)
 
-        self.model.setInput(cv2.dnn.blobFromImage(frame_resized, swapRB=self.swapRB))
+        rgb_image_resized  = cv2.resize(rgb_image, self.input_size, interpolation = cv2.INTER_AREA)
+        self.model.setInput(cv2.dnn.blobFromImage(rgb_image_resized, size=self.input_size, swapRB=self.swapRB, mean=self.mean, scalefactor=self.scalefactor))
 
         detections = self.model.forward()
         filtered_detections = []
@@ -33,11 +36,11 @@ class SSDDetector(object):
         detection_per_class = {}
         score_per_class = {}
 
-        rows = frame_resized.shape[0]
-        cols = frame_resized.shape[1]
+        rows = self.input_size[0]
+        cols = self.input_size[1]
 
-        height_factor = rgb_image.shape[0]/float(self.input_size[0])
-        width_factor = rgb_image.shape[1]/float(self.input_size[1])
+        height_factor = rgb_image.shape[0]/float(rows)
+        width_factor = rgb_image.shape[1]/float(cols)
 
         for i in range(detections.shape[2]):
             class_id = int(detections[0, 0, i, 1])
@@ -81,7 +84,11 @@ class SSDDetector(object):
                         depth = None
                 else:
                     depth = None
-                filtered_detections.append(Detection(d[0], d[1], d[2], d[3], class_label, d[4], depth=depth))
+                if depth is not None:
+                    if depth < MAX_DEPTH:
+                        filtered_detections.append(Detection(d[0], d[1], d[2], d[3], class_label, d[4], depth=depth))
+                else:
+                    filtered_detections.append(Detection(d[0], d[1], d[2], d[3], class_label, d[4], depth=depth))
 
         return filtered_detections
 

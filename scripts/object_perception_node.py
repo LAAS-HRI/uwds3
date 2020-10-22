@@ -13,10 +13,12 @@ from pyuwds3.utils.marker_publisher import MarkerPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.reasoning.estimation.object_pose_estimator import ObjectPoseEstimator
 from pyuwds3.reasoning.estimation.color_features_estimator import ColorFeaturesEstimator
+from pyuwds3.reasoning.estimation.appearance_features_estimator import AppearanceFeaturesEstimator
 from pyuwds3.reasoning.estimation.shape_estimator import ShapeEstimator
 from pyuwds3.reasoning.detection.mask_rcnn_detector import MaskRCNNDetector
 from pyuwds3.reasoning.detection.ssd_detector import SSDDetector
-from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, centroid_cost, color_cost
+from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, centroid_cost, color_cost, appearance_cost
+
 
 DEFAULT_SENSOR_QUEUE_SIZE = 5
 
@@ -54,7 +56,7 @@ class ObjectPerceptionNode(object):
         self.n_init = rospy.get_param("~n_init", 1)
 
         self.max_iou_distance = rospy.get_param("~max_iou_distance", 0.98)
-        self.max_color_distance = rospy.get_param("~max_color_distance", 0.2)
+        self.max_appearance_distance = rospy.get_param("~max_appearance_distance", 0.25)
 
         self.max_lost = rospy.get_param("~max_lost", 4)
         self.max_age = rospy.get_param("~max_age", 12)
@@ -69,13 +71,18 @@ class ObjectPerceptionNode(object):
         self.robot_camera_clipfar = rospy.get_param("~robot_camera_clipfar", 25.0)
 
         self.object_tracker = MultiObjectTracker(iou_cost,
-                                                 color_cost,
+                                                 appearance_cost,
                                                  self.max_iou_distance,
-                                                 self.max_color_distance,
+                                                 self.max_appearance_distance,
                                                  self.n_init,
                                                  self.max_lost,
                                                  self.max_age,
                                                  use_tracker=True)
+
+        appearance_features_weights_filename = rospy.get_param("~appearance_features_weights_filename", "")
+        appearance_features_model_filename = rospy.get_param("~appearance_features_model_filename", "")
+
+        self.appearance_features_estimator = AppearanceFeaturesEstimator(appearance_features_weights_filename, appearance_features_model_filename)
 
         self.shape_estimator = ShapeEstimator()
         self.color_features_estimator = ColorFeaturesEstimator()
@@ -174,7 +181,9 @@ class ObjectPerceptionNode(object):
         ####################################################################
         features_timer = cv2.getTickCount()
 
-        self.color_features_estimator.estimate(rgb_image, detections)
+        if self.frame_count == 0:
+            self.appearance_features_estimator.estimate(rgb_image, detections)
+            self.color_features_estimator.estimate(rgb_image, detections)
 
         features_fps = cv2.getTickFrequency() / (cv2.getTickCount()-features_timer)
         ######################################################

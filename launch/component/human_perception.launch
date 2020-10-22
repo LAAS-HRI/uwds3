@@ -22,7 +22,7 @@
   <arg name="person_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_person_config.yaml" if="$(arg use_mask_rcnn)"/>
 
   <!-- Face detector model parameters -->
-  <arg name="use_dlib_frontal_face_detector" default="false"/>
+  <arg name="use_dlib_frontal_face_detector" default="true"/>
   <arg name="face_detector_weights_filename" default="$(find uwds3)/models/detection/opencv_face_detector_uint8.pb"/>
   <arg name="face_detector_model_filename" default="$(find uwds3)/models/detection/opencv_face_detector.pbtxt"/>
   <arg name="face_detector_config_filename" default="$(find uwds3)/config/detection/face_config.yaml"/>
@@ -34,7 +34,7 @@
   <arg name="facial_features_model_filename" default="$(find uwds3)/models/features/nn4.small2.v1.t7"/>
 
   <!-- Tracker parameters -->
-  <arg name="n_init" default="8"/>
+  <arg name="n_init" default="4"/>
   <arg name="n_frame" default="4"/>
   <arg name="max_lost" default="5"/>
   <arg name="max_age" default="60"/>

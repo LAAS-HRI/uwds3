@@ -15,7 +15,7 @@ from pyuwds3.reasoning.estimation.object_pose_estimator import ObjectPoseEstimat
 from pyuwds3.reasoning.estimation.color_features_estimator import ColorFeaturesEstimator
 from pyuwds3.reasoning.estimation.shape_estimator import ShapeEstimator
 from pyuwds3.reasoning.detection.foreground_detector import ForegroundDetector
-from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, centroid_cost, color_cost
+from pyuwds3.reasoning.tracking.multi_object_tracker import MultiObjectTracker, iou_cost, centroid_cost, color_cost, appearance_cost
 
 DEFAULT_SENSOR_QUEUE_SIZE = 5
 
@@ -75,9 +75,9 @@ class TabletopObjectPerceptionNode(object):
             self.foreground_mask_pub = rospy.Publisher("foreground_mask", Image, queue_size=1)
             self.static_foreground_mask_pub = rospy.Publisher("static_foreground_mask", Image, queue_size=1)
 
-        self.world_publisher = WorldPublisher("tabletop_object_tracks")
-        self.view_publisher = ViewPublisher("tabletop_object_perception")
-        self.marker_publisher = MarkerPublisher("tabletop_object_markers")
+        self.world_publisher = WorldPublisher("object_tracks")
+        self.view_publisher = ViewPublisher("object_perception")
+        self.marker_publisher = MarkerPublisher("object_markers")
 
         self.use_depth = rospy.get_param("~use_depth", False)
         self.rgb_image_topic = rospy.get_param("~rgb_image_topic", "/camera/rgb/image_raw")

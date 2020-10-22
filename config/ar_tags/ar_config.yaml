@@ -1,6 +1,7 @@
 - marker_id: 10
   id: "green_bin"
   label: green_bin
+  description: "green_bin"
   file: "obj/green_bin.obj"
   position:
     x: 0.0
@@ -12,12 +13,13 @@
     z: 0.0
   color:
     r: 0.0
-    g: 0.8
+    g: 0.0
     b: 0.0
-    a: 1.0
+    a: 0.0
 - marker_id: 11
   id: "blue_bin"
   label: blue_bin
+  description: "blue_bin"
   file: "obj/blue_bin.obj"
   position:
     x: 0.0
@@ -30,5 +32,5 @@
   color:
     r: 0.0
     g: 0.0
-    b: 0.8
-    a: 1.0
+    b: 0.0
+    a: 0.0

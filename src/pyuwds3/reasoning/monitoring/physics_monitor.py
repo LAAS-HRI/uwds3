@@ -71,6 +71,11 @@ class PhysicsMonitor(Monitor):
                     distance = euclidean(simulated_position.to_array(), perceived_position.to_array())
                     #print distance
                     is_physically_plausible = distance < self.position_tolerance
+                    # print distance
+                    # if distance == 0.0:
+                    #     rospy.logerr("Distance threshold value is zero: deadlock detected")
+                    # if object.id not in self.previous_object_states:
+                    #     rospy.logerr("not in previous_object_states")
 
                     # compute next state
                     if is_physically_plausible:
@@ -80,10 +85,13 @@ class PhysicsMonitor(Monitor):
                         self.simulator.reset_entity_pose(object.id, object.pose)
 
                     if object.id not in self.previous_object_states:
+                        self.previous_object_states[object.id] = ActionStates.RELEASED
                         if next_object_states[object.id] == ActionStates.HELD:
                             self.assign_and_trigger_action(object, "pick", person_tracks, time)
+                            # print "pick"
                         if next_object_states[object.id] == ActionStates.PLACED:
                             self.assign_and_trigger_action(object, "place", person_tracks, time)
+                            # print "place"
 
         for object_id in self.previous_object_states.keys():
             if object_id in self.previous_object_tracks_map:
@@ -91,25 +99,33 @@ class PhysicsMonitor(Monitor):
                 if object_id in next_object_states:
                     if self.previous_object_states[object_id] == ActionStates.HELD and \
                             next_object_states[object_id] == ActionStates.PLACED:
+                        # print "place"
                         self.assign_and_trigger_action(object, "place", person_tracks, time)
                     if self.previous_object_states[object_id] == ActionStates.RELEASED and \
                             next_object_states[object_id] == ActionStates.PLACED:
                         self.assign_and_trigger_action(object, "place", person_tracks, time)
+                        # print "place"
                     if self.previous_object_states[object_id] == ActionStates.PLACED and \
                             next_object_states[object_id] == ActionStates.HELD:
                         self.assign_and_trigger_action(object, "pick", person_tracks, time)
+                        # print "pick"
                     if self.previous_object_states[object_id] == ActionStates.RELEASED and \
                             next_object_states[object_id] == ActionStates.HELD:
                         self.assign_and_trigger_action(object, "pick", person_tracks, time)
+                        # print "pick"
                 else:
                     if self.previous_object_states[object_id] == ActionStates.HELD:
                         self.assign_and_trigger_action(object, "release", person_tracks, time)
-                        next_object_states[object_id] = ActionStates.RELEASED
+                        # print "release"
+                    next_object_states[object_id] = ActionStates.RELEASED
+            else:
+                # print "test"
+                pass
 
         corrected_object_tracks = self.simulator.get_not_static_entities()
         static_objects = self.simulator.get_static_entities()
 
-        self.compute_allocentric_relations(corrected_object_tracks+static_objects, time)
+        self.compute_allocentric_relations(corrected_object_tracks+static_objects+person_tracks, time)
 
         self.previous_object_states = next_object_states
         self.previous_object_tracks_map = object_tracks_map

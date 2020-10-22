@@ -30,6 +30,7 @@ python tf_text_graph_mask_rcnn.py --input mask_rcnn_inception_v2_coco_2018_01_28
 rm -rf mask_rcnn_inception_v2_coco_2018_01_28
 rm -rf mask_rcnn_inception_v2_coco_2018_01_28.tar.gz
 
+
 wget https://raw.githubusercontent.com/opencv/opencv_extra/master/testdata/dnn/opencv_face_detector.pbtxt
 wget https://github.com/opencv/opencv_3rdparty/raw/8033c2bc31b3256f0d461c919ecc01c2428ca03b/opencv_face_detector_uint8.pb
 
@@ -44,3 +45,5 @@ cd -
 mkdir models/features
 cd models/features
 wget https://storage.cmusatyalab.org/openface-models/nn4.small2.v1.t7
+wget https://raw.githubusercontent.com/shicai/MobileNet-Caffe/26a8b8c0afb6114a07c1c9e4f550e4e0dd8cced1/mobilenet_v2_deploy.prototxt
+wget https://github.com/shicai/MobileNet-Caffe/raw/26a8b8c0afb6114a07c1c9e4f550e4e0dd8cced1/mobilenet_v2.caffemodel

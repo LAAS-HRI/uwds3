@@ -20,13 +20,16 @@
   <arg name="object_detector_model_filename" default="$(find uwds3)/models/detection/mask_rcnn_inception_v2_coco_2018_01_28.pbtxt" if="$(arg use_mask_rcnn)"/>
   <arg name="object_detector_config_filename" default="$(find uwds3)/config/detection/mscoco_object_config.yaml" if="$(arg use_mask_rcnn)"/>
 
+  <arg name="appearance_features_weights_filename" default="$(find uwds3)/models/features/resnet50_imagenet_features.pb"/>
+  <arg name="appearance_features_model_filename" default="$(find uwds3)/models/features/resnet50_imagenet_features.pbtxt"/>
+
   <!-- Tracker parameters -->
-  <arg name="n_init" default="10"/>
+  <arg name="n_init" default="8"/>
   <arg name="n_frame" default="3"/>
-  <arg name="max_lost" default="15"/>
+  <arg name="max_lost" default="25"/>
   <arg name="max_age" default="60"/>
-  <arg name="max_iou_distance" default="0.98"/>
-  <arg name="max_color_distance" default="0.3"/>
+  <arg name="max_iou_distance" default="0.999"/>
+  <arg name="max_color_distance" default="0.1"/>
 
   <!-- Other parameters -->
   <arg name="publish_viz" default="true"/>
@@ -53,6 +56,9 @@
       object_detector_weights_filename: $(arg object_detector_weights_filename)
       object_detector_model_filename: $(arg object_detector_model_filename)
       object_detector_config_filename: $(arg object_detector_config_filename)
+
+      appearance_features_weights_filename: $(arg appearance_features_weights_filename)
+      appearance_features_model_filename: $(arg appearance_features_model_filename)
 
       publish_viz: $(arg publish_viz)
       publish_tf: $(arg publish_tf)

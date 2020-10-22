@@ -26,6 +26,11 @@ def color_cost(detection, track):
     return cosine(detection.features["color"].data,
                      track.features["color"].data)
 
+def appearance_cost(detection, track):
+    """Returns the color cost"""
+    return cosine(detection.features["appearance"].data,
+                  track.features["appearance"].data)
+
 
 def face_cost(detection, track):
     """Returns the face cost"""
@@ -43,10 +48,10 @@ class MultiObjectTracker(object):
                  n_init,
                  max_lost,
                  max_age,
-                 p_cov_c=0.85, m_cov_c=0.003,
-                 p_cov_a=1.0, m_cov_a=1e-37,
-                 p_cov_h=1.0, m_cov_h=1e-37,
-                 p_cov_p=0.08, m_cov_p=3,
+                 p_cov_c=0.85, m_cov_c=1e-13,
+                 p_cov_a=0.08, m_cov_a=1e-13,
+                 p_cov_h=0.08, m_cov_h=1e-13,
+                 p_cov_p=0.08, m_cov_p=1.0,
                  p_cov_r=0.06, m_cov_r=0.001,
                  use_tracker=True):
 
