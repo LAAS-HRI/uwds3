@@ -26,6 +26,14 @@ class Camera(object):
         """
         d = math.sqrt(pow(self.width, 2) + pow(self.height, 2))
         return math.degrees(2 * math.atan2(d/2.0, self.width))
+    def hfov(self):
+        """ Returns the horizontal field of view
+        """
+        return math.degrees(2 * math.atan2(self.width,self.focal_length[0]))
+    def vfov(self):
+        """ Returns the vertical field of view
+        """
+        return math.degrees(2 * math.atan2(self.height,self.focal_length[1]))
 
     def center(self):
         """ Returns the camera's center

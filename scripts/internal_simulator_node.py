@@ -106,7 +106,6 @@ class InternalSimulatorNode(object):
             self.physics_monitor = PhysicsMonitor(self.internal_simulator)
         self.use_graphic_monitoring=rospy.get_param("~use_graphic_monitoring",42)
         if self.use_graphic_monitoring is True:
-
             self.physics_monitor = GraphicMonitor(self.internal_simulator)
 
         self.use_perspective_monitoring = rospy.get_param("use_perspective_monitoring", True)

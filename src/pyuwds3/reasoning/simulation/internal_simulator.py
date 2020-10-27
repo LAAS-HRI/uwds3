@@ -1,6 +1,7 @@
 import rospy
 import cv2
 import pybullet as p
+import os.path
 import numpy as np
 from sensor_msgs.msg import JointState
 from ...types.scene_node import SceneNode, SceneNodeType
@@ -126,7 +127,7 @@ class InternalSimulator(object):
                   static=False,
                   id="",
                   label="thing",
-                  description="unknown"):
+                  description="unknown",is_urdf=True):
         """ Load an URDF file in the simulator
         """
         try:
@@ -140,7 +141,17 @@ class InternalSimulator(object):
                 scene_node.label = "robot"
             use_fixed_base = 1 if static is True else 0
             flags = p.URDF_ENABLE_SLEEPING or p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES or p.URDF_MERGE_FIXED_LINKS
-            base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base, flags=flags)
+            if is_urdf:
+                base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base)
+            else:
+                use_fixed_base = 0 if static is True else 1
+                collision_shape_index = p.createCollisionShape(p.GEOM_MESH,fileName=filename,flags=flags)
+                visual_shape_index = p.createVisualShape(p.GEOM_MESH,fileName=filename)
+                base_link_sim_id = p.createMultiBody(
+                                            use_fixed_base,
+                                            collision_shape_id,visual_shape_id,
+                                            start_pose.position().to_array(),
+                                            start_pose.quaternion(),flags = flags)
             self.entity_id_map[scene_node.id] = base_link_sim_id
             # Create a joint map to ease exploration
             self.reverse_entity_id_map[base_link_sim_id] = scene_node.id
@@ -338,15 +349,20 @@ class InternalSimulator(object):
                     elif shape.is_mesh():
                         shape_type = p.GEOM_MESH
                         mesh_resource = shape.mesh_resource
-                        mesh_resource = mesh_resource.replace("obj", "urdf")
-                        mesh_resource = mesh_resource.replace("file://", "")
+                        mesh_resource_u = mesh_resource.replace("obj", "urdf")
+                        mesh_resource_u = mesh_resource_u.replace("dae","urdf")
+                        mesh_resource_u = mesh_resource_u.replace("file://", "")
+                        is_urdf = os.path.isfile(mesh_resource_u)
+                        if is_urdf:
+                            mesh_resource = mesh_resource_u
+
 
                         success, node = self.load_urdf(mesh_resource,
                                                        base_pose,
                                                        id=scene_node.id,
                                                        label=scene_node.label,
                                                        description=scene_node.description,
-                                                       static=static)
+                                                       static=static,is_urdf=is_urdf)
                         if success is True:
                             return True
                         else:
