@@ -4,7 +4,7 @@ from ...types.shape.sphere import Sphere
 from ...types.shape.cylinder import Cylinder
 import numpy as np
 
-K = 4
+K = 3
 
 
 class ShapeEstimator(object):
@@ -18,7 +18,7 @@ class ShapeEstimator(object):
                         if o.label != "person":
                             if not o.has_shape():
                                 shape = self.compute_cylinder_from_bbox(o.bbox, camera)
-                                if o.label == "face" or o.label == "hand":
+                                if o.label == "face" or o.label == "hand" or o.label =="sports_ball":
                                     shape = self.compute_sphere_from_bbox(o.bbox, camera)
                                 shape.pose.pos.x = .0
                                 shape.pose.pos.y = .0
