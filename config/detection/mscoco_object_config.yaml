@@ -161,14 +161,14 @@
 44:
   label : 'bottle'
   activated : True
-  confidence_threshold : 0.075
+  confidence_threshold : 0.07
 46:
   label : 'wine_glass'
   activated : True
   confidence_threshold : 0.07
 47:
   label : 'cup'
-  activated : True
+  activated : False
   confidence_threshold : 0.1
 48:
   label : 'fork'

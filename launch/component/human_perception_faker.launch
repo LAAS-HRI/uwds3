@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="rgb_camera_info_topic" default="kinect2/qhd/camera_info"/>
+
+  <arg name="global_frame_id" default="map"/>
+  <arg name="face_global_pose" default="0.0 1.5 1.3 2.0 0.0 -1.57"/>
+
+  <node name="human_perception_faker" pkg="uwds3" type="human_perception_faker_node.py" output="screen">
+    <rosparam subst_value="true">
+      rgb_camera_info_topic: $(arg rgb_camera_info_topic)
+      global_frame_id: $(arg global_frame_id)
+      face_global_pose: $(arg face_global_pose)
+    </rosparam>
+  </node>
+
+</launch>

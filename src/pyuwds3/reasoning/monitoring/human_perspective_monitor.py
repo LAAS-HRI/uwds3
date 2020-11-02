@@ -46,12 +46,16 @@ class HumanPerspectiveMonitor(Monitor):
         closest_face = None
         rgb_image = None
         min_depth = 1000.0
-        for t in face_tracks:
-            if t.is_confirmed():
-                if t.has_camera() is True and t.is_located() is True:
-                    if t.bbox.depth < min_depth:
-                        min_depth = t.bbox.depth
-                        closest_face = t
+        if len(face_tracks) > 1:
+            for t in face_tracks:
+                if t.is_confirmed():
+                    if t.has_camera() is True and t.is_located() is True:
+                        if t.bbox.depth < min_depth:
+                            min_depth = t.bbox.depth
+                            closest_face = t
+        else:
+            if len(face_tracks) == 1:
+                closest_face = face_tracks[0]
 
         if closest_face is not None:
             if self.monitored_face is None:
