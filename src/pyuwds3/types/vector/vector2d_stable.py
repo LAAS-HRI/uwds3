@@ -16,6 +16,8 @@ class Vector2DStable(Vector2D):
         self.y = y
         self.vx = vx
         self.vy = vy
+        self.p_cov = p_cov
+        self.m_cov = m_cov
         self.filter = cv2.KalmanFilter(4, 2)
         self.filter.statePost = self.to_array()
         self.filter.measurementMatrix = np.array([[1, 0, 0, 0],
@@ -48,8 +50,10 @@ class Vector2DStable(Vector2D):
         """"Returns the 2D vector stabilized velocity"""
         return Vector2D(x=self.vx, y=self.vy)
 
-    def update(self, x, y, time=None):
+    def update(self, x, y, time=None, m_cov=None):
         """Updates/Filter the 2D vector"""
+        if m_cov is not None:
+            self.__update_noise_cov(self.p_cov, m_cov)
         self.__update_time(time=time)
         self.filter.predict()
         measurement = np.array([[x], [y]], np.float32)
@@ -65,6 +69,8 @@ class Vector2DStable(Vector2D):
 
     def __update_noise_cov(self, p_cov, m_cov):
         """Updates the process and measurement covariances"""
+        self.p_cov = p_cov
+        self.m_cov = m_cov
         self.filter.processNoiseCov = np.array([[1, 0, 0, 0],
                                                 [0, 1, 0, 0],
                                                 [0, 0, 1, 0],

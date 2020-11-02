@@ -92,6 +92,7 @@ class Vector6D(object):
         return Vector6D().from_transform(np.dot(self.transform(), vector.inv().transform()))
 
     def from_msg(self, msg):
+        """ Converts from ROS message"""
         self.pos.x = msg.position.x
         self.pos.y = msg.position.y
         self.pos.z = msg.position.z

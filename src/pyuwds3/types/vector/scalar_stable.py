@@ -13,6 +13,8 @@ class ScalarStable(object):
         """ScalarStabilized constructor"""
         self.x = x
         self.vx = vx
+        self.p_cov = p_cov
+        self.m_cov = m_cov
         self.filter = cv2.KalmanFilter(2, 1)
         self.filter.statePost = self.to_array()
         self.filter.measurementMatrix = np.array([[1, 1]], np.float32)
@@ -41,8 +43,10 @@ class ScalarStable(object):
         """Returns the scalar's velocity"""
         return self.vx
 
-    def update(self, x, time=None):
+    def update(self, x, time=None, m_cov=None):
         """Updates/Filter the scalar"""
+        if m_cov is not None:
+            self.__update_noise_cov(self.p_cov, m_cov)
         self.__update_time(time=time)
         self.filter.predict()
         measurement = np.array([[np.float32(x)]])

@@ -23,6 +23,8 @@ class Vector3DStable(Vector3D):
         self.vmax = vmax
         self.amax = amax
         self.use_accel = use_accel
+        self.p_cov = p_cov
+        self.m_cov = m_cov
         if self.use_accel is True:
             self.ax = ax
             self.ay = ay
@@ -103,8 +105,10 @@ class Vector3DStable(Vector3D):
         """ """
         return Vector3D(x=self.ax, y=self.ay, z=self.az)
 
-    def update(self, x, y, z, time=None):
+    def update(self, x, y, z, time=None, m_cov=None):
         """Updates/Filter the 3D vector"""
+        if m_cov is not None:
+            self.__update_noise_cov(self.p_cov, m_cov)
         self.__update_time(time=time)
         self.predict()
         measurement = np.array([[x], [y], [z]], np.float32)
@@ -149,6 +153,8 @@ class Vector3DStable(Vector3D):
 
     def __update_noise_cov(self, p_cov, m_cov):
         """Updates the process and measurement covariances"""
+        self.p_cov = p_cov
+        self.m_cov = m_cov
         if self.use_accel is True:
             self.filter.processNoiseCov = np.eye(9, dtype=np.float32) * p_cov
         else:
