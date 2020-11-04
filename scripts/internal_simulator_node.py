@@ -13,6 +13,7 @@ from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.reasoning.simulation.internal_simulator import InternalSimulator
 from pyuwds3.reasoning.monitoring.physics_monitor import PhysicsMonitor
 from pyuwds3.reasoning.monitoring.human_perspective_monitor import HumanPerspectiveMonitor
+from pyuwds3.reasoning.monitoring.robot_perspective_monitor import RobotPerspectiveMonitor
 from pyuwds3.utils.egocentric_spatial_relations import is_right_of, is_left_of, is_behind
 from pyuwds3.types.vector.vector6d import Vector6D
 from pyuwds3.types.vector.vector3d import Vector3D
@@ -68,6 +69,7 @@ class InternalSimulatorNode(object):
         self.publish_markers = rospy.get_param("~publish_markers", True)
 
         self.world_publisher = WorldPublisher("corrected_tracks")
+        self.other_world_publisher = WorldPublisher("other_view_tracks")
         self.marker_publisher = MarkerPublisher("corrected_markers")
 
         self.robot_camera_clipnear = rospy.get_param("~robot_camera_clipnear", 0.1)
@@ -89,17 +91,20 @@ class InternalSimulatorNode(object):
 
         self.other_view_publisher = ViewPublisher("other_view")
 
+        self.robot_perspective_monitor = RobotPerspectiveMonitor(self.internal_simulator)
+
         self.use_physical_monitoring = rospy.get_param("use_physical_monitoring", True)
         if self.use_physical_monitoring is True:
             self.physics_monitor = PhysicsMonitor(self.internal_simulator)
 
         self.use_perspective_monitoring = rospy.get_param("use_perspective_monitoring", True)
         if self.use_perspective_monitoring is True:
-            self.perspective_monitor = HumanPerspectiveMonitor(self.internal_simulator, None)
+            self.perspective_monitor = HumanPerspectiveMonitor(self.internal_simulator)
 
         rospy.Service("/uwds3/get_perspective", GetPerspective, self.handle_perspective_taking)
 
         self.perspective_facts = []
+        self.egocentric_facts = []
         self.physics_facts = []
 
         self.rgb_camera_info_topic = rospy.get_param("~rgb_camera_info_topic", "/camera/rgb/camera_info")
@@ -165,38 +170,48 @@ class InternalSimulatorNode(object):
                                                   clipnear=self.robot_camera_clipnear,
                                                   clipfar=self.robot_camera_clipfar)
         if self.internal_simulator.is_robot_loaded() is True:
-            header = msg.header
-            header.frame_id = self.global_frame_id
-            self.frame_count %= self.n_frame
+            success, view_pose = self.tf_bridge.get_pose_from_tf(self.global_frame_id, self.camera_frame_id)
 
-            if self.use_perspective_monitoring is True:
-                if self.frame_count == 3:
-                    monitoring_timer = cv2.getTickCount()
-                    face_tracks = [f for f in self.human_tracks if f.label == "face"]
-                    person_tracks = [f for f in self.human_tracks if f.label == "person"]
-                    success, other_image, other_visible_tracks, self.perspective_facts = self.perspective_monitor.monitor(face_tracks, person_tracks, header.stamp)
-                    monitoring_fps = cv2.getTickFrequency() / (cv2.getTickCount()-monitoring_timer)
-                    if success:
-                        self.other_view_publisher.publish(other_image, other_visible_tracks, header.stamp, fps=monitoring_fps)
+            if success is not True:
+                rospy.logwarn("[human_perception] The camera sensor is not localized in world space (frame '{}'), please check if the sensor frame is published in /tf".format(self.global_frame_id))
+            else:
+                header = msg.header
+                header.frame_id = self.global_frame_id
+                self.frame_count %= self.n_frame
 
-            object_tracks = self.ar_tags_tracks + self.object_tracks
-            person_tracks = [f for f in self.human_tracks if f.label == "person"]
+                object_tracks = self.ar_tags_tracks + self.object_tracks
+                person_tracks = [f for f in self.human_tracks if f.label == "person"]
 
-            corrected_object_tracks, self.physics_facts = self.physics_monitor.monitor(object_tracks, person_tracks, header.stamp)
+                corrected_object_tracks, self.physics_facts = self.physics_monitor.monitor(object_tracks, person_tracks, header.stamp)
 
-            corrected_tracks = self.internal_simulator.get_static_entities() + self.human_tracks + corrected_object_tracks
+                if self.use_perspective_monitoring is True:
+                    if self.frame_count == 3:
+                        monitoring_timer = cv2.getTickCount()
+                        perspective_facts = []
+                        face_tracks = [f for f in self.human_tracks if f.label == "face"]
+                        person_tracks = [f for f in self.human_tracks if f.label == "person"]
+                        success, other_image, other_visible_tracks, perspective_facts = self.perspective_monitor.monitor(face_tracks, person_tracks, header.stamp)
+                        monitoring_fps = cv2.getTickFrequency() / (cv2.getTickCount()-monitoring_timer)
+                        if success:
+                            self.perspective_facts = [s for s in perspective_facts if s.predicate == "visible_by"]
+                            self.other_world_publisher.publish(other_visible_tracks, perspective_facts+self.physics_facts, header)
+                            self.other_view_publisher.publish(other_image, other_visible_tracks, header.stamp, fps=monitoring_fps)
 
-            events = self.physics_facts + self.perspective_facts
+                _, self.egocentric_facts = self.robot_perspective_monitor.monitor(object_tracks, person_tracks, self.robot_camera, view_pose, header.stamp)
 
-            self.world_publisher.publish(corrected_tracks, events, header)
+                corrected_tracks = self.internal_simulator.get_static_entities() + self.human_tracks + corrected_object_tracks
 
-            if self.publish_tf is True:
-                self.tf_bridge.publish_tf_frames(corrected_tracks, action_events, header)
+                events = self.physics_facts + self.perspective_facts + self.egocentric_facts
 
-            if self.publish_markers is True:
-                self.marker_publisher.publish(corrected_tracks, header)
+                self.world_publisher.publish(corrected_tracks, events, header)
 
-            self.frame_count += 1
+                if self.publish_tf is True:
+                    self.tf_bridge.publish_tf_frames(corrected_tracks, action_events , header)
+
+                if self.publish_markers is True:
+                    self.marker_publisher.publish(corrected_tracks, header)
+
+                self.frame_count += 1
 
     def run(self):
         while not rospy.is_shutdown():

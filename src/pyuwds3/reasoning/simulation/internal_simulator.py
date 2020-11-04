@@ -450,7 +450,7 @@ class InternalSimulator(object):
                 scene_node.pose.from_quaternion(orientation[0], orientation[1], orientation[2], orientation[3])
         return self.nodes_map[id]
 
-    def get_camera_view(self, camera_pose, camera, target_position=None, occlusion_threshold=0.01, rendering_ratio=1.0):
+    def get_camera_view(self, camera_pose, camera, target_position=None, occlusion_threshold=0.001, rendering_ratio=1.0):
         """ Render the rgb, depth and mask images from any point or view and compute the corresponding visible nodes
         """
         visible_nodes = []

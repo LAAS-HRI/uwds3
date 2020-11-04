@@ -503,3 +503,9 @@ class SceneNode(object):
 
     def __eq__(self, other):
         return other.id == self.id
+
+    def __str__(self):
+        return self.description+"("+self.id[:6]+")"
+
+    def __repr__(self):
+        return str(self)

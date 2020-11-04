@@ -2,13 +2,12 @@ from ...types.situation import SituationType, Fact, Event
 
 
 class Monitor(object):
-    def __init__(self, internal_simulator=None, beliefs_base=None):
+    def __init__(self, internal_simulator=None):
         """ Monitor constructor
         """
         self.relations = []
         self.relations_index = {}
         self.simulator = internal_simulator
-        self.beliefs_base = beliefs_base
 
     def cleanup_relations(self):
         """ Cleanup the relations buffer

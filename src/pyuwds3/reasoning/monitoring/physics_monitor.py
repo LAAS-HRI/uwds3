@@ -31,10 +31,10 @@ def centroid_cost(track_a, track_b):
 class PhysicsMonitor(Monitor):
     """ Special monitor for tabletop scenario
     """
-    def __init__(self, internal_simulator=None, beliefs_base=None, position_tolerance=0.04):
+    def __init__(self, internal_simulator=None, position_tolerance=0.04):
         """ Tabletop monitor constructor
         """
-        super(PhysicsMonitor, self).__init__(internal_simulator=internal_simulator, beliefs_base=beliefs_base)
+        super(PhysicsMonitor, self).__init__(internal_simulator=internal_simulator)
         self.previous_object_states = {}
         self.previous_object_tracks_map = {}
         self.position_tolerance = position_tolerance
