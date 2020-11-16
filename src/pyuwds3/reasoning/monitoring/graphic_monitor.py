@@ -12,8 +12,16 @@ from pyuwds3.types.vector.vector6d_stable import Vector6DStable
 from pyuwds3.types.scene_node import SceneNode
 from pyuwds3.types.shape.mesh import Mesh
 from .physics_monitor import ActionStates
+from pyuwds3.utils.view_publisher import ViewPublisher
 import math
-
+import tf
+from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Pose
+import tf2_ros
+import tf2_geometry_msgs
+from ...types.vector.vector6d import Vector6D
+from geometry_msgs.msg import Transform
+from geometry_msgs.msg import TransformStamped
 INF = 10e3
 #Ray >1
 N_RAY = 5
@@ -25,54 +33,105 @@ def centroid_cost(track_a, track_b):
         return euclidean(track_a.pose.position().to_array(), track_b.pose.position().to_array())
     except Exception:
         return INF
-
+class AgentType(object):
+    HUMAN = "h"
+    ROBOT = "r"
 
 class GraphicMonitor(Monitor):
-    """ Special monitor for tabletop scenario
+    """ Special monitor for agent management
     """
-    def __init__(self, internal_simulator=None, beliefs_base=None, position_tolerance=0.04):
+    def __init__(self,agent=None,agent_type =AgentType.ROBOT,
+     hand1 = None,hand2=None, head = "head_mount_kinect2_rgb_optical_frame", internal_simulator=None,
+      beliefs_base=None, position_tolerance=0.04,name="robot"):
         """ Tabletop monitor constructor
         """
         super(GraphicMonitor, self).__init__(internal_simulator=internal_simulator, beliefs_base=beliefs_base)
         self.internal_simulator = internal_simulator
-        self.onto = OntologyManipulator("")
+        # self.onto = OntologyManipulator("")
         self.previous_object_states = {}
+        self.camera = Camera()
         self.previous_object_tracks_map = {}
         self.position_tolerance = position_tolerance
         self.content_map = {}
         self.centroid_assignement = LinearAssignment(centroid_cost, max_distance=None)
         self.alpha_dic = {}
-        node = SceneNode(pose=Vector6DStable(-1,-1,1))
-        self.cad_models_search_path = rospy.get_param("~cad_models_search_path", "")
-        mesh_path = self.cad_models_search_path + "/obj/dt_cube.obj"
-        shape = Mesh(mesh_path,
-                     x=-1, y=-1, z=1,
-                     rx=0, ry=0, rz=0)
-        shape.color[0] = 1
-        shape.color[1] = 1
-        shape.color[2] = 1
-        shape.color[3] = 1
-        node.shapes.append(shape)
-        self.internal_simulator.load_node(node)
+        self.agent_type = agent_type
+        self.agent = agent
+        self.hand1 = hand1
+        self.hand2 = hand2
+        self.head  = head
+        self.n_frame=4
+        self.frame_count = 0
+        self._publisher = ViewPublisher(name+"_view")
+        self.ar_tags_sub = rospy.Subscriber("/tf", rospy.AnyMsg, self.publish_view)
 
 
-    def monitor(self, object_tracks, person_tracks, time):
+        # node = SceneNode(pose=Vector6DStable(-1,-1,1))
+        # self.cad_models_search_path = rospy.get_param("~cad_models_search_path", "")
+        # mesh_path = self.cad_models_search_path + "/obj/dt_cube.obj"
+        # shape = Mesh(mesh_path,
+        #              x=-1, y=-1, z=1,
+        #              rx=0, ry=0, rz=0)
+        # shape.color[0] = 1
+        # shape.color[1] = 1
+        # shape.color[2] = 1
+        # shape.color[3] = 1
+        # node.shapes.append(shape)
+        # self.internal_simulator.load_node(node)
+        self.time=rospy.Time().now().to_nsec()
+
+    def get_head_pose(self,time):
+        s,hpose=self.simulator.tf_bridge.get_pose_from_tf(self.simulator.global_frame_id,
+                                                        self.head,time)
+        return hpose
+
+    def publish_view(self,tfm):
+        time = rospy.Time.now().to_nsec()
+        # if time-self.time > 7166666:
+        # #     # print "test"
+        # #     self.time=time
+        # #     self.internal_simulator.step_simulation()
+        # # print self.internal_simulator.entity_id_map
+        # self.frame_count %= self.n_frame
+        # if time-self.time > 7166666:
+        #     # hpose=self.get_head_pose()
+        #     # print hpose
+        #     #
+        #     # image,_,_,_ =  self.simulator.get_camera_view(hpose, self.camera)
+        #     # self._publisher.publish(image,[],rospy.Time.now())
+        #     # self.time=time
+        #     # self.head.pose.rot.x+=0.03
+        #     # print self.head.pose.rot.x
+            # self.head.pose.rot.y+=0.06
+            # print self.head.pose.rot.y
+            # print self.head.pose.pos
+            # print "   "
+
+
+        self.frame_count+=1
+
+
+    def monitor(self, object_tracks, pose, time):
         """ Monitor the physical consistency of the objects and detect human tabletop actions
         """
         self.cleanup_relations()
-
         next_object_states = {}
         object_tracks_map = {}
+        if pose != None:
+            for object in object_tracks:
+                object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
 
+                if object.is_located() and object.has_shape():
+                    if not self.simulator.is_entity_loaded(object.id):
+                        self.simulator.load_node(object)
+                    self.simulator.reset_entity_pose(object.id, object.pose)
 
-        for object in object_tracks:
-            if object.is_located() and object.has_shape():
-                if not self.simulator.is_entity_loaded(object.id):
-                    self.simulator.load_node(object)
-                self.simulator.reset_entity_pose(object.id, object.pose)
-
-
-
+        if time.to_nsec()-self.time > 7166666:
+            hpose=self.get_head_pose(time)
+            print hpose
+            image,_,_,_ =  self.simulator.get_camera_view(hpose, self.camera)
+            self._publisher.publish(image,[],time)
+            self.time=time.to_nsec()
         # for object in object_tracks:
         #     if object.is_located() and object.has_shape():
         #         if object.is_confirmed():
@@ -83,7 +142,7 @@ class GraphicMonitor(Monitor):
         #             simulated_position = simulated_object.pose.position()
 
 
-        self.compute_allocentric_relations(object_tracks, time)
+        # self.compute_allocentric_relations(object_tracks, time)
 
 
         return object_tracks, self.relations
@@ -185,6 +244,8 @@ class GraphicMonitor(Monitor):
 
 
     def compute_allocentric_relations(self, objects, time):
+
+
         print self.relations_index
         for obj1 in objects:
             if obj1.is_located() and obj1.has_shape():
@@ -193,7 +254,8 @@ class GraphicMonitor(Monitor):
                     is_on = True
                     is_in = True
                     on = self.onto.indivividuals.getOn(obj1.id,"onTopOf")
-                    in = self.onto.indivividuals.getOn(obj1.id,"isInContainer")
+                    in_ = self.onto.indivividuals.getOn(obj1.id,"isInContainer")
+
                     if len(on)>0:
                         if on[0].is_located() and on[0].has_shape():
                             success2, aabb2 = self.simulator.get_aabb(on[0])
@@ -201,9 +263,9 @@ class GraphicMonitor(Monitor):
                                 is_on = is_on_top(aabb1, aabb2)
                                 # if is_on == False:
                                     #DELETE LINK IN ONTO
-                    if len(in)>0:
-                        if in[0].is_located() and in[0].has_shape():
-                            success2, aabb2 = self.simulator.get_aabb(in[0])
+                    if len(in_)>0:
+                        if in_[0].is_located() and in_[0].has_shape():
+                            success2, aabb2 = self.simulator.get_aabb(in_[0])
                             if success2:
                                 is_in = is_in(aabb1, aabb2)
                                 # if is_on == False:
@@ -221,14 +283,6 @@ class GraphicMonitor(Monitor):
                                     is_in = is_in(aabb1, aabb2)
                                     if is_in:
                                         self.onto.feeder.insert(obj1.id,"isInContainer",obj2.id)
-        
-
-
-
-
-
-
-
                 for obj2 in objects:
                     if obj1.id != obj2.id:
                         # evaluate allocentric relation
@@ -236,8 +290,3 @@ class GraphicMonitor(Monitor):
                             # get 3d aabb
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
-
-
-                                if is_on_top(aabb1, aabb2):
-
-                                if is_in(aabb1, aabb2):

@@ -32,6 +32,7 @@ class TfBridge(object):
         """ Get the pose from /tf2 """
         try:
             if time is not None:
+                # self.tf_listener.wait_for_transform(source_frame, target_frame, time, rospy.Duration(4.0))
                 trans = self.tf_buffer.lookup_transform(source_frame, target_frame, time)
             else:
                 trans = self.tf_buffer.lookup_transform(source_frame, target_frame, rospy.Time(0))
@@ -46,9 +47,10 @@ class TfBridge(object):
             pose = Vector6D(x=x, y=y, z=z).from_quaternion(rx, ry, rz, rw)
             return True, pose
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
-            rospy.logwarn("[tf_bridge] Exception occured: {}".format(e))
-            return False, None
-
+            rospy.logwarn("[tf_bridge] Exception occureddd: {}".format(e))
+            # return False, None
+            pose = Vector6D(x=0, y=0, z=0).from_quaternion(0, 0, 0, 0)
+            return False,pose
     def publish_tf_frames(self, tracks, events, header):
         for track in tracks:
             if track.is_located() is True and track.is_confirmed() is True:

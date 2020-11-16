@@ -12,15 +12,11 @@ from pyuwds3.utils.marker_publisher import MarkerPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.reasoning.simulation.internal_simulator import InternalSimulator
 from pyuwds3.reasoning.monitoring.physics_monitor import PhysicsMonitor
-<<<<<<< HEAD
-from pyuwds3.reasoning.monitoring.heatmap import Heatmap
-=======
 from pyuwds3.reasoning.monitoring.graphic_monitor import GraphicMonitor
-
->>>>>>> debug
 from pyuwds3.reasoning.monitoring.perspective_monitor import PerspectiveMonitor
 from pyuwds3.reasoning.monitoring.heatmap import Heatmap
-
+from pyuwds3.types.vector.vector6d_stable import Vector6DStable
+from pyuwds3.types.shape.mesh import Mesh
 DEFAULT_SENSOR_QUEUE_SIZE = 3
 
 
@@ -42,20 +38,15 @@ class InternalSimulatorNode(object):
 
         self.use_ar_tags = rospy.get_param("~use_ar_tags", True)
         self.ar_tags_topic = rospy.get_param("ar_tags_topic", "ar_tracks")
+        self.ar_tags_topic="ar_tracks"
+        self.use_ar_tags = True
         if self.use_ar_tags is True:
             self.ar_tags_tracks = []
             self.ar_tags_sub = rospy.Subscriber(self.ar_tags_topic, WorldStamped, self.ar_tags_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-        self.use_motion_capture = rospy.get_param("use_motion_capture", FALSE)
-=======
-        self.use_motion_capture = rospy.get_param("use_motion_capture", False)
->>>>>>> debug
-=======
-        self.use_motion_capture = rospy.get_param("use_motion_capture", True)
->>>>>>> work on graphic monitor and some debug
-        self.motion_capture_topic = rospy.get_param("motion_capture_topic", "motion_capture_tracks")
+
+        self.use_motion_capture = rospy.get_param("~use_motion_capture", False)
+        self.motion_capture_topic = rospy.get_param("~motion_capture_topic", "motion_capture_tracks")
         if self.use_motion_capture is True:
             self.motion_capture_tracks = []
             self.motion_capture_sub = rospy.Subscriber(self.motion_capture_topic, WorldStamped, self.motion_capture_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
@@ -100,13 +91,31 @@ class InternalSimulatorNode(object):
                                                     self.base_frame_id)
 
         self.other_view_publisher = ViewPublisher("other_view")
-        self.use_heatmap_monitoring = True
-        self.use_physical_monitoring = rospy.get_param("use_physical_monitoring", True)
+        self.use_heatmap_monitoring = False
+        self.use_physical_monitoring = rospy.get_param("~use_physical_monitoring", True)
         if self.use_physical_monitoring is True:
+            print "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
             self.physics_monitor = PhysicsMonitor(self.internal_simulator)
         self.use_graphic_monitoring=rospy.get_param("~use_graphic_monitoring",42)
+        self.use_graphic_monitoring = True
+        print self.use_graphic_monitoring
         if self.use_graphic_monitoring is True:
-            self.physics_monitor = GraphicMonitor(self.internal_simulator)
+            # bodynode = SceneNode(pose=Vector6DStable(x=-2,y=6,z=-9,rx=1.7, ry=3.54, rz=0))
+            # headnode = SceneNode(pose=Vector6DStable(x=-2,y=4.6,z=2.2,rx=1.7, ry=.42, rz=0))
+            # self.cad_models_search_path = rospy.get_param("~cad_models_search_path", "")
+            # # mesh_path = "/home/abonneau/catkin_ws/src/exp_director_task/mesh/obj/dt_cube.obj"
+            # mesh_path = "package://exp_director_task/mesh/ikea_console.stl"
+            # shape = Mesh(mesh_path,
+            #              x=0, y=0, z=0,
+            #              rx=0, ry=0, rz=0)
+            # shape.color[0] = 1
+            # shape.color[1] = 1
+            # shape.color[2] = 1
+            # shape.color[3] = 1
+            # bodynode.shapes.append(shape)
+            # self.internal_simulator.load_node(bodynode)
+            # self.internal_simulator.load_node(headnode)
+            self.physics_monitor = GraphicMonitor(internal_simulator=self.internal_simulator)#,head=headnode)
 
         self.use_perspective_monitoring = rospy.get_param("~use_perspective_monitoring", True)
         self.use_perspective_monitoring = False
@@ -135,8 +144,15 @@ class InternalSimulatorNode(object):
     def ar_tags_callback(self, world_msg):
         ar_tags_tracks = []
         for node in world_msg.world.scene:
+            # print self.internal_simulator.entity_id_map
             ar_tags_tracks.append(SceneNode().from_msg(node))
         self.ar_tags_tracks = ar_tags_tracks
+        #world_msg.header.frame_id[1:]
+        if world_msg.header.frame_id[1:] != '':
+            s,pose =self.tf_bridge.get_pose_from_tf(self.global_frame_id, world_msg.header.frame_id[1:])
+        else:
+            pose=None
+        self.physics_monitor.monitor(ar_tags_tracks, pose, world_msg.header.stamp)
 
     def motion_capture_callback(self, world_msg):
         motion_capture_tracks = []

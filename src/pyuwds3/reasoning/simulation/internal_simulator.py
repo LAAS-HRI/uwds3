@@ -15,11 +15,12 @@ from ...types.shape.sphere import Sphere
 from ...types.shape.mesh import Mesh
 from ...types.detection import Detection
 import yaml
+import inspect
 
 INF = 1e+7
 DEFAULT_DENSITY = 998.57
-
-
+import rospkg
+rospack = rospkg.RosPack()
 class InternalSimulator(object):
     """
     """
@@ -41,7 +42,7 @@ class InternalSimulator(object):
             self.load_robot = False
 
         self.tf_bridge = TfBridge()
-
+        self.joint_map_reset = {}
         self.nodes_map = {}
 
         self.my_id = None
@@ -107,14 +108,13 @@ class InternalSimulator(object):
                     if not success:
                         rospy.logwarn("[simulator] Unable to load {} node, skip it.".format(entity["id"]))
 
-        p.setGravity(0, 0, -10)
+        p.setGravity(0, 0, 0)
         p.setRealTimeSimulation(0)
 
         self.robot_loaded = False
         self.joint_states_last_update = None
 
         if load_robot is True:
-            print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
             self.joint_state_subscriber = rospy.Subscriber("/joint_states", JointState, self.joint_states_callback, queue_size=1)
 
         if self.use_controller is True:
@@ -144,14 +144,29 @@ class InternalSimulator(object):
             if is_urdf:
                 base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base)
             else:
+
                 use_fixed_base = 0 if static is True else 1
-                collision_shape_index = p.createCollisionShape(p.GEOM_MESH,fileName=filename,flags=flags)
-                visual_shape_index = p.createVisualShape(p.GEOM_MESH,fileName=filename)
+
+                if "package://" in filename:
+
+                    a=filename.split("package://")[-1]
+                    k=a.split('/')
+                    path=rospack.get_path(k[0])
+                    for i in k[1:]:
+                        path+='/'+i
+                    filename=path
+                collision_shape_id = p.createCollisionShape(p.GEOM_MESH,fileName=filename,flags=flags)
+                visual_shape_id = p.createVisualShape(p.GEOM_MESH,fileName=filename)
                 base_link_sim_id = p.createMultiBody(
                                             use_fixed_base,
                                             collision_shape_id,visual_shape_id,
                                             start_pose.position().to_array(),
                                             start_pose.quaternion(),flags = flags)
+                # base_link_sim_id = p.createMultiBody(
+                #                             use_fixed_base,
+                #                             collision_shape_id,visual_shape_id,
+                #                             [0,0,0],[1,0,0,0],flags = flags)
+
             self.entity_id_map[scene_node.id] = base_link_sim_id
             # Create a joint map to ease exploration
             self.reverse_entity_id_map[base_link_sim_id] = scene_node.id
@@ -355,7 +370,6 @@ class InternalSimulator(object):
                         is_urdf = os.path.isfile(mesh_resource_u)
                         if is_urdf:
                             mesh_resource = mesh_resource_u
-
 
                         success, node = self.load_urdf(mesh_resource,
                                                        base_pose,
@@ -631,6 +645,55 @@ class InternalSimulator(object):
     def step_simulation(self):
         p.stepSimulation()
 
+    # def joint_states_callback(self, joint_states_msg):
+    #     """
+    #     """
+    #
+    #     success, pose = self.tf_bridge.get_pose_from_tf(self.global_frame_id, self.base_frame_id)
+    #
+    #     if success is True:
+    #         if self.robot_loaded is False:
+    #             try:
+    #                 success, node = self.load_urdf(self.robot_urdf_file_path,
+    #                                             pose,
+    #                                             label="myself",
+    #                                             description="myself")
+    #                 rospy.loginfo("[simulation] Robot loaded")
+    #                 self.my_id = node.id
+    #                 self.robot_loaded = True
+    #             except Exception as e:
+    #                 rospy.logwarn("[simulation] Exception occured: {}".format(e))
+    #         else:
+    #             self.update_constraint(self.my_id, pose)
+    #     if self.robot_loaded is True:
+    #
+    #         joint_indices = []
+    #         target_positions = []
+    #         base_link_sim_id = self.entity_id_map[self.my_id]
+    #         for joint_state_index, joint_name in enumerate(joint_states_msg.name):
+    #             joint_sim_index = self.joint_id_map[base_link_sim_id][joint_name]
+    #             info = p.getJointInfo(base_link_sim_id, joint_sim_index, physicsClientId=self.client_simulator_id)
+    #             joint_name_sim = info[1]
+    #             assert(joint_name == joint_name_sim)
+    #             joint_position = joint_states_msg.position[joint_state_index]
+    #             state = p.getJointState(base_link_sim_id, joint_sim_index)
+    #             current_position = state[0]
+    #             if abs(joint_position - current_position) >= self.position_tolerance:
+    #                 joint_indices.append(joint_sim_index)
+    #                 target_positions.append(joint_position)
+    #             if len(target_positions) > 0:
+    #                 self.robot_moving = True
+    #                 p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_DISABLE_SLEEPING)
+    #
+    #                 p.setJointMotorControlArray(base_link_sim_id,
+    #                                             joint_indices,
+    #                                             controlMode=p.POSITION_CONTROL,
+    #                                             targetPositions=target_positions,forces = [0]*len(joint_indices))
+    #
+    #             else:
+    #                 self.robot_moving = False
+    #                 p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
+    #
     def joint_states_callback(self, joint_states_msg):
         """
         """
@@ -639,40 +702,42 @@ class InternalSimulator(object):
         if success is True:
             if self.robot_loaded is False:
                 try:
+                    # curframe = inspect.currentframe()
+                    # calframe = inspect.getouterframes(curframe, 2)
+                    # print ("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+                    # print('caller name:', calframe[1][3])
+                    self.robot_loaded = True
                     success, node = self.load_urdf(self.robot_urdf_file_path,
                                                 pose,
                                                 label="myself",
                                                 description="myself")
+                    if not success:
+                        self.robot_loaded = False
                     rospy.loginfo("[simulation] Robot loaded")
                     self.my_id = node.id
-                    self.robot_loaded = True
                 except Exception as e:
                     rospy.logwarn("[simulation] Exception occured: {}".format(e))
-            else:
-                self.update_constraint(self.my_id, pose)
+                    self.robot_loaded = False
+            # else:
+            #     self.update_constraint(self.my_id, pose)
         if self.robot_loaded is True:
+
             joint_indices = []
             target_positions = []
             base_link_sim_id = self.entity_id_map[self.my_id]
             for joint_state_index, joint_name in enumerate(joint_states_msg.name):
-
                 joint_sim_index = self.joint_id_map[base_link_sim_id][joint_name]
                 info = p.getJointInfo(base_link_sim_id, joint_sim_index, physicsClientId=self.client_simulator_id)
                 joint_name_sim = info[1]
+                # joint_index = info[0]
                 assert(joint_name == joint_name_sim)
                 joint_position = joint_states_msg.position[joint_state_index]
                 state = p.getJointState(base_link_sim_id, joint_sim_index)
                 current_position = state[0]
-                if abs(joint_position - current_position) >= self.position_tolerance:
-                    joint_indices.append(joint_sim_index)
-                    target_positions.append(joint_position)
-                if len(target_positions) > 0:
-                    self.robot_moving = True
-                    p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_DISABLE_SLEEPING)
-                    p.setJointMotorControlArray(base_link_sim_id,
-                                                joint_indices,
-                                                controlMode=p.POSITION_CONTROL,
-                                                targetPositions=target_positions)
+                if not joint_sim_index in self.joint_map_reset:
+                    self.joint_map_reset[joint_sim_index]=joint_position
+                    p.resetJointState(base_link_sim_id,joint_sim_index,joint_position)
                 else:
-                    self.robot_moving = False
-                    p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
+                    if self.joint_map_reset[joint_sim_index]!=joint_position:
+                        self.joint_map_reset[joint_sim_index]=joint_position
+                        p.resetJointState(base_link_sim_id,joint_sim_index,joint_position)
