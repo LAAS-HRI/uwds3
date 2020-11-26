@@ -34,7 +34,9 @@ class Camera(object):
         """ Returns the vertical field of view
         """
         return math.degrees(2 * math.atan2(self.height,self.focal_length[1]))
-
+    def setfov(self,hfov,vfov):
+        self.focal_length.x = self.width/(1.0*math.tan(2*math.radians(hfov)))
+        self.focal_length.y = self.height/(1.0*math.tan(2*math.radians(vfov)))
     def center(self):
         """ Returns the camera's center
         """
