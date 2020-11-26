@@ -332,6 +332,7 @@ class InternalSimulator(object):
                     elif shape.is_sphere():
                         shape_type = p.GEOM_SPHERE
                         radius = shape.radius()
+
                         collision_shape_id = p.createCollisionShape(shape_type, radius=radius,
                                                                     collisionFramePosition=t,
                                                                     collisionFrameOrientation=q)
@@ -344,8 +345,24 @@ class InternalSimulator(object):
                             shape_masses.append(mass)
                             collision_shape_ids.append(collision_shape_id)
                             visual_shape_ids.append(visual_shape_id)
-
+                    # elif shape.is_plane():
+                    #     shape_type = p.GEOM_PLANE
+                    #     dim = [shape.x/2.0, shape.y/2.0, shape.z/2.0]
+                    #     collision_shape_id = p.createCollisionShape(shape_type, plane_normal=dim,
+                    #                                                 collisionFramePosition=t,
+                    #                                                 collisionFrameOrientation=q
+                    #                                                 )
+                    #     visual_shape_id = p.createVisualShape(shape_type, plane_normal=dim,
+                    #                                           visualFramePosition=t,
+                    #                                           visualFrameOrientation=q,
+                    #                                           rgbaColor=shape.color)
+                    #     if visual_shape_id >= 0 and collision_shape_id >= 0:
+                    #         mass = DEFAULT_DENSITY * shape.volume()
+                    #         shape_masses.append(mass)
+                    #         collision_shape_ids.append(collision_shape_id)
+                    #         visual_shape_ids.append(visual_shape_id)
                     elif shape.is_box():
+
                         shape_type = p.GEOM_BOX
                         dim = [shape.x/2.0, shape.y/2.0, shape.z/2.0]
                         collision_shape_id = p.createCollisionShape(shape_type, halfExtents=dim,

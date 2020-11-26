@@ -9,6 +9,8 @@ from .camera import Camera, HumanCamera
 from .shape.cylinder import Cylinder
 from .shape.sphere import Sphere
 from .shape.mesh import Mesh
+from .shape.box import Box
+
 from .vector.vector6d_stable import Vector6DStable
 from .bbox_stable import BoundingBoxStable
 from .vector.vector6d import Vector6D
@@ -338,7 +340,6 @@ class SceneNode(object):
         msg.features = []
         for features in msg.features:
             msg.features.append(features.from_msg(features))
-
         if msg.has_shape is True:
             for shape in msg.shapes:
                 if shape.type == uwds3_msgs.msg.PrimitiveShape.CYLINDER:
@@ -347,6 +348,8 @@ class SceneNode(object):
                     self.shapes.append(Sphere().from_msg(shape))
                 if shape.type == uwds3_msgs.msg.PrimitiveShape.MESH:
                     self.shapes.append(Mesh().from_msg(shape))
+                if shape.type == uwds3_msgs.msg.PrimitiveShape.BOX:
+                    self.shapes.append(Box().from_msg(shape))
 
         if msg.has_camera is True:
             self.camera = Camera().from_msg(msg.camera.info,
@@ -463,7 +466,7 @@ class SceneNode(object):
                                 2)
                     cv2.drawFrameAxes(image, camera_matrix, dist_coeffs,
                                       rvec,
-                                      sensor_pose.position().to_array(), 0.1)
+                                          sensor_pose.position().to_array(), 0.1)
                 else:
                     depth = self.bbox.depth
                     cv2.putText(image, "{0:.2}m".format(depth),

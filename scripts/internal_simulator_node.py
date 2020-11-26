@@ -94,7 +94,6 @@ class InternalSimulatorNode(object):
         self.use_heatmap_monitoring = False
         self.use_physical_monitoring = rospy.get_param("~use_physical_monitoring", True)
         if self.use_physical_monitoring is True:
-            print "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
             self.physics_monitor = PhysicsMonitor(self.internal_simulator)
         self.use_graphic_monitoring=rospy.get_param("~use_graphic_monitoring",42)
         self.use_graphic_monitoring = True

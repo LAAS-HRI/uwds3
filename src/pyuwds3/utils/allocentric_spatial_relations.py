@@ -6,7 +6,7 @@
 import math
 
 INSIDE_EPSILON = 0.025 # 2.5mm
-ONTOP_EPSILON = 0.005 # 1cm
+ONTOP_EPSILON = 0.02 # 1cm
 
 
 def bb_center(bb):
@@ -127,7 +127,7 @@ def is_above(bb1, bb2):
     x1,y1,z1 = bb1_min
     x2,y2,z2 = bb2_max
 
-    if z1 < z2 - ONTOP_EPSILON:
+    if z1 < z2 - 4*ONTOP_EPSILON:
         return False
 
     return overlap(bb_footprint(bb1),
@@ -159,7 +159,8 @@ def is_on_top(bb1, bb2):
 
     x1,y1,z1 = bb1_min
     x2,y2,z2 = bb2_max
-
+    # print bb1
+    # print bb2
     return z1 < z2 + ONTOP_EPSILON and is_above(bb1, bb2)
 
 
@@ -190,12 +191,39 @@ def is_in(bb1, bb2):
     x1,y1,z1 = bb1_min
     x2,y2,z2 = bb2_max
     x3,y3,z3 = bb2_min
-
+    # print z1
+    # print z2
+    # print z2 - INSIDE_EPSILON
     if z1 > z2 - INSIDE_EPSILON:
         return False
 
     if z1 < z3 + INSIDE_EPSILON:
         return False
+
+    return weakly_cont(bb_footprint(bb1),
+                       bb_footprint(bb2))
+
+def is_included(bb1, bb2):
+    """ Returns True if bb1 is included in bb2.
+
+    To be 'in' bb1 is weakly contained by bb2 and the top of bb1 is lower
+    than the top of bb2 and the bottom of bb1 is  higher than the bottom of bb2.
+    """
+    bb1_min, bb1_max = bb1
+    bb2_min, bb2_max = bb2
+
+    x1,y1,z1 = bb1_min
+    x2,y2,z2 = bb1_max
+    x3,y3,z3 = bb2_min
+    x4,y4,z4 = bb2_max
+
+
+    if z2 > z4+ INSIDE_EPSILON:
+        return False
+
+    if z1 < z3 - INSIDE_EPSILON:
+        return False
+
 
     return weakly_cont(bb_footprint(bb1),
                        bb_footprint(bb2))
