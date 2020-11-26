@@ -9,7 +9,7 @@ class ShapeType(object):
     CYLINDER = uwds3_msgs.msg.PrimitiveShape.CYLINDER
     SPHERE = uwds3_msgs.msg.PrimitiveShape.SPHERE
     MESH = uwds3_msgs.msg.PrimitiveShape.MESH
-
+    PLANE=uwds3_msgs.msg.PrimitiveShape.BOX
 
 class Shape(object):
     def __init__(self, type, name="",
@@ -34,6 +34,11 @@ class Shape(object):
         """ Returns True if is a box
         """
         return self.type == ShapeType.BOX
+
+    def is_plane(self):
+        """ Returns True if is a plane
+        """
+        return self.type == ShapeType.PLANE
 
     def is_cylinder(self):
         """ Returns True if is a cylinder

@@ -14,6 +14,7 @@ class Box(Shape):
                  r=0, g=0., b=0., a=1.):
         """Box constructor
         """
+
         super(Box, self).__init__(ShapeType.BOX,
                                   name=name,
                                   x=x, y=y, z=z,
@@ -54,8 +55,9 @@ class Box(Shape):
     def from_msg(self, msg):
         """ Convert from ROS message
         """
-        self.w = msg.dimensions[0]
-        self.h = msg.dimensions[1]
+        self.x = msg.dimensions[0]
+        self.y = msg.dimensions[1]
+        self.z = msg.dimensions[2]
         self.name = msg.name
         a = msg.color.a
         r = msg.color.r
@@ -63,6 +65,7 @@ class Box(Shape):
         b = msg.color.b
         self.color = np.array([r, g, b, a])
         self.pose.from_msg(msg.pose)
+        self.type = ShapeType.BOX
         return self
 
     def to_msg(self):
