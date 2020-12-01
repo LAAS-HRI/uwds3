@@ -14,7 +14,7 @@ class Heatmap(Monitor):
     """
     def __init__(self, internal_simulator=None, beliefs_base=None):
 
-        super(Heatmap, self).__init__(internal_simulator=internal_simulator, beliefs_base=beliefs_base)
+        super(Heatmap, self).__init__(internal_simulator=internal_simulator)#, beliefs_base=beliefs_base)
         self.internal_simulator = internal_simulator
         self.heatm = {} # id -> heat value dictionay
         self.heatmax = {} # id -> max heat value ever reached dictionnary

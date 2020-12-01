@@ -34,7 +34,7 @@ class PhysicsMonitor(Monitor):
     def __init__(self, internal_simulator=None, beliefs_base=None, position_tolerance=0.04):
         """ Tabletop monitor constructor
         """
-        super(PhysicsMonitor, self).__init__(internal_simulator=internal_simulator, beliefs_base=beliefs_base)
+        super(PhysicsMonitor, self).__init__(internal_simulator=internal_simulator)#, beliefs_base=beliefs_base)
         self.previous_object_states = {}
         self.previous_object_tracks_map = {}
         self.position_tolerance = position_tolerance

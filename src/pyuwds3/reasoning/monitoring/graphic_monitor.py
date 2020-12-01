@@ -13,6 +13,7 @@ from pyuwds3.types.scene_node import SceneNode
 from pyuwds3.types.shape.mesh import Mesh
 from .physics_monitor import ActionStates
 from pyuwds3.utils.view_publisher import ViewPublisher
+from pyuwds3.utils.world_publisher import WorldPublisher
 import math
 import tf
 from geometry_msgs.msg import PoseStamped
@@ -46,12 +47,15 @@ class GraphicMonitor(Monitor):
     """
     def __init__(self,agent=None,agent_type =AgentType.ROBOT,
      hand1 = None,hand2=None, head = "head_mount_kinect2_rgb_optical_frame", internal_simulator=None,
-      beliefs_base=None, position_tolerance=0.04,name="robot"):
+       position_tolerance=0.04,name="robot"): #beliefs_base=None,
         """ Tabletop monitor constructor
         """
-        super(GraphicMonitor, self).__init__(internal_simulator=internal_simulator, beliefs_base=beliefs_base)
+        super(GraphicMonitor, self).__init__(internal_simulator=internal_simulator)#, beliefs_base=beliefs_base)
         self.internal_simulator = internal_simulator
         self.ontologies_manip = OntologiesManipulator()
+        self.global_frame_id = rospy.get_param("~global_frame_id")
+        self.world_publisher = WorldPublisher("corrected_tracks", self.global_frame_id)
+
         self.ontologies_manip.add("robot")
         self.onto=self.ontologies_manip.get("robot")
         self.onto.close()
@@ -72,7 +76,7 @@ class GraphicMonitor(Monitor):
         self.frame_count = 0
         self._publisher = ViewPublisher(name+"_view")
         self.ar_tags_sub = rospy.Subscriber("/tf", rospy.AnyMsg, self.publish_view)
-
+        self.last_onto_state=None
 
         # node = SceneNode(pose=Vector6DStable(-1,-1,1))
         # self.cad_models_search_path = rospy.get_param("~cad_models_search_path", "")
@@ -118,29 +122,44 @@ class GraphicMonitor(Monitor):
 
         self.frame_count+=1
 
+    def mocap(self,tracks,header):
+        for object in tracks:
+            if object.is_located() and object.has_shape():
+                if not self.simulator.is_entity_loaded(object.id):
+                    self.simulator.load_node(object)
+                self.simulator.reset_entity_pose(object.id, object.pose)
+        print "jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
 
-    def monitor(self, object_tracks, pose, time):
+
+    def monitor(self, object_tracks, pose, header):
         """ Monitor the physical consistency of the objects and detect human tabletop actions
+
         """
+
+        time = header.stamp
         self.cleanup_relations()
         next_object_states = {}
         object_tracks_map = {}
-        redo_onto=False
         if pose != None:
             for object in object_tracks:
-                object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
                 if object.is_located() and object.has_shape():
+                    object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
                     if not self.simulator.is_entity_loaded(object.id):
                         self.simulator.load_node(object)
-                        redo_onto=True
                     base_link_sim_id = self.simulator.entity_id_map[object.id]
-                    obj_previous_pose,_=p.getBasePositionAndOrientation(base_link_sim_id)
-                    if np.linalg.norm(object.pose.position().to_array()-np.array(obj_previous_pose))>1E-2:
-                        redo_onto=True
+                    # obj_previous_pose,_=p.getBasePositionAndOrientation(base_link_sim_id)
+                    # FAIRE UNE MAP
+                    # object_tracks_map[base_link_sim_id]=obj_previous_pose
+                    # print np.linalg.norm(object.pose.position().to_array()-np.array(obj_previous_pose))
+                    # FAIRE COMME AVANT
+                    # if np.linalg.norm(object.pose.position().to_array()-np.array(obj_previous_pose))>11:
+                    #     # print np.linalg.norm(object.pose.position().to_array()-np.array(object_tracks_map[base_link_sim_id]))
+                    #     redo_onto=True
+
                     self.simulator.reset_entity_pose(object.id, object.pose)
 
             # print self.simulator.entity_id_map
-        if time.to_nsec()-self.time > 7166666:
+        if time.to_nsec()-self.time > 4166666:
             hpose=self.get_head_pose(time)
             # print hpose
             image,_,_,_ =  self.simulator.get_camera_view(hpose, self.camera)
@@ -155,11 +174,12 @@ class GraphicMonitor(Monitor):
         #             # compute scene node input
         #             simulated_position = simulated_object.pose.position()
 
-        if redo_onto:
-            self.reset_allocentric_relation(object_tracks,time)
-            self.compute_allocentric_relations(object_tracks, time)
 
 
+        self.compute_allocentric_relations(object_tracks, time)
+
+        self.world_publisher.publish([],self.relations,header)
+        print self.relations_index
         return object_tracks, self.relations
 
     #
@@ -257,52 +277,54 @@ class GraphicMonitor(Monitor):
 
     # def hasInView(self,start_pose,end_id,camera):
 
-    def compute_allocentric_relations(self, objects, time):
-        for obj1 in objects:
-            if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
-                for obj2 in objects:
-                    if obj1.id != obj2.id:
-                        # evaluate allocentric relation
-                        if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
-                            # get 3d aabb
-                            success1, aabb1 = self.simulator.get_aabb(obj1)
-                            success2, aabb2 = self.simulator.get_aabb(obj2)
+#     def compute_allocentric_relations(self, objects, time):
+#         for obj1 in objects:
+#             if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
+#                 for obj2 in objects:
+#                     if obj1.id != obj2.id:
+#                         # evaluate allocentric relation
+#                         if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
+#                             # get 3d aabb
+#                             success1, aabb1 = self.simulator.get_aabb(obj1)
+#                             success2, aabb2 = self.simulator.get_aabb(obj2)
+#
+#                             if success1 is True and success2 is True:
+#                                 # if (obj1.id == "cube_BBCG" and obj2.id == "box_B5"):
+#                                 print obj1.id
+#                                 print obj2.id
+#                                 if is_on_top(aabb1, aabb2):
+#                                     self.start_predicate(obj1, "on", object=obj2, time=time)
+#                                     # self.onto.feeder.addObjectProperty(obj1.id,"isOnTopOf",obj2.id,time)
+#                                     # print obj1.id
+#                                     # print obj2.id
+#                                     # print self.onto.individuals.getOn(obj1.id,"isOnTopOf")
+#                                     # print self.onto.individuals.getOn(obj2.id,"isOnTopOf")
+# #TODO COPY CA DANS SELF
+#                                 else:
+#                                     self.end_predicate(obj1, "on", object=obj2, time=time)
+#
+#                                 if is_included(aabb1, aabb2):
+#                                     self.start_predicate(obj1, "in", object=obj2, time=time)
+#                                     # self.onto.feeder.addObjectProperty(obj1.id,"isIn",obj2.id,time)
+#                                 else:
+#                                     self.end_predicate(obj1, "in", object=obj2, time=time)
+        # print self.relations_index
 
-                            if success1 is True and success2 is True:
-                                # if (obj1.id == "cube_BBCG" and obj2.id == "box_B5"):
-                                #     print obj1.id
-                                #     print obj2.id
-                                if is_on_top(aabb1, aabb2):
-                                    self.start_predicate(obj1, "on", object=obj2, time=time)
-                                    self.onto.feeder.addObjectProperty(obj1.id,"isOnTopOf",obj2.id,time)
-                                    print obj1.id
-                                    print obj2.id
-                                    print self.onto.individuals.getOn(obj1.id,"isOnTopOf")
-                                    # print self.onto.individuals.getOn(obj2.id,"isOnTopOf")
-
-                                else:
-                                    self.end_predicate(obj1, "on", object=obj2, time=time)
-
-                                if is_included(aabb1, aabb2):
-                                    self.start_predicate(obj1, "in", object=obj2, time=time)
-                                    self.onto.feeder.addObjectProperty(obj1.id,"isIn",obj2.id,time)
-                                else:
-                                    self.end_predicate(obj1, "in", object=obj2, time=time)
-        print self.relations_index
-
-    def reset_allocentric_relation(self,objects,time):
-            for obj1 in objects:
-                if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
-                    for obj2 in objects:
-                        if obj1.id != obj2.id:
-                            # evaluate allocentric relation
-                            if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
-                                self.onto.feeder.removeObjectProperty(obj1.id,"isOnTopOf",obj2.id)
-                                self.onto.feeder.removeObjectProperty(obj1.id,"isIn",obj2.id)
+    # def reset_allocentric_relation(self,objects,time):
+    #     #TODO: PAS  FAIRE CA
+    #     #DELETE LA VERSION PRECEDENDE
+    #         for obj1 in objects:
+    #             if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
+    #                 for obj2 in objects:
+    #                     if obj1.id != obj2.id:
+    #                         # evaluate allocentric relation
+    #                         if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
+    #                             self.onto.feeder.removeObjectProperty(obj1.id,"isOnTopOf",obj2.id,time)
+    #                             self.onto.feeder.removeObjectProperty(obj1.id,"isIn",obj2.id,time)
 
     #
     # def compute_allocentric_relations(self, objects, time):
-    #
+    #     redo_onto = False
     #
     #     print self.relations_index
     #     for obj1 in objects:
@@ -311,8 +333,8 @@ class GraphicMonitor(Monitor):
     #             if success1:
     #                 is_on = True
     #                 is_in = True
-    #                 on = self.onto.indivividuals.getOn(obj1.id,"onTopOf")
-    #                 in_ = self.onto.indivividuals.getOn(obj1.id,"isInContainer")
+                    # on = self.onto.individuals.getOn(obj1.id,"isOnTopOf")
+                    # in_ = self.onto.individuals.getOn(obj1.id,"isIn")
     #
     #                 if len(on)>0:
     #                     if on[0].is_located() and on[0].has_shape():
@@ -336,11 +358,17 @@ class GraphicMonitor(Monitor):
     #                             if not is_on:
     #                                 is_on = is_on_top(aabb1, aabb2)
     #                                 if is_on:
-    #                                     self.onto.feeder.insert(obj1.id,"onTopOf",obj2.id)
+    #                                     if redo_onto:
+    #                                         redo_onto=True
+    #                                         self.reset_allocentric_relation(object_tracks,time)
+    #                                     self.onto.feeder.addObjectProperty(obj1.id,"isOnTopOf",obj2.id,time)
     #                             if not is_in:
-    #                                 is_in = is_in(aabb1, aabb2)
+    #                                 is_in = is_included(aabb1, aabb2)
     #                                 if is_in:
-    #                                     self.onto.feeder.insert(obj1.id,"isInContainer",obj2.id)
+    #                                     if redo_onto:
+    #                                         redo_onto=True
+    #                                         self.reset_allocentric_relation(object_tracks,time)
+    #                                     self.onto.feeder.addObjectProperty(obj1.id,"isIn",obj2.id,time)
     #             for obj2 in objects:
     #                 if obj1.id != obj2.id:
     #                     # evaluate allocentric relation
@@ -348,3 +376,49 @@ class GraphicMonitor(Monitor):
     #                         # get 3d aabb
     #                         success1, aabb1 = self.simulator.get_aabb(obj1)
     #                         success2, aabb2 = self.simulator.get_aabb(obj2)
+
+
+    def compute_allocentric_relations(self, objects, time):
+        included_map={}
+        #included_map[a] = [b,c,d] <=> a is in b in c and in d
+        for obj1 in objects:
+            if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
+                included_map[obj1.id]=[]
+                for obj2 in objects:
+                    if obj1.id != obj2.id:
+                        # evaluate allocentric relation
+                        if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
+                            # get 3d aabb
+                            success1, aabb1 = self.simulator.get_aabb(obj1)
+                            success2, aabb2 = self.simulator.get_aabb(obj2)
+                            if success1 is True and success2 is True:
+                                if is_included(aabb1, aabb2):
+                                    self.start_fact(obj1, "in", object=obj2, time=time)
+                                    included_map[obj1.id].append(obj2.id)
+                                else:
+                                    self.end_fact(obj1, "in", object=obj2, time=time)
+        for obj1 in objects:
+            if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
+                for obj2 in objects:
+                    if obj1.id != obj2.id:
+                        # evaluate allocentric relation
+                        if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
+                            # get 3d aabb
+                            success1, aabb1 = self.simulator.get_aabb(obj1)
+                            success2, aabb2 = self.simulator.get_aabb(obj2)
+                            if success1 is True and success2 is True:
+                                if  included_map[obj1.id]==included_map[obj2.id] and is_on_top(aabb1, aabb2):
+                                    self.start_fact(obj1, "on", object=obj2, time=time)
+                                else:
+                                    self.end_fact(obj1, "on", object=obj2, time=time)
+
+    #     if redo_onto:
+    #         if self.last_onto_state != None:
+    #             self.reset_onto() #resetonto utilise last_onto_state
+    #             # self.add_onto() #add onto utilise la list des pred actuel
+    #             print self.relations_index
+    #             # print self.relations
+    #         self.last_onto_state = self.relations
+    #
+    # def reset_onto(self):
+    #     for i in self.last_onto_state:
