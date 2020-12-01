@@ -6,8 +6,8 @@
 import math
 
 INSIDE_EPSILON = 0.025 # 2.5mm
-ONTOP_EPSILON = 0.02 # 1cm
-
+ONTOP_EPSILON = 0.02 # 2cm
+ISABOVE_EPSILON = 0.06 #6cm
 
 def bb_center(bb):
 
@@ -126,7 +126,7 @@ def is_above(bb1, bb2):
 
     x1,y1,z1 = bb1_min
     x2,y2,z2 = bb2_max
-    if z1 < z2 - 3*ONTOP_EPSILON:
+    if z1 < z2 - ISABOVE_EPSILON:
         return False
 
     return overlap(bb_footprint(bb1),
