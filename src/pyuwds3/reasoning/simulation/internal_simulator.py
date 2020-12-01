@@ -127,7 +127,7 @@ class InternalSimulator(object):
                   static=False,
                   id="",
                   label="thing",
-                  description="unknown",is_urdf=True):
+                  description="unknown",is_urdf=True,color=None):
         """ Load an URDF file in the simulator
         """
         try:
@@ -156,7 +156,10 @@ class InternalSimulator(object):
                         path+='/'+i
                     filename=path
                 collision_shape_id = p.createCollisionShape(p.GEOM_MESH,fileName=filename,flags=flags)
-                visual_shape_id = p.createVisualShape(p.GEOM_MESH,fileName=filename)
+                if not color is None:
+                    visual_shape_id = p.createVisualShape(p.GEOM_MESH,fileName=filename,rgbaColor=color)
+                else:
+                    visual_shape_id = p.createVisualShape(p.GEOM_MESH,fileName=filename)
                 base_link_sim_id = p.createMultiBody(
                                             use_fixed_base,
                                             collision_shape_id,visual_shape_id,
@@ -393,7 +396,7 @@ class InternalSimulator(object):
                                                        id=scene_node.id,
                                                        label=scene_node.label,
                                                        description=scene_node.description,
-                                                       static=static,is_urdf=is_urdf)
+                                                       static=static,is_urdf=is_urdf,color=shape.color)
                         if success is True:
                             return True
                         else:

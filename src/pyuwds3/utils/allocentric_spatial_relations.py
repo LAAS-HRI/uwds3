@@ -126,8 +126,7 @@ def is_above(bb1, bb2):
 
     x1,y1,z1 = bb1_min
     x2,y2,z2 = bb2_max
-
-    if z1 < z2 - 4*ONTOP_EPSILON:
+    if z1 < z2 - 3*ONTOP_EPSILON:
         return False
 
     return overlap(bb_footprint(bb1),

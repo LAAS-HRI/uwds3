@@ -47,6 +47,8 @@ class InternalSimulatorNode(object):
 
         self.use_motion_capture = rospy.get_param("~use_motion_capture", False)
         self.motion_capture_topic = rospy.get_param("~motion_capture_topic", "motion_capture_tracks")
+        self.use_motion_capture=True
+        self.motion_capture_topic="mocap_tracks"
         if self.use_motion_capture is True:
             self.motion_capture_tracks = []
             self.motion_capture_sub = rospy.Subscriber(self.motion_capture_topic, WorldStamped, self.motion_capture_callback, queue_size=DEFAULT_SENSOR_QUEUE_SIZE)
@@ -151,13 +153,13 @@ class InternalSimulatorNode(object):
             s,pose =self.tf_bridge.get_pose_from_tf(self.global_frame_id, world_msg.header.frame_id[1:])
         else:
             pose=None
-        self.physics_monitor.monitor(ar_tags_tracks, pose, world_msg.header.stamp)
+        self.physics_monitor.monitor(ar_tags_tracks, pose, world_msg.header)
 
     def motion_capture_callback(self, world_msg):
         motion_capture_tracks = []
         for node in world_msg.world.scene:
             motion_capture_tracks.append(SceneNode().from_msg(node))
-        self.motion_capture_tracks = motion_capture_tracks
+        self.physics_monitor.mocap(motion_capture_tracks,world_msg.header)
 
     def camera_info_callback(self, msg):
         """ """
