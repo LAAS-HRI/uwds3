@@ -11,6 +11,8 @@ from geometry_msgs.msg import Pose
 from pyuwds3.types.vector.vector6d_stable import Vector6DStable
 from pyuwds3.types.scene_node import SceneNode
 from pyuwds3.types.shape.sphere import Sphere
+from pyuwds3.types.shape.mesh import Mesh
+from pyuwds3.types.shape.shape import Shape, ShapeType
 NODE_NAME = "mocap_human_localization"
 HUMAN_SUB_PARAM_NAME = "optitrack_human_topic_names"
 HUMAN_SUB_PREPEND = "/optitrack/bodies/"
@@ -50,7 +52,18 @@ class MocapHumanLocalization(object):
                         or_pose_estimator_state,
                         self.updateMocapPersonPose_callback,
                         self.subscribedNodeNames[key]))
-                self.tfOptitrack2Humans_[self.subscribedNodeNames[key]]=SceneNode(label=key)
+                new_node =SceneNode(label="human")
+                shape = Mesh("package://uwds3/models/cad_models/obj/human_man_1.stl",
+                         x=0, y=0, z=0,
+                         rx=0, ry=0, rz=0)
+                r,g,b=0,0,0
+                shape.color[0] = r
+                shape.color[1] = g
+                shape.color[2] = b
+                shape.color[3] = 1
+                new_node.id=key
+                new_node.shapes.append(shape)
+                self.tfOptitrack2Humans_[self.subscribedNodeNames[key]]=new_node
         self.timer = rospy.Timer(rospy.Duration(TIMER_CALLBACK), self.world_publisher_timer_callback)
         self.header = rospy.Header()
         self.header.frame_id ='map'
