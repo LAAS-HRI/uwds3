@@ -75,9 +75,11 @@ class GraphicMonitor(Monitor):
         self.n_frame=4
         self.frame_count = 0
         self._publisher = ViewPublisher(name+"_view")
+        self._publisher2=ViewPublisher("human_view")
         self.ar_tags_sub = rospy.Subscriber("/tf", rospy.AnyMsg, self.publish_view)
         self.last_onto_state=None
-
+        self.human_pose = None
+        self.headpose = None
         # node = SceneNode(pose=Vector6DStable(-1,-1,1))
         # self.cad_models_search_path = rospy.get_param("~cad_models_search_path", "")
         # mesh_path = self.cad_models_search_path + "/obj/dt_cube.obj"
@@ -128,8 +130,12 @@ class GraphicMonitor(Monitor):
                 if not self.simulator.is_entity_loaded(object.id):
                     self.simulator.load_node(object)
                 self.simulator.reset_entity_pose(object.id, object.pose)
-        print "jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
-
+                if not "_body" in object.id:
+                    self.headpose=object.pose
+                # self.human_pose=object.pose
+                # self.simulator.change_joint(object.id,0,2)
+                # print p.getVisualShapeData(self.simulator.entity_id_map[object.id])
+                # p.resetJointState(self.simulator.entity_id_map[object.id],0,0.1)
 
     def monitor(self, object_tracks, pose, header):
         """ Monitor the physical consistency of the objects and detect human tabletop actions
@@ -147,6 +153,7 @@ class GraphicMonitor(Monitor):
                     if not self.simulator.is_entity_loaded(object.id):
                         self.simulator.load_node(object)
                     base_link_sim_id = self.simulator.entity_id_map[object.id]
+
                     # obj_previous_pose,_=p.getBasePositionAndOrientation(base_link_sim_id)
                     # FAIRE UNE MAP
                     # object_tracks_map[base_link_sim_id]=obj_previous_pose
@@ -164,6 +171,7 @@ class GraphicMonitor(Monitor):
             # print hpose
             image,_,_,_ =  self.simulator.get_camera_view(hpose, self.camera)
             self._publisher.publish(image,[],time)
+
             self.time=time.to_nsec()
         # for object in object_tracks:
         #     if object.is_located() and object.has_shape():
@@ -177,9 +185,18 @@ class GraphicMonitor(Monitor):
 
 
         self.compute_allocentric_relations(object_tracks, time)
-
+        print ("robot")
+        print self.get_head_pose(time).pos.to_array()
+        self.compute_egocentric_relations(list(self.get_head_pose(time).pos.to_array()),object_tracks, time)
+        print ("_________________________")
+        if not self.headpose is None:
+            print ("human")
+            print list(self.headpose.pos.to_array())[:3]
+            self.compute_egocentric_relations(list(self.headpose.pos.to_array())[:3],object_tracks, time)
+            # print self.headpose
+            print ("_________________________")
         self.world_publisher.publish([],self.relations,header)
-        print self.relations_index
+        # print self.relations_index
         return object_tracks, self.relations
 
     #
@@ -208,23 +225,28 @@ class GraphicMonitor(Monitor):
 #cansee
 #getvisualshapedata [X][7] = color
 
-    def can_reach(self,start_pose,end_id,working_area,xy_n=10,z_n=5):
-        x_init = working_area[0][0]
-        y_init = working_area[0][1]
-        z_init = working_area[0][2]
-        x_step = (working_area[1][0] - x_init)/(xy_n*1.0)
-        y_step = (working_area[1][1] - y_init)/(xy_n*1.0)
-        z_step = (working_area[1][2] - z_init)/(z_n*1.0)
-        for x in range(xy_n):
-            for y in range(xy_n):
-                for z in range(z_n):
-                    if can_reach_rot(self,
-                    [x_init + x*x_step,
-                    y_init + y*y_step,
-                    z_init + z*z_step],end_id):
-                        return True
+    def can_reach(self,start_pose,obj):#,working_area,xy_n=10,z_n=5):
+        end_id=self.simulator.entity_id_map[obj.id]
+        # x_init = working_area[0][0]
+        # y_init = working_area[0][1]
+        # z_init = working_area[0][2]
+        # x_step = (working_area[1][0] - x_init)/(xy_n*1.0)
+        # y_step = (working_area[1][1] - y_init)/(xy_n*1.0)
+        # z_step = (working_area[1][2] - z_init)/(z_n*1.0)
+        # for x in range(xy_n):
+        #     for y in range(xy_n):
+        #         for z in range(z_n):
+        #             if can_reach_rot(self,
+        #             [x_init + x*x_step,
+        #             y_init + y*y_step,
+        #             z_init + z*z_step],end_id):
+        #                 return True
+        if self.can_reach_rot(start_pose,end_id):
+            return True
 
         return False
+
+
     def can_reach_rot(self,start_pose,end_id):
         [xmin,ymin,zmin],[xmax,ymax,zmax] = p.getAABB(end_id)
         xlength = xmax - xmin
@@ -240,36 +262,46 @@ class GraphicMonitor(Monitor):
                 return True
         return False
 
-    def canSee(self,start_pose,end_id):
+    def canSee(self,start_pose,obj):
+        end_id=self.simulator.entity_id_map[obj.id]
         [xmin,ymin,zmin],[xmax,ymax,zmax] = p.getAABB(end_id)
         xlength = xmax - xmin
         ylength = ymax - ymin
         zlength = zmax - zmin
         pose_list = []
+        # print start_pose
         for i in range(N_RAY):
-            end_pose = [xmin +i*xlength/(N_RAY-1),
-            ymin +i*xlength/(N_RAY-1),
-            zmin +i*xlength/(N_RAY-1)]
-            if self.canSeeRec(start_pose,end_pose,end_id,0):
-                return True
+            for j in range (N_RAY):
+                for k in range(N_RAY):
+                    end_pose = [xmin +i*xlength/((N_RAY-1)*1.),
+                    ymin +j*xlength/((N_RAY-1)*1.),
+                    zmin +k*xlength/((N_RAY-1)*1.)]
+                    if self.canSeeRec(start_pose,end_pose,end_id,0):
+                        return True
+        # pose_end=obj.pose.pos.to_array()
+        # [pose_end[0],pose_end[1],pose_end[2]]
+        start_pose=[start_pose[0][0],start_pose[1][0],start_pose[2][0]]
+        if self.canSeeRec(start_pose,end_pose,end_id,0):
+            return True
         return False
 
     def canSeeRec(self,start_pose,end_pose,end_id,hitnumber):
-        print("here")
+
         r=p.rayTestBatch([start_pose],[end_pose],reportHitNumber = hitnumber)
-        print (r)
+        # print r[0]
+        # print end_id
         if r[0][0] == end_id:
             return True
         if r[0][0]==-1:
             return False
         if not (r[0][0],r[0][1]) in self.alpha_dic:
-            data = p.getVisualShapeData(r[0][0],r[0][1])
-        if r[0][1] +1 >0 and r[0][1] +1 <len(data) and data[r[0][1] +1][1] == r[0][1]:
-            self.alpha_dic[[0][0],r[0][1]] =data[ r[0][1] +1][7]
-        else:
-            for i in data:
-                if i[1]== r[0][1]:
-                    self.alpha_dic[r[0][0],r[0][1]]=i[7]
+            data = p.getVisualShapeData(r[0][0])
+            if r[0][1] +1 >0 and r[0][1] +1 <len(data) and data[r[0][1] +1][1] == r[0][1]:
+                self.alpha_dic[[0][0],r[0][1]] =data[ r[0][1] +1][7]
+            else:
+                for i in data:
+                    if i[1]== r[0][1]:
+                        self.alpha_dic[r[0][0],r[0][1]]=i[7]
 
         if self.alpha_dic[(r[0][0],r[0][1])] >ALPHA_THRESHOLD:
             return False
@@ -377,6 +409,15 @@ class GraphicMonitor(Monitor):
     #                         success1, aabb1 = self.simulator.get_aabb(obj1)
     #                         success2, aabb2 = self.simulator.get_aabb(obj2)
 
+
+
+    def compute_egocentric_relations(self,pose,objects,time):
+        for obj1 in objects:
+            if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
+                print obj1.id
+                print self.canSee(pose,obj1)
+                print self.can_reach(pose,obj1)
+                print "   "
 
     def compute_allocentric_relations(self, objects, time):
         included_map={}
