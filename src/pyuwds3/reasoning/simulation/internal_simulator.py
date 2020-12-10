@@ -155,7 +155,7 @@ class InternalSimulator(object):
                     for i in k[1:]:
                         path+='/'+i
                     filename=path
-                collision_shape_id = p.createCollisionShape(p.GEOM_MESH,fileName=filename,flags=flags)
+                collision_shape_id = p.createCollisionShape(p.GEOM_MESH,fileName=filename,flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
                 if not color is None:
                     visual_shape_id = p.createVisualShape(p.GEOM_MESH,fileName=filename,rgbaColor=color)
                 else:
@@ -384,9 +384,18 @@ class InternalSimulator(object):
                     elif shape.is_mesh():
                         shape_type = p.GEOM_MESH
                         mesh_resource = shape.mesh_resource
+                        if "package://" in mesh_resource:
+                            a=mesh_resource.split("package://")[-1]
+                            k=a.split('/')
+                            path=rospack.get_path(k[0])
+                            for i in k[1:]:
+                                path+='/'+i
+                            mesh_resource=path
                         mesh_resource_u = mesh_resource.replace("obj", "urdf")
                         mesh_resource_u = mesh_resource_u.replace("dae","urdf")
+                        mesh_resource_u = mesh_resource_u.replace("stl","urdf")
                         mesh_resource_u = mesh_resource_u.replace("file://", "")
+                        print mesh_resource
                         is_urdf = os.path.isfile(mesh_resource_u)
                         if is_urdf:
                             mesh_resource = mesh_resource_u
@@ -714,6 +723,13 @@ class InternalSimulator(object):
     #                 self.robot_moving = False
     #                 p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
     #
+
+    def change_joint(self,main_id,joint_id,joint_position):
+        base_link_sim_id = self.entity_id_map[main_id]
+        print p.getNumJoints(base_link_sim_id)
+        p.resetJointState(base_link_sim_id,joint_id,0)
+
+
     def joint_states_callback(self, joint_states_msg):
         """
         """
