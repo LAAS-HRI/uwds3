@@ -131,7 +131,10 @@ class SceneNode(object):
         else:
             self.camera = None
 
-        self.last_update = rospy.Time().now()
+        if time is None:
+            self.last_update = rospy.Time().now()
+        else:
+            self.last_update = time
         self.expiration_duration = 1.0
 
     def update_bbox(self, detection, detected=True, time=None):
