@@ -80,6 +80,10 @@ class GraphicMonitor(Monitor):
         self.last_onto_state=None
         self.human_pose = None
         self.headpose = None
+
+        self.mocap_obj={}
+        self.publish_dic={}
+
         # node = SceneNode(pose=Vector6DStable(-1,-1,1))
         # self.cad_models_search_path = rospy.get_param("~cad_models_search_path", "")
         # mesh_path = self.cad_models_search_path + "/obj/dt_cube.obj"
@@ -101,10 +105,26 @@ class GraphicMonitor(Monitor):
 
     def publish_view(self,tfm):
         time = rospy.Time.now().to_nsec()
-        # if time-self.time > 7166666:
-        # #     # print "test"
-        # #     self.time=time
-        # #     self.internal_simulator.step_simulation()
+        header = rospy.Header()
+        header.frame_id ='map'
+        if time-self.time > 7166666:
+            # print "test"
+            self.time=time
+            if self.agent_type== AgentType.ROBOT:
+                for obj_id in self.mocap_obj.keys():
+                    if not obj_id in self.publish_dic:
+                        self.publish_dic[obj_id]=WorldPublisher(str(obj_id)+"_tracks", self.global_frame_id)
+                for obj_id in self.publish_dic.keys():
+                    view_pose=self.mocap_obj[obj_id].pose
+                    _, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera)
+                    for node in nodes:
+                        node.last_update = self.mocap_obj[obj_id].last_update
+                    header.stamp=self.mocap_obj[obj_id].last_update
+                    self.publish_dic[obj_id].publish(nodes,[],header)
+
+
+
+            # self.internal_simulator.step_simulation()
         # # print self.internal_simulator.entity_id_map
         # self.frame_count %= self.n_frame
         # if time-self.time > 7166666:
@@ -131,7 +151,7 @@ class GraphicMonitor(Monitor):
                     self.simulator.load_node(object)
                 self.simulator.reset_entity_pose(object.id, object.pose)
                 if not "_body" in object.id:
-                    self.headpose=object.pose
+                    self.mocap_obj[object.id]=object
                 # self.human_pose=object.pose
                 # self.simulator.change_joint(object.id,0,2)
                 # print p.getVisualShapeData(self.simulator.entity_id_map[object.id])
@@ -185,7 +205,18 @@ class GraphicMonitor(Monitor):
 
 
         self.compute_allocentric_relations(object_tracks, time)
-        self.world_publisher.publish([],self.relations,header)
+        # print ("robot")
+        # print self.get_head_pose(time).pos.to_array()
+        # self.compute_egocentric_relations(list(self.get_head_pose(time).pos.to_array()),object_tracks, time)
+        # print ("_________________________")
+        # if not self.headpose is None:
+        #     print ("human")
+        #     print list(self.headpose.pos.to_array())[:3]
+        #     self.compute_egocentric_relations(list(self.headpose.pos.to_array())[:3],object_tracks, time)
+        #     # print self.headpose
+        #     print ("_________________________")
+        # self.world_publisher.publish([],self.relations,header)
+
         # print self.relations_index
         return object_tracks, self.relations
 
