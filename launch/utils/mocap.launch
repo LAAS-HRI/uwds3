@@ -1,6 +1,5 @@
 <launch>
 
-  <!-- <arg name="optitrack_human_topic_names" default="person_01_torso"/> -->
   <arg name="world2map_x" default ="6.4868"/>
   <arg name="world2map_y" default ="2.8506"/>
   <arg name="world2map_z" default ="0"/>

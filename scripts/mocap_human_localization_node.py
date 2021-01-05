@@ -29,7 +29,7 @@ class MocapHumanLocalization(object):
         self.tf_bridge = TfBridge()
         self.tfOptitrack2Humans_ ={}
         self.subscribedNodeNames =rospy.get_param("~optitrack_human_topic_names",None)
-        # print self.subscribedNodeNames
+        print self.subscribedNodeNames
         # self.subscribedNodeNames={"Neophasia": 1}
 
         self.personSubs =[]
@@ -48,7 +48,6 @@ class MocapHumanLocalization(object):
             for key in self.subscribedNodeNames.keys():
                 fullTopicName = HUMAN_SUB_PREPEND + key
 
-                #print fullTopicName
                 self.personSubs.append(rospy.Subscriber(
                         fullTopicName,
                         or_pose_estimator_state,
@@ -56,7 +55,7 @@ class MocapHumanLocalization(object):
                         self.subscribedNodeNames[key]))
                 new_node =SceneNode(label="human")
                 shape = Mesh("package://uwds3/models/cad_models/human/cylinder_man.urdf",
-                         x=0, y=0, z=0,
+                         x=0, y=-0.4, z=0,
                          rx=0, ry=0, rz=0)
                 r,g,b=0,0,0
                 shape.color[0] = r
