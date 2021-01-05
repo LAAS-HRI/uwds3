@@ -25,6 +25,11 @@ from geometry_msgs.msg import Transform
 from geometry_msgs.msg import TransformStamped
 from ontologenius import OntologiesManipulator
 from ontologenius import OntologyManipulator
+
+from  pr2_motion_tasks_msgs.msg import RobotAction
+
+
+
 import pybullet as p
 
 INF = 10e3
@@ -81,6 +86,10 @@ class GraphicMonitor(Monitor):
         self.human_pose = None
         self.headpose = None
 
+
+        self.pick_map = {}
+        self.pick_subsc = rospy.Subscriber("/pr2_fact",RobotAction, self.pick_callback)
+
         self.mocap_obj={}
         self.publish_dic={}
 
@@ -97,7 +106,12 @@ class GraphicMonitor(Monitor):
         # node.shapes.append(shape)
         # self.internal_simulator.load_node(node)
         self.time=rospy.Time().now().to_nsec()
-
+    def pick_callback(self, msg):
+        if msg.action = RobotAction.PICK:
+            self.pick_map[msg.objID]="pr2_arm"+str(msg.arm)
+        else:
+            if msg.objID in self.pick_map:
+                del self.pick_map[self.objID]
     def get_head_pose(self,time):
         s,hpose=self.simulator.tf_bridge.get_pose_from_tf(self.simulator.global_frame_id,
                                                         self.head,time)
@@ -459,7 +473,7 @@ class GraphicMonitor(Monitor):
                             # get 3d aabb
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
-                            if success1 is True and success2 is True:
+                            if success1  and success2 and (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
                                 if is_included(aabb1, aabb2):
                                     self.start_fact(obj1, "in", object=obj2, time=time)
                                     included_map[obj1.id].append(obj2.id)
@@ -474,7 +488,7 @@ class GraphicMonitor(Monitor):
                             # get 3d aabb
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
-                            if success1 is True and success2 is True:
+                            if success1  and success2 and (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
                                 if  included_map[obj1.id]==included_map[obj2.id] and is_on_top(aabb1, aabb2):
                                     self.start_fact(obj1, "on", object=obj2, time=time)
                                 else:
