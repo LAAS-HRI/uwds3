@@ -51,7 +51,7 @@ class GraphicMonitor(Monitor):
     """ Special monitor for agent management
     """
     def __init__(self,agent=None,agent_type =AgentType.ROBOT,
-     hand1 = None,hand2=None, head = "head_mount_kinect2_rgb_optical_frame", internal_simulator=None,
+     handL = None,handR=None, head = "head_mount_kinect2_rgb_optical_frame", internal_simulator=None,
        position_tolerance=0.04,name="robot"): #beliefs_base=None,
 
         super(GraphicMonitor, self).__init__(internal_simulator=internal_simulator)#, beliefs_base=beliefs_base)
@@ -81,8 +81,8 @@ class GraphicMonitor(Monitor):
         #type of agent + limb name
         self.agent_type = agent_type
         self.agent = agent
-        self.hand1 = hand1
-        self.hand2 = hand2
+        self.handL = handL
+        self.handR = handR
         self.head  = head
         self.human_pose = None
         self.headpose = None
@@ -120,7 +120,10 @@ class GraphicMonitor(Monitor):
         #deal w/ robot pick
         """
         if msg.action == RobotAction.PICK:
-            self.pick_map[msg.objID]="pr2_arm"+str(msg.arm)
+            if msg.arm==RobotAction.LEFT_ARM:
+                self.pick_map[msg.objID]=self.handL
+            if msg.arm==RobotAction.RIGHT_ARM:
+                self.pick_map[msg.objID]=self.handL
         else:
             if msg.objID in self.pick_map:
                 del self.pick_map[self.objID]
