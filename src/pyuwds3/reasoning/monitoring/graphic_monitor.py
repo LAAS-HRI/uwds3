@@ -107,7 +107,7 @@ class GraphicMonitor(Monitor):
         # self.internal_simulator.load_node(node)
         self.time=rospy.Time().now().to_nsec()
     def pick_callback(self, msg):
-        if msg.action = RobotAction.PICK:
+        if msg.action == RobotAction.PICK:
             self.pick_map[msg.objID]="pr2_arm"+str(msg.arm)
         else:
             if msg.objID in self.pick_map:
