@@ -53,77 +53,101 @@ class GraphicMonitor(Monitor):
     def __init__(self,agent=None,agent_type =AgentType.ROBOT,
      hand1 = None,hand2=None, head = "head_mount_kinect2_rgb_optical_frame", internal_simulator=None,
        position_tolerance=0.04,name="robot"): #beliefs_base=None,
-        """ Tabletop monitor constructor
-        """
+
         super(GraphicMonitor, self).__init__(internal_simulator=internal_simulator)#, beliefs_base=beliefs_base)
+
+        #init of the simulator and ontology
         self.internal_simulator = internal_simulator
         self.ontologies_manip = OntologiesManipulator()
         self.global_frame_id = rospy.get_param("~global_frame_id")
-        self.world_publisher = WorldPublisher("corrected_tracks", self.global_frame_id)
+        # self.world_publisher = WorldPublisher("corrected_tracks", self.global_frame_id)
+
 
         self.ontologies_manip.add("robot")
         self.onto=self.ontologies_manip.get("robot")
         self.onto.close()
-        self.previous_object_states = {}
+
+        #init of the camera (kinect fov)
         self.camera = Camera(640)
         self.camera.setfov(84.1,53.8)
-        self.previous_object_tracks_map = {}
-        self.position_tolerance = position_tolerance
-        self.content_map = {}
-        self.centroid_assignement = LinearAssignment(centroid_cost, max_distance=None)
+
+        #link between the physics simlatro and the reality
+        #not used for now
+        # self.position_tolerance = position_tolerance
+
+        # dictionnary of the transparent object
         self.alpha_dic = {}
+
+        #type of agent + limb name
         self.agent_type = agent_type
         self.agent = agent
         self.hand1 = hand1
         self.hand2 = hand2
         self.head  = head
-        self.n_frame=4
-        self.frame_count = 0
-        self._publisher = ViewPublisher(name+"_view")
-        self._publisher2=ViewPublisher("human_view")
-        self.ar_tags_sub = rospy.Subscriber("/tf", rospy.AnyMsg, self.publish_view)
-        self.last_onto_state=None
         self.human_pose = None
         self.headpose = None
 
 
+
+
+        #view of robot and human
+        self._publisher = ViewPublisher(name+"_view")
+        self._publisher2=ViewPublisher("human_view")
+
+        #tf subscription
+        self.ar_tags_sub = rospy.Subscriber("/tf", rospy.AnyMsg, self.publish_view)
+
+
+
+        # dictionnary of the picked objects
         self.pick_map = {}
         self.pick_subsc = rospy.Subscriber("/pr2_fact",RobotAction, self.pick_callback)
 
+        #mocap dicttionary, and object to publish dictionnary
         self.mocap_obj={}
         self.publish_dic={}
 
-        # node = SceneNode(pose=Vector6DStable(-1,-1,1))
-        # self.cad_models_search_path = rospy.get_param("~cad_models_search_path", "")
-        # mesh_path = self.cad_models_search_path + "/obj/dt_cube.obj"
-        # shape = Mesh(mesh_path,
-        #              x=-1, y=-1, z=1,
-        #              rx=0, ry=0, rz=0)
-        # shape.color[0] = 1
-        # shape.color[1] = 1
-        # shape.color[2] = 1
-        # shape.color[3] = 1
-        # node.shapes.append(shape)
-        # self.internal_simulator.load_node(node)
-        self.time=rospy.Time().now().to_nsec()
+        #time, and fps limit
+        self.time_monitor=rospy.Time().now().to_nsec()
+        self.time_view=rospy.Time().now().to_nsec()
+        self.n_frame_monitor=15
+        self.n_frame_view = 15
+
+
+
     def pick_callback(self, msg):
+        """
+        #deal w/ robot pick
+        """
         if msg.action == RobotAction.PICK:
             self.pick_map[msg.objID]="pr2_arm"+str(msg.arm)
         else:
             if msg.objID in self.pick_map:
                 del self.pick_map[self.objID]
+
+
     def get_head_pose(self,time):
+        """
+            #get the head pose in simulator, so in the global_frame_id (often map)
+        """
         s,hpose=self.simulator.tf_bridge.get_pose_from_tf(self.simulator.global_frame_id,
                                                         self.head,time)
         return hpose
 
+
+
     def publish_view(self,tfm):
+        """
+        #publish the view of the agent,
+        #create a map of all the object seen at a defnie time
+        """
         time = rospy.Time.now().to_nsec()
         header = rospy.Header()
         header.frame_id ='map'
-        if time-self.time > 7166666:
-            # print "test"
-            self.time=time
+        if time-self.time_view >1E9*1./(self.n_frame_view):
+            #if needed : >7166666 work
+
+            self.time_view=time
             if self.agent_type== AgentType.ROBOT:
                 for obj_id in self.mocap_obj.keys():
                     if not obj_id in self.publish_dic:
@@ -156,9 +180,12 @@ class GraphicMonitor(Monitor):
             # print "   "
 
 
-        self.frame_count+=1
 
     def mocap(self,tracks,header):
+        """
+        mocap : add object in the simulator
+        each human is present 2 time in the tracks : 1 for the head/1for the body
+        """
         for object in tracks:
             if object.is_located() and object.has_shape():
                 if not self.simulator.is_entity_loaded(object.id):
@@ -171,52 +198,36 @@ class GraphicMonitor(Monitor):
                 # print p.getVisualShapeData(self.simulator.entity_id_map[object.id])
                 # p.resetJointState(self.simulator.entity_id_map[object.id],0,0.1)
 
+
+    #main element :
+
     def monitor(self, object_tracks, pose, header):
-        """ Monitor the physical consistency of the objects and detect human tabletop actions
+        """ Monitor the physical consistency of the objects and compute fact
 
         """
-
+        #place all object of the tracks in the simulator
         time = header.stamp
-        self.cleanup_relations()
-        next_object_states = {}
-        object_tracks_map = {}
         if pose != None:
             for object in object_tracks:
                 if object.is_located() and object.has_shape():
+
                     object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
                     if not self.simulator.is_entity_loaded(object.id):
                         self.simulator.load_node(object)
                     base_link_sim_id = self.simulator.entity_id_map[object.id]
+            self.simulator.reset_entity_pose(object.id, object.pose)
 
-                    # obj_previous_pose,_=p.getBasePositionAndOrientation(base_link_sim_id)
-                    # FAIRE UNE MAP
-                    # object_tracks_map[base_link_sim_id]=obj_previous_pose
-                    # print np.linalg.norm(object.pose.position().to_array()-np.array(obj_previous_pose))
-                    # FAIRE COMME AVANT
-                    # if np.linalg.norm(object.pose.position().to_array()-np.array(obj_previous_pose))>11:
-                    #     # print np.linalg.norm(object.pose.position().to_array()-np.array(object_tracks_map[base_link_sim_id]))
-                    #     redo_onto=True
-
-                    self.simulator.reset_entity_pose(object.id, object.pose)
-
-            # print self.simulator.entity_id_map
-        if time.to_nsec()-self.time > 4166666:
+        #publish the head view
+        if time.to_nsec()-self.time_monitor > 1E9*1./(self.n_frame_monitor):
             hpose=self.get_head_pose(time)
             # print hpose
             image,_,_,_ =  self.simulator.get_camera_view(hpose, self.camera)
             self._publisher.publish(image,[],time)
 
-            self.time=time.to_nsec()
-        # for object in object_tracks:
-        #     if object.is_located() and object.has_shape():
-        #         if object.is_confirmed():
-        #             simulated_object = self.simulator.get_entity(object.id)
-        #
-        #             object_tracks_map[object.id] = simulated_object
-        #             # compute scene node input
-        #             simulated_position = simulated_object.pose.position()
+            self.time_monitor=time.to_nsec()
 
 
+        #compute the facts
 
         self.compute_allocentric_relations(object_tracks, time)
         # print ("robot")
@@ -260,22 +271,12 @@ class GraphicMonitor(Monitor):
 #cansee
 #getvisualshapedata [X][7] = color
     #
-    def can_reach(self,start_pose,obj):#,working_area,xy_n=10,z_n=5):
+    def can_reach(self,start_pose,obj):
+        """
+        compute if obj can be reached from the start pos
+        """
+        # TODO: add some small movement
         end_id=self.simulator.entity_id_map[obj.id]
-        # x_init = working_area[0][0]
-        # y_init = working_area[0][1]
-        # z_init = working_area[0][2]
-        # x_step = (working_area[1][0] - x_init)/(xy_n*1.0)
-        # y_step = (working_area[1][1] - y_init)/(xy_n*1.0)
-        # z_step = (working_area[1][2] - z_init)/(z_n*1.0)
-        # for x in range(xy_n):
-        #     for y in range(xy_n):
-        #         for z in range(z_n):
-        #             if can_reach_rot(self,
-        #             [x_init + x*x_step,
-        #             y_init + y*y_step,
-        #             z_init + z*z_step],end_id):
-        #                 return True
         if self.can_reach_rot(start_pose,end_id):
             return True
 
@@ -283,6 +284,9 @@ class GraphicMonitor(Monitor):
 
 
     def can_reach_rot(self,start_pose,end_id):
+        """
+        compute if obj can be reached from the start pos with no move
+        """
         [xmin,ymin,zmin],[xmax,ymax,zmax] = p.getAABB(end_id)
         xlength = xmax - xmin
         ylength = ymax - ymin
@@ -298,6 +302,7 @@ class GraphicMonitor(Monitor):
         return False
 
     def canSee(self,start_pose,obj):
+        """ compute if obj can be seen from start pose"""
         end_id=self.simulator.entity_id_map[obj.id]
         [xmin,ymin,zmin],[xmax,ymax,zmax] = p.getAABB(end_id)
         xlength = xmax - xmin
@@ -321,7 +326,11 @@ class GraphicMonitor(Monitor):
         return False
 
     def canSeeRec(self,start_pose,end_pose,end_id,hitnumber):
-
+        """
+        recursive function to achied the canSee goal
+        ray cast btween strart pose and end pose
+        we go through transparent object (the recursive part)
+        """
         r=p.rayTestBatch([start_pose],[end_pose],reportHitNumber = hitnumber)
         # print r[0]
         # print end_id
@@ -447,6 +456,7 @@ class GraphicMonitor(Monitor):
 
 
     def compute_egocentric_relations(self,pose,objects,time):
+        """ compute the egocentric relations (can see can reach)"""
         for obj1 in objects:
             if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
                 if self.canSee(pose,obj1):
@@ -461,30 +471,36 @@ class GraphicMonitor(Monitor):
 
 
     def compute_allocentric_relations(self, objects, time):
+        """ compute the allocentric relations (isIn isonTop)
+        we do not compute those relation for object beeing picked"""
         included_map={}
         #included_map[a] = [b,c,d] <=> a is in b in c and in d
         for obj1 in objects:
-            if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
+            if (obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact"
+             and (not (obj1.id in self.pick_map))) :
                 included_map[obj1.id]=[]
                 for obj2 in objects:
                     if obj1.id != obj2.id:
                         # evaluate allocentric relation
-                        if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
+                        if (obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact" and
+                        (not (obj2.id in self.pick_map))):
                             # get 3d aabb
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
-                            if success1  and success2 and (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
+                            if success1  and success2
                                 if is_included(aabb1, aabb2):
                                     self.start_fact(obj1, "in", object=obj2, time=time)
                                     included_map[obj1.id].append(obj2.id)
                                 else:
                                     self.end_fact(obj1, "in", object=obj2, time=time)
         for obj1 in objects:
-            if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
+            if (obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact"
+            and (not (obj1.id in self.pick_map))):
                 for obj2 in objects:
                     if obj1.id != obj2.id:
                         # evaluate allocentric relation
-                        if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
+                        if (obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact"
+                        and (not (obj2.id in self.pick_map))):
                             # get 3d aabb
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
@@ -493,14 +509,3 @@ class GraphicMonitor(Monitor):
                                     self.start_fact(obj1, "on", object=obj2, time=time)
                                 else:
                                     self.end_fact(obj1, "on", object=obj2, time=time)
-
-    #     if redo_onto:
-    #         if self.last_onto_state != None:
-    #             self.reset_onto() #resetonto utilise last_onto_state
-    #             # self.add_onto() #add onto utilise la list des pred actuel
-    #             print self.relations_index
-    #             # print self.relations
-    #         self.last_onto_state = self.relations
-    #
-    # def reset_onto(self):
-    #     for i in self.last_onto_state:
