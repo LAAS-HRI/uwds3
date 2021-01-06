@@ -123,7 +123,7 @@ class GraphicMonitor(Monitor):
             if msg.arm==RobotAction.LEFT_ARM:
                 self.pick_map[msg.objID]=self.handL
             if msg.arm==RobotAction.RIGHT_ARM:
-                self.pick_map[msg.objID]=self.handL
+                self.pick_map[msg.objID]=self.handR
         else:
             if msg.objID in self.pick_map:
                 del self.pick_map[self.objID]
