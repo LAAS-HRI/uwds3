@@ -490,7 +490,7 @@ class GraphicMonitor(Monitor):
                             # get 3d aabb
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
-                            if success1  and success2
+                            if success1  and success2:
                                 if is_included(aabb1, aabb2):
                                     self.start_fact(obj1, "in", object=obj2, time=time)
                                     included_map[obj1.id].append(obj2.id)
