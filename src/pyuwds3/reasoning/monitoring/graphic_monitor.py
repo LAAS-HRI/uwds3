@@ -60,7 +60,7 @@ class GraphicMonitor(Monitor):
         self.internal_simulator = internal_simulator
         self.ontologies_manip = OntologiesManipulator()
         self.global_frame_id = rospy.get_param("~global_frame_id")
-        # self.world_publisher = WorldPublisher("corrected_tracks", self.global_frame_id)
+        self.world_publisher = WorldPublisher("corrected_tracks", self.global_frame_id)
 
 
         self.ontologies_manip.add("robot")
@@ -231,7 +231,6 @@ class GraphicMonitor(Monitor):
 
 
         #compute the facts
-
         self.compute_allocentric_relations(object_tracks, time)
         # print ("robot")
         # print self.get_head_pose(time).pos.to_array()
@@ -243,7 +242,9 @@ class GraphicMonitor(Monitor):
         #     self.compute_egocentric_relations(list(self.headpose.pos.to_array())[:3],object_tracks, time)
         #     # print self.headpose
         #     print ("_________________________")
-        # self.world_publisher.publish([],self.relations,header)
+
+
+        self.world_publisher.publish([],self.relations,header)
 
         # print self.relations_index
         return object_tracks, self.relations
