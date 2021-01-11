@@ -14,7 +14,12 @@ from pyuwds3.types.shape.mesh import Mesh
 from .physics_monitor import ActionStates
 from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
+from pyuwds3.utils.marker_publisher import MarkerPublisher
+
+from pyuwds3.utils.uwds3_ontologenius_bridge import OntologeniusReaderNode
+
 import math
+
 import tf
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Pose
@@ -61,8 +66,9 @@ class GraphicMonitor(Monitor):
         self.ontologies_manip = OntologiesManipulator()
         self.global_frame_id = rospy.get_param("~global_frame_id")
         self.world_publisher = WorldPublisher("corrected_tracks", self.global_frame_id)
+        self.marker_publisher = MarkerPublisher("ar_perception_marker")
 
-
+        self.onto_bridge = OntologeniusReaderNode("robot")
         self.ontologies_manip.add("robot")
         self.onto=self.ontologies_manip.get("robot")
         self.onto.close()
@@ -95,21 +101,20 @@ class GraphicMonitor(Monitor):
         self._publisher2=ViewPublisher("human_view")
 
         #tf subscription
-        self.ar_tags_sub = rospy.Subscriber("/tf", rospy.AnyMsg, self.publish_view)
 
 
 
         # dictionnary of the picked objects
         self.pick_map = {}
-        self.pick_subsc = rospy.Subscriber("/pr2_fact",RobotAction, self.pick_callback)
+
 
         #mocap dicttionary, and object to publish dictionnary
         self.mocap_obj={}
         self.publish_dic={}
 
-        #time, and fps limit
-        self.time_monitor=rospy.Time().now().to_nsec()
-        self.time_view=rospy.Time().now().to_nsec()
+        #time, and fps limit a a
+        self.time_monitor=rospy.Time().now().to_sec()
+        self.time_view=rospy.Time().now().to_sec()
         self.n_frame_monitor=15
         self.n_frame_view = 15
 
@@ -144,10 +149,10 @@ class GraphicMonitor(Monitor):
         #publish the view of the agent,
         #create a map of all the object seen at a defnie time
         """
-        time = rospy.Time.now().to_nsec()
+        time = rospy.Time.now().to_sec()
         header = rospy.Header()
         header.frame_id ='map'
-        if time-self.time_view >1E9*1./(self.n_frame_view):
+        if time-self.time_view >1./(self.n_frame_view):
             #if needed : >7166666 work
 
             self.time_view=time
@@ -156,7 +161,8 @@ class GraphicMonitor(Monitor):
                     if not obj_id in self.publish_dic:
                         self.publish_dic[obj_id]=WorldPublisher(str(obj_id)+"_tracks", self.global_frame_id)
                 for obj_id in self.publish_dic.keys():
-                    view_pose=self.mocap_obj[obj_id].pose
+                    view_pose=self.mocap_obj[obj_id].pose + Vector6DStable(0.15,0,0,0,np.pi/2)
+
                     _, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera)
                     for node in nodes:
                         node.last_update = self.mocap_obj[obj_id].last_update
@@ -196,6 +202,7 @@ class GraphicMonitor(Monitor):
                 self.simulator.reset_entity_pose(object.id, object.pose)
                 if not "_body" in object.id:
                     self.mocap_obj[object.id]=object
+                    self.simulator.reset_entity_pose(object.id, object.pose)
                 # self.human_pose=object.pose
                 # self.simulator.change_joint(object.id,0,2)
                 # print p.getVisualShapeData(self.simulator.entity_id_map[object.id])
@@ -213,21 +220,22 @@ class GraphicMonitor(Monitor):
         if pose != None:
             for object in object_tracks:
                 if object.is_located() and object.has_shape():
-
+                    print "here"
                     object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
                     if not self.simulator.is_entity_loaded(object.id):
                         self.simulator.load_node(object)
                     base_link_sim_id = self.simulator.entity_id_map[object.id]
             self.simulator.reset_entity_pose(object.id, object.pose)
+            # self.marker_publisher.publish(object_tracks,header)
 
         #publish the head view
-        if time.to_nsec()-self.time_monitor > 1E9*1./(self.n_frame_monitor):
+        if time.to_sec()-self.time_monitor >1./(self.n_frame_monitor):
             hpose=self.get_head_pose(time)
             # print hpose
             image,_,_,_ =  self.simulator.get_camera_view(hpose, self.camera)
             self._publisher.publish(image,[],time)
 
-            self.time_monitor=time.to_nsec()
+            self.time_monitor=time.to_sec()
 
 
         #compute the facts

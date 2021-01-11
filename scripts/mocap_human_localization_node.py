@@ -104,7 +104,7 @@ class MocapHumanLocalization(object):
                                             msg.att[0].qy,
                                             msg.att[0].qz,
                                             msg.att[0].qw)
-            pose_received.rot.z +=1.57
+            # pose_received.rot.z +=1.57
             pose_received.from_transform(np.dot(self.world2map_transform,pose_received.transform()))
             # object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
             # pose_received.pos.x += self.world2map_x
