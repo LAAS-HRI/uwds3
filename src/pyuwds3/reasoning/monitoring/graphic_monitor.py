@@ -16,7 +16,7 @@ from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
 
-# from pyuwds3.utils.uwds3_ontologenius_bridge import OntologeniusReaderNode
+from pyuwds3.utils.uwds3_ontologenius_bridge import OntologeniusReaderNode
 
 import math
 
@@ -68,7 +68,7 @@ class GraphicMonitor(Monitor):
         self.world_publisher = WorldPublisher("corrected_tracks", self.global_frame_id)
         self.marker_publisher = MarkerPublisher("ar_perception_marker")
 
-        # self.onto_bridge = OntologeniusReaderNode("robot")
+        self.onto_bridge = OntologeniusReaderNode(name)
         self.ontologies_manip.add("robot")
         self.onto=self.ontologies_manip.get("robot")
         self.onto.close()
