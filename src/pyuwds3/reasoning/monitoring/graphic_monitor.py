@@ -93,7 +93,8 @@ class GraphicMonitor(Monitor):
         self.human_pose = None
         self.headpose = None
 
-
+        #A map of graphic monitor class, one/agent
+        self.agent_map={}
 
 
         #view of robot and human
@@ -201,6 +202,10 @@ class GraphicMonitor(Monitor):
                     self.simulator.load_node(object)
                 self.simulator.reset_entity_pose(object.id, object.pose)
                 if not "_body" in object.id:
+                    if not object.id in self.agent_map:
+                        self.agent_map[object.id]=GraphicMonitor(agent=None,agent_type =AgentType.ROBOT,
+                         handL = None,handR=None, head = "head_mount_kinect2_rgb_optical_frame", internal_simulator=None,
+                           position_tolerance=0.04,name="robot")
                     self.mocap_obj[object.id]=object
                     self.simulator.reset_entity_pose(object.id, object.pose)
                 # self.human_pose=object.pose
@@ -482,41 +487,35 @@ class GraphicMonitor(Monitor):
 
 
     def compute_allocentric_relations(self, objects, time):
-        """ compute the allocentric relations (isIn isonTop)
-        we do not compute those relation for object beeing picked"""
         included_map={}
         #included_map[a] = [b,c,d] <=> a is in b in c and in d
         for obj1 in objects:
-            if (obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact"
-             and (not (obj1.id in self.pick_map))) :
+            if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
                 included_map[obj1.id]=[]
                 for obj2 in objects:
                     if obj1.id != obj2.id:
                         # evaluate allocentric relation
-                        if (obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact" and
-                        (not (obj2.id in self.pick_map))):
+                        if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
                             # get 3d aabb
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
-                            if success1  and success2:
-                                if is_included(aabb1, aabb2):
+                            if success1  and success2 :
+                                if is_included(aabb1, aabb2) and (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
                                     self.start_fact(obj1, "in", object=obj2, time=time)
                                     included_map[obj1.id].append(obj2.id)
                                 else:
                                     self.end_fact(obj1, "in", object=obj2, time=time)
         for obj1 in objects:
-            if (obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact"
-            and (not (obj1.id in self.pick_map))):
+            if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
                 for obj2 in objects:
                     if obj1.id != obj2.id:
                         # evaluate allocentric relation
-                        if (obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact"
-                        and (not (obj2.id in self.pick_map))):
+                        if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
                             # get 3d aabb
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
-                            if success1  and success2 and (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
-                                if  included_map[obj1.id]==included_map[obj2.id] and is_on_top(aabb1, aabb2):
+                            if success1  and success2 :
+                                if  included_map[obj1.id]==included_map[obj2.id] and is_on_top(aabb1, aabb2) and (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
                                     self.start_fact(obj1, "on", object=obj2, time=time)
                                 else:
                                     self.end_fact(obj1, "on", object=obj2, time=time)
