@@ -220,7 +220,6 @@ class GraphicMonitor(Monitor):
         if pose != None:
             for object in object_tracks:
                 if object.is_located() and object.has_shape():
-                    print "here"
                     object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
                     if not self.simulator.is_entity_loaded(object.id):
                         self.simulator.load_node(object)
