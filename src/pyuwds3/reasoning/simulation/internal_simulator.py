@@ -142,6 +142,7 @@ class InternalSimulator(object):
             use_fixed_base = 1 if static is True else 0
             flags = p.URDF_ENABLE_SLEEPING or p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES or p.URDF_MERGE_FIXED_LINKS
             if is_urdf:
+                print filename
                 base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base)
             else:
 
@@ -752,7 +753,7 @@ class InternalSimulator(object):
                     rospy.loginfo("[simulation] Robot loaded")
                     self.my_id = node.id
                 except Exception as e:
-                    rospy.logwarn("[simulation] Exception occured: {}".format(e))
+                    rospy.logwarn("[simulation, joint_states_callback] Exception occured: {}".format(e))
                     self.robot_loaded = False
             # else:
             #     self.update_constraint(self.my_id, pose)
