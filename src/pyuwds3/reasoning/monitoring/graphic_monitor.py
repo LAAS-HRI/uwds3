@@ -31,6 +31,8 @@ from geometry_msgs.msg import TransformStamped
 from ontologenius import OntologiesManipulator
 from ontologenius import OntologyManipulator
 
+from pyuwds3.reasoning.simulation.internal_simulator import InternalSimulator
+
 from  pr2_motion_tasks_msgs.msg import RobotAction
 
 
@@ -61,10 +63,13 @@ class GraphicMonitor(Monitor):
 
         super(GraphicMonitor, self).__init__(internal_simulator=internal_simulator)#, beliefs_base=beliefs_base)
 
-        #init of the simulator and ontology
+        self.name = name
+        #init of the simulator and ontolog
         self.internal_simulator = internal_simulator
+        self.simulator_id = self.internal_simulator.client_simulator_id
         self.ontologies_manip = OntologiesManipulator()
         self.global_frame_id = rospy.get_param("~global_frame_id")
+        self.base_frame_id = rospy.get_param("~base_frame_id", "odom")
         self.world_publisher = WorldPublisher("corrected_tracks", self.global_frame_id)
         self.marker_publisher = MarkerPublisher("ar_perception_marker")
 
@@ -164,15 +169,22 @@ class GraphicMonitor(Monitor):
                 for obj_id in self.mocap_obj.keys():
                     if not obj_id in self.publish_dic:
                         self.publish_dic[obj_id]=WorldPublisher(str(obj_id)+"_tracks", self.global_frame_id)
-                for obj_id in self.publish_dic.keys():
+                for obj_id in self.agent_map.keys():
                     view_pose=self.mocap_obj[obj_id].pose + Vector6DStable(0.15,0,0,0,np.pi/2)
 
                     _, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera)
+                    node_to_keep=[]
                     for node in nodes:
-                        node.last_update = self.mocap_obj[obj_id].last_update
+                        if node.label !="appartment" and node.label!= "robot":
+                            #we remove the background
+                            print "node_id" + str(node.id) +"\n"
+                            print node.label
+                            print "end"
+                            node.last_update = self.mocap_obj[obj_id].last_update
+                            node_to_keep.append(node)
                     header.stamp=self.mocap_obj[obj_id].last_update
-                    self.publish_dic[obj_id].publish(nodes,[],header)
-
+                    # self.publish_dic[obj_id].publish(nodes,[],header)
+                    self.agent_map[obj_id].monitor(node_to_keep,Vector6DStable(),header)
 
 
             # self.internal_simulator.step_simulation()
@@ -192,7 +204,20 @@ class GraphicMonitor(Monitor):
             # print self.head.pose.pos
             # print "   "
 
-
+    def create_internal_sim(self):
+        simulation_config_filename = rospy.get_param("~simulation_config_filename", "")
+        cad_models_additional_search_path = rospy.get_param("~cad_models_additional_search_path", "")
+        static_entities_config_filename = rospy.get_param("~static_entities_config_filename", "")
+        robot_urdf_file_path = rospy.get_param("~robot_urdf_file_path", "")
+        internal_simulator = InternalSimulator(True,
+                                                    simulation_config_filename,
+                                                    cad_models_additional_search_path,
+                                                    static_entities_config_filename,
+                                                    robot_urdf_file_path,
+                                                    self.global_frame_id,
+                                                    self.base_frame_id,
+                                                    load_robot = False)
+        return internal_simulator
 
     def mocap(self,tracks,header):
         """
@@ -205,10 +230,11 @@ class GraphicMonitor(Monitor):
                     self.simulator.load_node(object)
                 self.simulator.reset_entity_pose(object.id, object.pose)
                 if not "_body" in object.id:
-                    # if not object.id in self.agent_map:
-                    #     self.agent_map[object.id]=GraphicMonitor(agent=None,agent_type =AgentType.ROBOT,
-                    #      handL = None,handR=None, head = "head_mount_kinect2_rgb_optical_frame", internal_simulator=None,
-                    #        position_tolerance=0.04,name="robot")
+                    if not object.id in self.agent_map:
+
+                        self.agent_map[object.id]=GraphicMonitor(agent=None,agent_type =AgentType.ROBOT,
+                         handL = None,handR=None, head = "head_mount_kinect2_rgb_optical_frame", internal_simulator=self.create_internal_sim(),
+                           position_tolerance=0.04,name="robot")
                     self.mocap_obj[object.id]=object
                     self.simulator.reset_entity_pose(object.id, object.pose)
                 # self.human_pose=object.pose
@@ -227,12 +253,15 @@ class GraphicMonitor(Monitor):
         time = header.stamp
         if pose != None:
             for object in object_tracks:
+                print "here +" + str(self.name)
                 if object.is_located() and object.has_shape():
                     object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
                     if not self.simulator.is_entity_loaded(object.id):
                         self.simulator.load_node(object)
+                    print self.name
+                    print self.simulator.entity_id_map
                     base_link_sim_id = self.simulator.entity_id_map[object.id]
-            self.simulator.reset_entity_pose(object.id, object.pose)
+                self.simulator.reset_entity_pose(object.id, object.pose)
             # self.marker_publisher.publish(object_tracks,header)
 
         #publish the head view
