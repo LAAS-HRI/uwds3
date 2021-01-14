@@ -205,10 +205,10 @@ class GraphicMonitor(Monitor):
                     self.simulator.load_node(object)
                 self.simulator.reset_entity_pose(object.id, object.pose)
                 if not "_body" in object.id:
-                    if not object.id in self.agent_map:
-                        self.agent_map[object.id]=GraphicMonitor(agent=None,agent_type =AgentType.ROBOT,
-                         handL = None,handR=None, head = "head_mount_kinect2_rgb_optical_frame", internal_simulator=None,
-                           position_tolerance=0.04,name="robot")
+                    # if not object.id in self.agent_map:
+                    #     self.agent_map[object.id]=GraphicMonitor(agent=None,agent_type =AgentType.ROBOT,
+                    #      handL = None,handR=None, head = "head_mount_kinect2_rgb_optical_frame", internal_simulator=None,
+                    #        position_tolerance=0.04,name="robot")
                     self.mocap_obj[object.id]=object
                     self.simulator.reset_entity_pose(object.id, object.pose)
                 # self.human_pose=object.pose
