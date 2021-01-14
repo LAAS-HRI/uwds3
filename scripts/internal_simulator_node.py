@@ -214,6 +214,7 @@ class InternalSimulatorNode(object):
 
     def run(self):
         while not rospy.is_shutdown():
+            
             rospy.spin()
 
 
