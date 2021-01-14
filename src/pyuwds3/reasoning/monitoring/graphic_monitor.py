@@ -126,13 +126,16 @@ class GraphicMonitor(Monitor):
         #deal w/ robot pick
         """
         if msg.action == RobotAction.PICK:
-            if msg.arm==RobotAction.LEFT_ARM:
-                self.pick_map[msg.objID]=self.handL
-            if msg.arm==RobotAction.RIGHT_ARM:
-                self.pick_map[msg.objID]=self.handR
+            print msg.arm
+            if msg.arm=="left_arm":
+                self.pick_map[msg.objId]=self.handL
+
+            if msg.arm=="right_arm":
+                self.pick_map[msg.objId]=self.handR
+
         else:
-            if msg.objID in self.pick_map:
-                del self.pick_map[self.objID]
+            if msg.objId in self.pick_map:
+                del self.pick_map[self.objId]
 
 
     def get_head_pose(self,time):
