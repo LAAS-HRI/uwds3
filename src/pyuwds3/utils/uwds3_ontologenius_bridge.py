@@ -34,7 +34,7 @@ class OntologeniusReaderNode(object):
         self.held_by = {}
         self.relations = {}
 
-        self.query_service = rospy.Service("uwds3/query_knowledge_base", Query, self.handle_query)
+        # self.query_service = rospy.Service("uwds3/query_knowledge_base", Query, self.handle_query)
 
         input_world_topic = rospy.get_param("~input_world_topic", "corrected_tracks")
         rospy.loginfo("[ontologenius_reader] Connecting to '" + input_world_topic +  "'...")
