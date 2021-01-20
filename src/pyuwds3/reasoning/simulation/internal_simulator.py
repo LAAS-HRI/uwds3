@@ -32,20 +32,23 @@ class InternalSimulator(object):
                  robot_urdf_file_path,
                  global_frame_id,
                  base_frame_id,
-                 load_robot=True):
+                 load_robot=True,
+                 update_robot_at_each_step=True):
         """ Internal simulator constructor
         """
-        if simulation_config_filename != "":
-            with open(simulation_config_filename, 'r') as config:
-                self.simulator_config = yaml.safe_load(config)
-        else:
-            self.load_robot = False
+        # if simulation_config_filename != "":
+        #     with open(simulation_config_filename, 'r') as config:
+        #         self.simulator_config = yaml.safe_load(config)
+        # else:
+        #     self.load_robot = False
 
         self.tf_bridge = TfBridge()
         self.joint_map_reset = {}
         self.nodes_map = {}
 
         self.my_id = None
+
+        self.update_robot_at_each_step=update_robot_at_each_step
 
         self.entity_id_map = {}
         self.reverse_entity_id_map = {}
@@ -59,12 +62,12 @@ class InternalSimulator(object):
 
         self.robot_joints_command = []
         self.robot_joints_command_indices = []
-        self.position_tolerance = self.simulator_config["base_config"]["position_tolerance"]
+        # self.position_tolerance = self.simulator_config["base_config"]["position_tolerance"]
 
-        if "controller_config" in self.simulator_config:
-            self.use_controller = True
-        else:
-            self.use_controller = False
+        # if "controller_config" in self.simulator_config:
+        #     self.use_controller = True
+        # else:
+        #     self.use_controller = False
 
         self.global_frame_id = global_frame_id
         self.base_frame_id = base_frame_id
@@ -113,13 +116,13 @@ class InternalSimulator(object):
 
         self.robot_loaded = False
         self.joint_states_last_update = None
-
+        self.load_robot = load_robot
         if load_robot is True:
             self.joint_state_subscriber = rospy.Subscriber("/joint_states", JointState, self.joint_states_callback, queue_size=1)
 
-        if self.use_controller is True:
-            pass
-            # TODO add controller to play arm traj, only PD is available in bullet, it is sufficient ?
+        # if self.use_controller is True:
+        #     pass
+        #     # TODO add controller to play arm traj, only PD is available in bullet, it is sufficient ?
 
     def load_urdf(self,
                   filename,
@@ -736,6 +739,9 @@ class InternalSimulator(object):
     def joint_states_callback(self, joint_states_msg):
         """
         """
+        if not self.load_robot:
+            return
+
         success, pose = self.tf_bridge.get_pose_from_tf(self.global_frame_id, self.base_frame_id)
 
         if success is True:
@@ -780,3 +786,5 @@ class InternalSimulator(object):
                     if self.joint_map_reset[joint_sim_index]!=joint_position:
                         self.joint_map_reset[joint_sim_index]=joint_position
                         p.resetJointState(base_link_sim_id,joint_sim_index,joint_position, physicsClientId=self.client_simulator_id)
+
+        self.load_robot = self.update_robot_at_each_step
