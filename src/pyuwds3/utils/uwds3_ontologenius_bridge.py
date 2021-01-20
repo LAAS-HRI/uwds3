@@ -142,29 +142,42 @@ class OntologeniusReaderNode(object):
                 if situation.subject+"isOnTop"+situation.object in self.relations:
                     rospy.loginfo("remove: "+situation.subject+" isOnTop "+situation.object)
                     self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "isOnTopOf", situation.object,situation.end_time)
-                    del self.relations[situation.subject+"isOnTop"+situation.object]
-        elif situation.predicate == "close":
+
+        elif situation.predicate == "canSee":
             if not situation.is_finished():
-                if situation.subject+"isCloseTo"+situation.object not in self.relations:
-                    rospy.loginfo("add: "+situation.subject+" isCloseTo "+situation.object)
-                    self.ontologenius_client.feeder.addObjectProperty(situation.subject, "isCloseTo", situation.object_time)
-                    self.relations[situation.subject+"isCloseTo"+situation.object] = True
+                if situation.subject+"canSee"+situation.object not in self.relations:
+                    rospy.loginfo("add: "+situation.subject+" canSee "+situation.object)
+                    self.ontologenius_client.feeder.addObjectProperty(situation.subject, "canSee", situation.object,situation.start_time)
+                    self.relations[situation.subject+"canSee"+situation.object] = True
             else:
-                if situation.subject+"isCloseTo"+situation.object in self.relations:
-                    rospy.loginfo("remove: "+situation.subject+" isCloseTo "+situation.object)
-                    self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "isCloseTo", situation.object_time)
-                    del self.relations[situation.subject+"isCloseTo"+situation.object]
-        # elif situation.predicate == "CanSee":
-        #     if not situation.is_finished():
-        #         if situation.subject+"CanSee" not in self.relations:
-        #             rospy.loginfo("add: "+situation.subject+" CanSee ")
-        #             self.ontologenius_client.feeder.addObjectProperty(situation.subject, "CanSee", situation.object_time)
-        #             self.relations[situation.subject+"isCloseTo"+situation.object] = True
-        #     else:
-        #         if situation.subject+"isCloseTo"+situation.object in self.relations:
-        #             rospy.loginfo("remove: "+situation.subject+" isCloseTo "+situation.object)
-        #             self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "isCloseTo", situation.object_time)
-        #             del self.relations[situation.subject+"isCloseTo"+situation.object]
+                if situation.subject+"canSee"+situation.object in self.relations:
+                    rospy.loginfo("remove: "+situation.subject+" canSee "+situation.object)
+                    self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "canSee",situation.object, situation.end_time)
+                    del self.relations[situation.subject+"canSee"+situation.object]
+        elif situation.predicate == "CanReach":
+            if not situation.is_finished():
+                if situation.subject+"CanReach"+situation.object not in self.relations:
+                    rospy.loginfo("add: "+situation.subject+" CanReach "+situation.object)
+                    self.ontologenius_client.feeder.addObjectProperty(situation.subject, "CanReach",situation.object, situation.start_time)
+                    self.relations[situation.subject+"CanReach"+situation.object] = True
+            else:
+                if situation.subject+"CanReach"+situation.object in self.relations:
+                    rospy.loginfo("remove: "+situation.subject+" CanReach "+situation.object)
+                    self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "CanReach",situation.object, situation.end_time)
+                    del self.relations[situation.subject+"CanReach"+situation.object]
+
+                del self.relations[situation.subject+"isOnTop"+situation.object]
+    # elif situation.predicate == "close":
+    #     if not situation.is_finished():
+    #         if situation.subject+"isCloseTo"+situation.object not in self.relations:
+    #             rospy.loginfo("add: "+situation.subject+" isCloseTo "+situation.object)
+    #             self.ontologenius_client.feeder.addObjectProperty(situation.subject, "isCloseTo", situation.object_time)
+    #             self.relations[situation.subject+"isCloseTo"+situation.object] = True
+    #     else:
+    #         if situation.subject+"isCloseTo"+situation.object in self.relations:
+    #             rospy.loginfo("remove: "+situation.subject+" isCloseTo "+situation.object)
+    #             self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "isCloseTo", situation.object_time)
+    #             del self.relations[situation.subject+"isCloseTo"+situation.object]
         else:
             pass
 

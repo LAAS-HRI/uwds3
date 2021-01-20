@@ -51,8 +51,8 @@ def centroid_cost(track_a, track_b):
     except Exception:
         return INF
 class AgentType(object):
-    HUMAN = "h"
-    ROBOT = "r"
+    HUMAN = "human"
+    ROBOT = "robot"
 
 class GraphicMonitor(Monitor):
     """ Special monitor for agent management
@@ -64,6 +64,8 @@ class GraphicMonitor(Monitor):
         super(GraphicMonitor, self).__init__(internal_simulator=internal_simulator)#, beliefs_base=beliefs_base)
 
         self.name = name
+        self.myself = SceneNode(agent = True,label=agent_type)
+        self.myself.id = name
         #init of the simulator and ontolog
         self.internal_simulator = internal_simulator
         self.simulator_id = self.internal_simulator.client_simulator_id
@@ -204,7 +206,7 @@ class GraphicMonitor(Monitor):
                             node_to_keep.append(scene_node)
                     header.stamp=self.mocap_obj[obj_id].last_update
                     # self.publish_dic[obj_id].publish(nodes,[],header)
-                    self.agent_monitor_map[obj_id].monitor(node_to_keep,Vector6DStable(),header)
+                    # self.agent_monitor_map[obj_id].monitor(node_to_keep,Vector6DStable(),header)
 
 
             # self.internal_simulator.step_simulation()
@@ -229,7 +231,7 @@ class GraphicMonitor(Monitor):
         cad_models_additional_search_path = rospy.get_param("~cad_models_additional_search_path", "")
         static_entities_config_filename = rospy.get_param("~static_entities_config_filename", "")
         robot_urdf_file_path = rospy.get_param("~robot_urdf_file_path", "")
-        internal_simulator = InternalSimulator(True,
+        internal_simulator = InternalSimulator(False,
                                                     simulation_config_filename,
                                                     cad_models_additional_search_path,
                                                     static_entities_config_filename,
@@ -289,6 +291,8 @@ class GraphicMonitor(Monitor):
                     self.simulator.reset_entity_pose(object.id, object.pose)
                 if object.label=="robot":
                     self.simulator.load_robot=True
+                if object.agent:
+                    self.agent_map[object.id]=object
             # self.marker_publisher.publish(object_tracks,header)
         # self.list.append(time.to_sec()-self.time_monitor)
         # print time.to_sec()-self.time_monitor
@@ -306,6 +310,7 @@ class GraphicMonitor(Monitor):
 
         #compute the facts
         self.compute_allocentric_relations(object_tracks, time)
+        self.compute_egocentric_relations(object_tracks, time)
         # print ("robot")
         # print self.get_head_pose(time).pos.to_array()
         # self.compute_egocentric_relations(list(self.get_head_pose(time).pos.to_array()),object_tracks, time)
@@ -379,9 +384,11 @@ class GraphicMonitor(Monitor):
                 return True
         return False
 
-    def canSee(self,start_pose,obj):
+    def canSee(self,start_pose_vector6,obj):
         """ compute if obj can be seen from start pose"""
         end_id=self.simulator.entity_id_map[obj.id]
+        start_pose = start_pose_vector6.pos.to_array()[:3]
+        start_pose=[start_pose[0][0],start_pose[1][0],start_pose[2][0]]
         [xmin,ymin,zmin],[xmax,ymax,zmax] = p.getAABB(end_id)
         xlength = xmax - xmin
         ylength = ymax - ymin
@@ -410,6 +417,7 @@ class GraphicMonitor(Monitor):
         we go through transparent object (the recursive part)
         """
         r=p.rayTestBatch([start_pose],[end_pose],reportHitNumber = hitnumber)
+        # print r
         # print r[0]
         # print end_id
         if r[0][0] == end_id:
@@ -418,8 +426,9 @@ class GraphicMonitor(Monitor):
             return False
         if not (r[0][0],r[0][1]) in self.alpha_dic:
             data = p.getVisualShapeData(r[0][0])
+
             if r[0][1] +1 >0 and r[0][1] +1 <len(data) and data[r[0][1] +1][1] == r[0][1]:
-                self.alpha_dic[[0][0],r[0][1]] =data[ r[0][1] +1][7]
+                self.alpha_dic[(r[0][0],r[0][1])] =data[ r[0][1] +1][7]
             else:
                 for i in data:
                     if i[1]== r[0][1]:
@@ -533,19 +542,22 @@ class GraphicMonitor(Monitor):
 
 
 
-    def compute_egocentric_relations(self,pose,objects,time):
+    def compute_egocentric_relations(self,objects,time):
         """ compute the egocentric relations (can see can reach)"""
-        for obj1 in objects:
-            if obj1.is_located() and obj1.has_shape() and obj1.label!="human":
-                if self.canSee(pose,obj1):
-                    self.start_fact(obj1, "isSeen", time=time)
-                else:
-                    self.end_fact(obj1, "isSeen", time=time)
+        self.myself.pose = self.get_head_pose(time)
+        self.agent_map[self.name]=self.myself
+        for agent in self.agent_map.values():
+            for obj1 in objects:
+                if obj1.is_located() and obj1.has_shape() and obj1.label!="robot":
+                    if self.canSee(agent.pose,obj1):
+                        self.start_fact(agent, "canSee",object=obj1, time=time)
+                    else:
+                        self.end_fact(agent, "canSee",object=obj1, time=time)
 
-                if self.can_reach(pose,obj1):
-                    self.start_fact(obj1, "isReachable", time=time)
-                else:
-                    self.end_fact(obj1, "isReachable", time=time)
+                    if self.can_reach(agent.pose,obj1):
+                        self.start_fact(agent, "CanReach",object=obj1, time=time)
+                    else:
+                        self.end_fact(agent, "CanReach",object=obj1, time=time)
 
 
     def compute_allocentric_relations(self, objects, time):
