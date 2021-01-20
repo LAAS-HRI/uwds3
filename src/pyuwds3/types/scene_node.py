@@ -50,7 +50,8 @@ class SceneNode(object):
                  p_cov_h=0.85, m_cov_h=1e-9,
                  p_cov_p=0.8, m_cov_p=0.01,
                  p_cov_r=0.06, m_cov_r=0.001,
-                 time=None):
+                 time=None,
+                 agent=False):
         """ Scene node constructor
         """
         self.id = str(uuid.uuid4()).replace("-", "")
@@ -59,6 +60,8 @@ class SceneNode(object):
         self.label = None
         self.bbox = None
         self.mask = None
+
+        self.agent=agent
 
         self.n_init = n_init
         self.max_lost = max_lost
