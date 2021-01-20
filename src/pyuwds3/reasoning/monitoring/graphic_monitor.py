@@ -59,7 +59,7 @@ class GraphicMonitor(Monitor):
     """
     def __init__(self,agent=None,agent_type =AgentType.ROBOT,
      handL = None,handR=None, head = "head_mount_kinect2_rgb_optical_frame", internal_simulator=None,
-       position_tolerance=0.04,name="robot"): #beliefs_base=None,
+       position_tolerance=0.04,name="robot" ): #beliefs_base=None,
 
         super(GraphicMonitor, self).__init__(internal_simulator=internal_simulator)#, beliefs_base=beliefs_base)
 
@@ -99,8 +99,8 @@ class GraphicMonitor(Monitor):
         self.headpose = None
 
         #A map of graphic monitor class, one/agent
+        self.agent_monitor_map={}
         self.agent_map={}
-
 
         #view of robot and human
         self._publisher = ViewPublisher(name+"_view")
@@ -114,8 +114,13 @@ class GraphicMonitor(Monitor):
         self.pick_map = {}
 
 
+        self.list=[]
+        # dictionary of the frame that are abble to grasp/pick obj
+        self.grasp_map = {}
+
         #mocap dicttionary, and object to publish dictionnary
         self.mocap_obj={}
+        self.mocap_body={}
         self.publish_dic={}
 
         #time, and fps limit a a
@@ -147,8 +152,11 @@ class GraphicMonitor(Monitor):
         """
             #get the head pose in simulator, so in the global_frame_id (often map)
         """
-        s,hpose=self.simulator.tf_bridge.get_pose_from_tf(self.simulator.global_frame_id,
-                                                        self.head,time)
+        if not self.simulator.is_entity_loaded(self.head):
+            s,hpose=self.simulator.tf_bridge.get_pose_from_tf(self.simulator.global_frame_id,
+                                                            self.head)
+        else:
+            hpose = self.simulator.get_entity(self.head).pose
         return hpose
 
 
@@ -169,22 +177,34 @@ class GraphicMonitor(Monitor):
                 for obj_id in self.mocap_obj.keys():
                     if not obj_id in self.publish_dic:
                         self.publish_dic[obj_id]=WorldPublisher(str(obj_id)+"_tracks", self.global_frame_id)
-                for obj_id in self.agent_map.keys():
+                for obj_id in self.agent_monitor_map.keys():
                     view_pose=self.mocap_obj[obj_id].pose + Vector6DStable(0.15,0,0,0,np.pi/2)
 
                     _, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera)
-                    node_to_keep=[]
+                    node_to_keep=[self.mocap_obj[obj_id]]
+                    if obj_id + "_body" in self.mocap_body:
+                        node_to_keep.append(self.mocap_body[obj_id+"_body"])
                     for node in nodes:
                         if node.label !="appartment" and node.label!= "robot":
                             #we remove the background
-                            print "node_id" + str(node.id) +"\n"
-                            print node.label
-                            print "end"
                             node.last_update = self.mocap_obj[obj_id].last_update
                             node_to_keep.append(node)
+                        if node.label== "robot":
+                            # if node.agent==True:
+                            #     node.last_update = self.mocap_obj[obj_id].last_update
+                            #     node_to_keep.append(node)
+                            # else:
+                            #     node_ = SceneNode(pose=self.get_head_pose(),agent = True,label="robot")
+                            #     node_.last_update = self.mocap_obj[obj_id].last_update
+                            #     node_to_keep.append(node_)
+                            scene_node = self.internal_simulator.get_entity(self.internal_simulator.my_id)
+                            scene_node.agent=True
+                            scene_node.id="robot"
+                            scene_node.last_update = self.mocap_obj[obj_id].last_update
+                            node_to_keep.append(scene_node)
                     header.stamp=self.mocap_obj[obj_id].last_update
                     # self.publish_dic[obj_id].publish(nodes,[],header)
-                    self.agent_map[obj_id].monitor(node_to_keep,Vector6DStable(),header)
+                    self.agent_monitor_map[obj_id].monitor(node_to_keep,Vector6DStable(),header)
 
 
             # self.internal_simulator.step_simulation()
@@ -216,7 +236,8 @@ class GraphicMonitor(Monitor):
                                                     robot_urdf_file_path,
                                                     self.global_frame_id,
                                                     self.base_frame_id,
-                                                    load_robot = False)
+                                                    load_robot = True,
+                                                    update_robot_at_each_step = False)
         return internal_simulator
 
     def mocap(self,tracks,header):
@@ -229,14 +250,21 @@ class GraphicMonitor(Monitor):
                 if not self.simulator.is_entity_loaded(object.id):
                     self.simulator.load_node(object)
                 self.simulator.reset_entity_pose(object.id, object.pose)
-                if not "_body" in object.id:
-                    if not object.id in self.agent_map:
-
-                        self.agent_map[object.id]=GraphicMonitor(agent=None,agent_type =AgentType.ROBOT,
-                         handL = None,handR=None, head = "head_mount_kinect2_rgb_optical_frame", internal_simulator=self.create_internal_sim(),
-                           position_tolerance=0.04,name="robot")
+                if not "_body" in object.id and not "pick" in object.id:
+                    self.agent_map[object.id]=object
+                    if not object.id in self.agent_monitor_map:
+                        self.onto.feeder.addConcept(object.id)
+                        self.onto.feeder.addInheritage(object.id,"human")
+                        self.agent_monitor_map[object.id]=GraphicMonitor(agent=None,agent_type =AgentType.HUMAN,
+                         handL = None,handR=None, head = object.id, internal_simulator=self.create_internal_sim(),
+                           position_tolerance=0.04,name= object.id)
                     self.mocap_obj[object.id]=object
                     self.simulator.reset_entity_pose(object.id, object.pose)
+                if "_body" in object.id:
+                    self.mocap_body[object.id]=object
+                if "pick" in object.id:
+                    self.grasp_map[object.id]=object
+
                 # self.human_pose=object.pose
                 # self.simulator.change_joint(object.id,0,2)
                 # print p.getVisualShapeData(self.simulator.entity_id_map[object.id])
@@ -253,17 +281,19 @@ class GraphicMonitor(Monitor):
         time = header.stamp
         if pose != None:
             for object in object_tracks:
-                print "here +" + str(self.name)
-                if object.is_located() and object.has_shape():
+                if object.is_located() and object.has_shape() and object.label!="robot":
                     object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
                     if not self.simulator.is_entity_loaded(object.id):
                         self.simulator.load_node(object)
-                    print self.name
-                    print self.simulator.entity_id_map
                     base_link_sim_id = self.simulator.entity_id_map[object.id]
-                self.simulator.reset_entity_pose(object.id, object.pose)
+                    self.simulator.reset_entity_pose(object.id, object.pose)
+                if object.label=="robot":
+                    self.simulator.load_robot=True
             # self.marker_publisher.publish(object_tracks,header)
-
+        # self.list.append(time.to_sec()-self.time_monitor)
+        # print time.to_sec()-self.time_monitor
+        # print self.list
+        # print (sum(self.list)/(1.0*len(self.list)))
         #publish the head view
         if time.to_sec()-self.time_monitor >1./(self.n_frame_monitor):
             hpose=self.get_head_pose(time)
@@ -403,11 +433,11 @@ class GraphicMonitor(Monitor):
 
 #     def compute_allocentric_relations(self, objects, time):
 #         for obj1 in objects:
-#             if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
+#             if obj1.is_located() and obj1.has_shape() and obj1.label!="human":
 #                 for obj2 in objects:
 #                     if obj1.id != obj2.id:
 #                         # evaluate allocentric relation
-#                         if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
+#                         if obj2.is_located() and obj2.has_shape() and obj2.label!="human":
 #                             # get 3d aabb
 #                             success1, aabb1 = self.simulator.get_aabb(obj1)
 #                             success2, aabb2 = self.simulator.get_aabb(obj2)
@@ -438,11 +468,11 @@ class GraphicMonitor(Monitor):
     #     #TODO: PAS  FAIRE CA
     #     #DELETE LA VERSION PRECEDENDE
     #         for obj1 in objects:
-    #             if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
+    #             if obj1.is_located() and obj1.has_shape() and obj1.label!="human":
     #                 for obj2 in objects:
     #                     if obj1.id != obj2.id:
     #                         # evaluate allocentric relation
-    #                         if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
+    #                         if obj2.is_located() and obj2.has_shape() and obj2.label!="human":
     #                             self.onto.feeder.removeObjectProperty(obj1.id,"isOnTopOf",obj2.id,time)
     #                             self.onto.feeder.removeObjectProperty(obj1.id,"isIn",obj2.id,time)
 
@@ -506,7 +536,7 @@ class GraphicMonitor(Monitor):
     def compute_egocentric_relations(self,pose,objects,time):
         """ compute the egocentric relations (can see can reach)"""
         for obj1 in objects:
-            if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
+            if obj1.is_located() and obj1.has_shape() and obj1.label!="human":
                 if self.canSee(pose,obj1):
                     self.start_fact(obj1, "isSeen", time=time)
                 else:
@@ -522,12 +552,12 @@ class GraphicMonitor(Monitor):
         included_map={}
         #included_map[a] = [b,c,d] <=> a is in b in c and in d
         for obj1 in objects:
-            if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
+            if obj1.is_located() and obj1.has_shape() and obj1.label!="human":
                 included_map[obj1.id]=[]
                 for obj2 in objects:
                     if obj1.id != obj2.id:
                         # evaluate allocentric relation
-                        if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
+                        if obj2.is_located() and obj2.has_shape() and obj2.label!="human":
                             # get 3d aabb
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
@@ -538,12 +568,14 @@ class GraphicMonitor(Monitor):
                                 else:
                                     self.end_fact(obj1, "in", object=obj2, time=time)
         for obj1 in objects:
-            if obj1.is_located() and obj1.has_shape() and obj1.label!="no_fact":
+            if obj1.is_located() and obj1.has_shape() and obj1.label!="human":
                 for obj2 in objects:
                     if obj1.id != obj2.id:
                         # evaluate allocentric relation
-                        if obj2.is_located() and obj2.has_shape() and obj2.label!="no_fact":
+                        if obj2.is_located() and obj2.has_shape() and obj2.label!="human":
                             # get 3d aabb
+                            # print included_map
+
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
                             if success1  and success2 :
