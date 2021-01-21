@@ -33,7 +33,6 @@ class MocapHumanLocalization(object):
         self.tf_bridge = TfBridge()
         self.tfOptitrack2Humans_ ={}
         self.subscribedNodeNames =rospy.get_param("~optitrack_human_topic_names",None)
-        print self.subscribedNodeNames
         # self.subscribedNodeNames={"Neophasia": 1}
 
         self.personSubs =[]
@@ -57,14 +56,14 @@ class MocapHumanLocalization(object):
                         or_pose_estimator_state,
                         self.updateMocapPersonPose_callback,
                         (self.subscribedNodeNames[key],key)  ))
-                print fullTopicName
+
                 new_node =SceneNode(label="human")
 
                 if "Helmet" in key:
-                    shape = Mesh("package://uwds3/models/cad_models/human/cylinder_man.urdf",
+                    shape = Mesh("package://uwds3/models/cad_models/human/human_head1.stl",
                              x=0, y=-0.4, z=0,
                              rx=0, ry=0, rz=0)
-                    r,g,b=0,0,0
+                    r,g,b=1,1,1
                     shape.color[0] = r
                     shape.color[1] = g
                     shape.color[2] = b
@@ -75,7 +74,7 @@ class MocapHumanLocalization(object):
 
                     new_id=key+"_body"
                     new_body=SceneNode(pose = Vector6D(x=0,y=0,z=0,rx=0,ry=0,rz=0),label="human")
-                    body_shape = Cylinder(0.3,1.7, "shp1",x=0,y=-0.15,z=-1.1,a=1,r=1,g=1,b=1)
+                    body_shape = Cylinder(0.3,1.7, "shp1",x=0,y=-0.02,z=-1.1,a=1,r=1,g=1,b=1)
                     new_body.id=new_id
                     new_body.shapes.append(body_shape)
                     self.tfOptitrack2Humans_[new_id]=new_body
