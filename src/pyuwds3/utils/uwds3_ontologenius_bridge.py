@@ -163,8 +163,6 @@ class OntologeniusReaderNode(object):
                     rospy.loginfo("remove: "+situation.subject+" CanReach "+situation.object)
                     self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "CanReach",situation.object, situation.end_time)
                     del self.relations[situation.subject+"CanReach"+situation.object]
-
-                del self.relations[situation.subject+"isOnTop"+situation.object]
     # elif situation.predicate == "close":
     #     if not situation.is_finished():
     #         if situation.subject+"isCloseTo"+situation.object not in self.relations:

@@ -133,7 +133,8 @@ class GraphicMonitor(Monitor):
         self.pick_map = {}
 
 
-        self.list=[]
+        self.time_max=0
+        self.number_iteration=0
         # dictionary of the frame that are abble to grasp/pick obj
         self.grasp_map = {}
 
@@ -307,7 +308,12 @@ class GraphicMonitor(Monitor):
         time = header.stamp
         check_missing_object = False
         node_seen = []
-        if self.agent_type== AgentType.ROBOT and time.to_sec()-self.time_monitor >1./(self.n_frame_monitor):
+        print time.to_sec()
+        print self.time_monitor
+        self.time_max=+time.to_sec()-self.time_monitor
+        self.number_iteration+=1.0
+        print self.name + " : " + str(self.time_max/self.number_iteration)
+        if self.agent_type== AgentType.ROBOT and abs(time.to_sec()-self.time_monitor) >1./(self.n_frame_monitor):
             hpose=self.get_head_pose(time)
             # print hpose
             image,_,_,nodes =  self.simulator.get_camera_view(hpose, self.camera)
@@ -344,6 +350,7 @@ class GraphicMonitor(Monitor):
                 if object.agent:
                     self.agent_map[object.id]=object
             # self.marker_publisher.publish(object_tracks,header)
+
         # self.list.append(time.to_sec()-self.time_monitor)
         # print time.to_sec()-self.time_monitor
         # print self.list
@@ -357,7 +364,7 @@ class GraphicMonitor(Monitor):
         self.compute_allocentric_relations(object_tracks, time)
         self.compute_egocentric_relations(object_tracks, time)
 
-        self.pick(object_tracks,time,node_seen)
+        # self.pick(object_tracks,time,node_seen)
         # print ("robot")
         # print self.get_head_pose(time).pos.to_array()
         # self.compute_egocentric_relations(list(self.get_head_pose(time).pos.to_array()),object_tracks, time)
