@@ -135,14 +135,12 @@ class OntologeniusReaderNode(object):
                 if situation.subject+"isOnTop"+situation.object not in self.relations:
                     rospy.loginfo("add: "+situation.subject+" isOnTop "+situation.object)
                     self.ontologenius_client.feeder.addObjectProperty(situation.subject, "isOnTopOf", situation.object,situation.start_time)
-                    print situation.subject
-                    print situation.object
                     self.relations[situation.subject+"isOnTop"+situation.object] = True
             else:
                 if situation.subject+"isOnTop"+situation.object in self.relations:
                     rospy.loginfo("remove: "+situation.subject+" isOnTop "+situation.object)
                     self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "isOnTopOf", situation.object,situation.end_time)
-
+                    del self.relations[situation.subject+"isOnTop"+situation.object]
         elif situation.predicate == "canSee":
             if not situation.is_finished():
                 if situation.subject+"canSee"+situation.object not in self.relations:
