@@ -4,7 +4,7 @@ import cv2
 from ..assignment.linear_assignment import LinearAssignment
 from .monitor import Monitor
 from ...utils.bbox_metrics import overlap
-from ...utils.allocentric_spatial_relations import is_on_top, is_included, is_close
+from ...utils.allocentric_spatial_relations import is_on_top, is_included, is_close,distance
 from ...utils.egocentric_spatial_relations import is_right_of, is_left_of
 from ...types.camera import Camera
 from scipy.spatial.distance import euclidean
@@ -44,6 +44,13 @@ INF = 10e3
 N_RAY = 5
 ALPHA_THRESHOLD = 0.6
 
+PICK_DIST=5
+DELTA_TIME=0.5
+
+FILTERING_Y = 15
+FILTERING_Z = 20
+
+
 def centroid_cost(track_a, track_b):
     """Returns the centroid cost"""
     try:
@@ -62,6 +69,10 @@ class GraphicMonitor(Monitor):
        position_tolerance=0.04,name="robot" ): #beliefs_base=None,
 
         super(GraphicMonitor, self).__init__(internal_simulator=internal_simulator)#, beliefs_base=beliefs_base)
+
+        # filteringvalue
+        self.filtering_y_axis = rospy.get_param("~filtering_y_axis", FILTERING_Y)
+        self.filtering_z_axis = rospy.get_param("~filtering_z_axis", FILTERING_Z)
 
         self.name = name
         self.myself = SceneNode(agent = True,label=agent_type)
@@ -83,6 +94,11 @@ class GraphicMonitor(Monitor):
         #init of the camera (kinect fov)
         self.camera = Camera(640)
         self.camera.setfov(84.1,53.8)
+
+
+        #init of the camera (fileterd fov)
+        self.filtered_camera = Camera(640)
+        self.filtered_camera.setfov(2*self.filtering_y_axis,2*self.filtering_y_axis)
 
         #link between the physics simlatro and the reality
         #not used for now
@@ -112,7 +128,8 @@ class GraphicMonitor(Monitor):
 
 
 
-        # dictionnary of the picked objects
+
+        # dictionnary of the picked objects by the robot
         self.pick_map = {}
 
 
@@ -131,7 +148,14 @@ class GraphicMonitor(Monitor):
         self.n_frame_monitor=15
         self.n_frame_view = 15
 
+        #object being picke by a human:
 
+        #   - hand_close-map : hand was close, checking if hand is going inside
+        #   - may_be_picked_map : hand wa never inside, waiting to see if diseapear/moved
+        #   - picked_map : obejct that were picked
+        self.hand_close_map={}
+        self.may_be_picked_map={}
+        self.picked_map={}
 
     def pick_callback(self, msg):
         """
@@ -281,10 +305,36 @@ class GraphicMonitor(Monitor):
         """
         #place all object of the tracks in the simulator
         time = header.stamp
+        check_missing_object = False
+        node_seen = []
+        if self.agent_type== AgentType.ROBOT and time.to_sec()-self.time_monitor >1./(self.n_frame_monitor):
+            hpose=self.get_head_pose(time)
+            # print hpose
+            image,_,_,nodes =  self.simulator.get_camera_view(hpose, self.camera)
+            self._publisher.publish(image,[],time)
+
+            self.time_monitor=time.to_sec()
+            check_missing_object = True
+            for node in nodes:
+                node_seen.append(node.id)
+
+
         if pose != None:
             for object in object_tracks:
                 if object.is_located() and object.has_shape() and object.label!="robot":
+                    # if check_missing_object == True:
+                    #     if object.id in node_seen:
+                    #         if (time -object.last_update).to_sec()>DELTA_TIME:
+                    #             self.missing_object[object.id]=object.last_update
+
+                            # if object should be seen but are not, they are missing
+
                     object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
+                    # if object.id in self.missing_object:
+                    #     if (object.last_update == self.missing_object[object.id]):
+                    #         object.pose.pos.z =object.pose.pos.z - 100
+                    #     else:
+                    #         del( self.missing_object[object.id])
                     if not self.simulator.is_entity_loaded(object.id):
                         self.simulator.load_node(object)
                     base_link_sim_id = self.simulator.entity_id_map[object.id]
@@ -299,18 +349,15 @@ class GraphicMonitor(Monitor):
         # print self.list
         # print (sum(self.list)/(1.0*len(self.list)))
         #publish the head view
-        if time.to_sec()-self.time_monitor >1./(self.n_frame_monitor):
-            hpose=self.get_head_pose(time)
-            # print hpose
-            image,_,_,_ =  self.simulator.get_camera_view(hpose, self.camera)
-            self._publisher.publish(image,[],time)
 
-            self.time_monitor=time.to_sec()
+
 
 
         #compute the facts
         self.compute_allocentric_relations(object_tracks, time)
         self.compute_egocentric_relations(object_tracks, time)
+
+        self.pick(object_tracks,time,node_seen)
         # print ("robot")
         # print self.get_head_pose(time).pos.to_array()
         # self.compute_egocentric_relations(list(self.get_head_pose(time).pos.to_array()),object_tracks, time)
@@ -354,6 +401,7 @@ class GraphicMonitor(Monitor):
 #cansee
 #getvisualshapedata [X][7] = color
     #
+
     def can_reach(self,start_pose,obj):
         """
         compute if obj can be reached from the start pos
@@ -405,7 +453,6 @@ class GraphicMonitor(Monitor):
                         return True
         # pose_end=obj.pose.pos.to_array()
         # [pose_end[0],pose_end[1],pose_end[2]]
-        start_pose=[start_pose[0][0],start_pose[1][0],start_pose[2][0]]
         if self.canSeeRec(start_pose,end_pose,end_id,0):
             return True
         return False
@@ -558,6 +605,60 @@ class GraphicMonitor(Monitor):
                         self.start_fact(agent, "CanReach",object=obj1, time=time)
                     else:
                         self.end_fact(agent, "CanReach",object=obj1, time=time)
+
+
+    def pick(self,obj_list,time,node_seen):
+        for obj in obj_list:
+            if "Pickable" in self.onto.individuals.getUp(obj.id):
+                for hand in self.grasp_map.values():
+                    has_pick(hand,obj,time,node_seen)
+
+    def has_pick(self,hand,obj,time,node_seen):
+        hand_pose = hand.pose.pos.to_array()[:3]
+        hand_aabb=[
+        [hand_pose[0]-2,hand_pose[1]-2,hand_pose[2]-2],
+        [hand_pose[0]+2,hand_pose[1]+2,hand_pose[2]+2]]
+        success, obj_aabb = self.simulator.get_aabb(obj)
+        if not success:
+            return
+        if obj.id in self.picked_map:
+            return
+        # if obj.id in self.picked_map:
+        #     time =  self.picked_map[obj.id]
+        #     # if obj.last_update
+
+        if obj.id in self.may_be_picked_map:
+            old_time,old_pose = self.may_be_picked_map[obj.id]
+            if obj.id in self.node_seen:
+                del self.may_be_picked_map[obj.id]
+                if obj.last_update ==old_time:
+                    self.picked_map[obj.id]=old_time,old_pose
+                else:
+                    vect = obj.old_pose.pos - obj.pose.pos
+                    dist = np.linalg(vect.to_array()[:3])
+                    if dist> MOVED_DIST:
+                        self.picked_map[obj.id]=old_time,old_pose
+                        # AND DROP!!!
+            return
+
+        if obj.id in self.hand_close_map:
+            computation_old_time,obj_old_time,old_pose = self.hand_close_map[obj.id]
+            if is_included(hand_aabb,obj_aabb):
+                del self.hand_close_map[obj.id]
+            else:
+                if time-computation_old_time >DELTA_TIME:
+                    self.may_be_picked_map[obj.id]=(obj_old_time,old_pose)
+                    del self.hand_close_map[obj.id]
+            return
+
+        if distance(obj_aabb,hand_aabb)<PICK_DIST:
+            self.may_be_picked_map[obj.id]=(time,obj_old_time,old_pose)
+
+
+                        # obj_pose,time =  self.picked_map[obj.id]
+
+
+
 
 
     def compute_allocentric_relations(self, objects, time):
