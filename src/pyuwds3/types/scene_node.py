@@ -309,7 +309,7 @@ class SceneNode(object):
         self.type = msg.type
         self.state = msg.state
         self.description = msg.description
-
+        self.last_update = msg.last_update
         if msg.is_perceived is True:
             self.bbox = BoundingBoxStable().from_msg(msg.bbox)
         else:
@@ -426,7 +426,7 @@ class SceneNode(object):
             for shape in self.shapes:
                 msg.shapes.append(shape.to_msg())
 
-        msg.last_update = header.stamp
+        msg.last_update = self.last_update
         msg.expiration_duration = rospy.Duration(self.expiration_duration)
         return msg
 
