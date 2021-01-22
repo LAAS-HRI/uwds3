@@ -225,6 +225,7 @@ class GraphicMonitor(Monitor):
         """
         #place all object of the tracks in the simulator
         time = header.stamp
+        self.cleanup_relations()
         if pose != None:
             for object in object_tracks:
                 if object.is_located() and object.has_shape():
