@@ -126,6 +126,7 @@ class MocapHumanLocalization(object):
             self.header.stamp.secs=msg.ts.sec
             self.header.stamp.nsecs=msg.ts.nsec
             self.tfOptitrack2Humans_[humanId].time = self.header.stamp
+            
             if str(key)+"_body" in self.tfOptitrack2Humans_ :
                 self.tfOptitrack2Humans_[str(key)+"_body"].pose.pos.x=pose_received.pos.x
                 self.tfOptitrack2Humans_[str(key)+"_body"].pose.pos.y=pose_received.pos.y
