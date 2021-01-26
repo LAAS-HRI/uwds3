@@ -64,31 +64,31 @@ def distance(bb1, bb2):
     return math.sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)+(z1-z2)*(z1-z2))
 
 
-def overlap(rect1, rect2):
+def overlap(rect1, rect2,hyst=0):
     '''Overlapping rectangles overlap both horizontally & vertically
     '''
     (l1,b1), (r1,t1) = rect1
     (l2,b2), (r2,t2) = rect2
-    return range_overlap(l1, r1, l2, r2) and \
-            range_overlap(b1, t1, b2, t2)
+    return range_overlap(l1, r1, l2, r2,hyst) and \
+            range_overlap(b1, t1, b2, t2,hyst)
 
 
-def range_overlap(a_min, a_max, b_min, b_max):
+def range_overlap(a_min, a_max, b_min, b_max,hyst):
     '''Neither range is completely greater than the other
 
     http://codereview.stackexchange.com/questions/31352/overlapping-rectangles
     '''
-    return (a_min <= b_max) and (b_min <= a_max)
+    return (a_min <= b_max+hyst) and (b_min <= a_max+hyst)
 
 
-def weakly_cont(rect1, rect2):
+def weakly_cont(rect1, rect2,hyst=0):
     '''Obj1 is weakly contained if the base of the object is surrounded
     by Obj2
     '''
     (l1,b1), (r1,t1) = rect1
     (l2,b2), (r2,t2) = rect2
 
-    return (l1 >= l2) and (b1 >= b2) and (r1 <= r2) and (t1 <= t2)
+    return (l1+hyst >= l2) and (b1+hyst >= b2) and (r1+hyst <= r2) and (t1+hyst <= t2)
 
 
 def is_wkly_cont(bb1, bb2):
@@ -114,7 +114,7 @@ def is_lower(bb1, bb2):
     return z1 < z2
 
 
-def is_above(bb1, bb2):
+def is_above(bb1, bb2,hyst=0):
     """ For obj 1 to be above obj 2:
          - the bottom of its bounding box must be higher that
            the top of obj 2's bounding box
@@ -126,11 +126,11 @@ def is_above(bb1, bb2):
 
     x1,y1,z1 = bb1_min
     x2,y2,z2 = bb2_max
-    if z1 < z2 - ISABOVE_EPSILON:
+    if z1 < z2 - ISABOVE_EPSILON-hyst:
         return False
 
     return overlap(bb_footprint(bb1),
-                   bb_footprint(bb2))
+                   bb_footprint(bb2),hyst)
 
 
 def is_below(bb1, bb2):
@@ -146,12 +146,12 @@ def is_below(bb1, bb2):
     return False
 
 
-def is_on_top(bb1, bb2):
+def is_on_top(bb1, bb2,hyst=0):
     """ For obj 1 to be on top of obj 2:
          - obj1 must be above obj 2
          - the bottom of obj 1 must be close to the top of obj 2
     """
-
+    ontop_epsilon = ONTOP_EPSILON + hyst
 
     bb1_min, _ = bb1
     _, bb2_max = bb2
@@ -160,7 +160,7 @@ def is_on_top(bb1, bb2):
     x2,y2,z2 = bb2_max
     # print bb1
     # print bb2
-    return z1 < z2 + ONTOP_EPSILON and is_above(bb1, bb2)
+    return z1 < z2 + ontop_epsilon and is_above(bb1, bb2,hyst)
 
 
 def is_close(bb1, bb2):
@@ -178,7 +178,7 @@ def is_close(bb1, bb2):
     return dist < 2 * dim2
 
 
-def is_in(bb1, bb2):
+def is_in(bb1, bb2,hyst):
     """ Returns True if bb1 is in bb2.
 
     To be 'in' bb1 is weakly contained by bb2 and the bottom of bb1 is lower
@@ -193,16 +193,16 @@ def is_in(bb1, bb2):
     # print z1
     # print z2
     # print z2 - INSIDE_EPSILON
-    if z1 > z2 - INSIDE_EPSILON:
+    if z1 > z2 - INSIDE_EPSILON-hyst:
         return False
 
-    if z1 < z3 + INSIDE_EPSILON:
+    if z1 < z3 + INSIDE_EPSILON-hyst:
         return False
 
     return weakly_cont(bb_footprint(bb1),
-                       bb_footprint(bb2))
+                       bb_footprint(bb2),hyst)
 
-def is_included(bb1, bb2):
+def is_included(bb1, bb2,hyst=0):
     """ Returns True if bb1 is included in bb2.
 
     To be 'in' bb1 is weakly contained by bb2 and the top of bb1 is lower
@@ -217,12 +217,12 @@ def is_included(bb1, bb2):
     x4,y4,z4 = bb2_max
 
 
-    if z2 > z4+ INSIDE_EPSILON:
+    if z2 > z4+ INSIDE_EPSILON+hyst:
         return False
 
-    if z1 < z3 - INSIDE_EPSILON:
+    if z1 < z3 - INSIDE_EPSILON+hyst:
         return False
 
 
     return weakly_cont(bb_footprint(bb1),
-                       bb_footprint(bb2))
+                       bb_footprint(bb2),hyst)

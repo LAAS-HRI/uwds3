@@ -231,7 +231,7 @@ class GraphicMonitor(Monitor):
                             node_to_keep.append(scene_node)
                     header.stamp=self.mocap_obj[obj_id].last_update
                     # self.publish_dic[obj_id].publish(nodes,[],header)
-                    # self.agent_monitor_map[obj_id].monitor(node_to_keep,Vector6DStable(),header)
+                    self.agent_monitor_map[obj_id].monitor(node_to_keep,Vector6DStable(),header)
 
 
             # self.internal_simulator.step_simulation()
@@ -305,6 +305,7 @@ class GraphicMonitor(Monitor):
 
         """
         #place all object of the tracks in the simulator
+        self.cleanup_relations()
         time = header.stamp
         check_missing_object = False
         node_seen = []
@@ -682,11 +683,16 @@ class GraphicMonitor(Monitor):
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
                             if success1  and success2 :
-                                if is_included(aabb1, aabb2) and (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
-                                    self.start_fact(obj1, "in", object=obj2, time=time)
-                                    included_map[obj1.id].append(obj2.id)
-                                else:
-                                    self.end_fact(obj1, "in", object=obj2, time=time)
+                                if (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
+                                    if obj1.id+"in"+obj2.id in self.relations_index:
+                                        hyst=2
+                                    else:
+                                        hyst=0
+                                    if is_included(aabb1, aabb2,hyst) :
+                                        self.start_fact(obj1, "in", object=obj2, time=time)
+                                        included_map[obj1.id].append(obj2.id)
+                                    else:
+                                        self.end_fact(obj1, "in", object=obj2, time=time)
         for obj1 in objects:
             if obj1.is_located() and obj1.has_shape() and obj1.label!="human":
                 for obj2 in objects:
@@ -699,7 +705,13 @@ class GraphicMonitor(Monitor):
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
                             if success1  and success2 :
-                                if  included_map[obj1.id]==included_map[obj2.id] and is_on_top(aabb1, aabb2) and (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
-                                    self.start_fact(obj1, "on", object=obj2, time=time)
-                                else:
-                                    self.end_fact(obj1, "on", object=obj2, time=time)
+                                if included_map[obj1.id]==included_map[obj2.id] and (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
+                                    if obj1.id+"on"+obj2.id in self.relations_index:
+                                        hyst=2
+                                    else:
+                                        hyst=0
+
+                                    if  is_on_top(aabb1, aabb2,hyst) :
+                                        self.start_fact(obj1, "on", object=obj2, time=time)
+                                    else:
+                                        self.end_fact(obj1, "on", object=obj2, time=time)
