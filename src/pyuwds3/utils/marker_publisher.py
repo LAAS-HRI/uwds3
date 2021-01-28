@@ -82,6 +82,6 @@ class MarkerPublisher(object):
                         else:
                             raise NotImplementedError("Shape not implemented")
 
-                        marker.lifetime = rospy.Duration(3.0)
+                        marker.lifetime = rospy.Duration(3.)
                         markers_msg.markers.append(marker)
         self.publisher.publish(markers_msg)
