@@ -758,7 +758,7 @@ class InternalSimulator(object):
             # else:
             #     self.update_constraint(self.my_id, pose)
         if self.robot_loaded is True:
-
+            self.reset_entity_pose(self.my_id,pose)
             joint_indices = []
             target_positions = []
             base_link_sim_id = self.entity_id_map[self.my_id]
