@@ -135,7 +135,7 @@ class GraphicMonitor(Monitor):
 
         else:
             if msg.objId in self.pick_map:
-                del self.pick_map[self.objId]
+                del self.pick_map[msg.objId]
 
 
     def get_head_pose(self,time):
@@ -226,14 +226,22 @@ class GraphicMonitor(Monitor):
         #place all object of the tracks in the simulator
         time = header.stamp
         self.cleanup_relations()
+
+        # print "pbublish dixt" + str(len(self.publish_dic))
+        # print "agent map " + str(len(self.agent_map))
+        # print "pick map " + str(len(self.pick_map ))
+        # print "mocap obj " + str(len(self.mocap_obj))
+        # print "rel ind " + str(len(self.relations_index))
+        # print "relations  " + str(len(self.relations))
+
         if pose != None:
             for object in object_tracks:
                 if object.is_located() and object.has_shape():
-                    object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
+                    # object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
                     if not self.simulator.is_entity_loaded(object.id):
                         self.simulator.load_node(object)
                     base_link_sim_id = self.simulator.entity_id_map[object.id]
-            self.simulator.reset_entity_pose(object.id, object.pose)
+                    self.simulator.reset_entity_pose(object.id, object.pose)
             # self.marker_publisher.publish(object_tracks,header)
 
         #publish the head view
