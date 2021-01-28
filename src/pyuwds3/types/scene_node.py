@@ -59,7 +59,7 @@ class SceneNode(object):
         self.label = None
         self.bbox = None
         self.mask = None
-
+        self.gone = False
         self.n_init = n_init
         self.max_lost = max_lost
         self.max_age = max_age
