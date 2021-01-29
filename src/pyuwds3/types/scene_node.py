@@ -64,6 +64,10 @@ class SceneNode(object):
         self.max_lost = max_lost
         self.max_age = max_age
 
+        self.last_seen_position = {}
+        #the map of the last seen position of the object
+        #It can be equivalent to the pose (eg mocap) or not (eg ar_tags)
+
         self.static = is_static
         if self.static is True:
             self.state = SceneNodeState.CONFIRMED
