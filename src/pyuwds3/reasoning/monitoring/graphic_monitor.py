@@ -245,7 +245,8 @@ class GraphicMonitor(Monitor):
             # self.marker_publisher.publish(object_tracks,header)
 
         #publish the head view
-        if time.to_sec()-self.time_monitor >1./(self.n_frame_monitor):
+
+        if abs(time.to_sec()-self.time_monitor) >1./(self.n_frame_monitor):
             hpose=self.get_head_pose(time)
             # print hpose
             image,_,_,_ =  self.simulator.get_camera_view(hpose, self.camera)
