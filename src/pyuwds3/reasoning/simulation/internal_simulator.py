@@ -5,6 +5,8 @@ import os.path
 import numpy as np
 from sensor_msgs.msg import JointState
 from ...types.scene_node import SceneNode, SceneNodeType
+
+from pyuwds3.utils.marker_publisher import MarkerPublisher
 from tf.transformations import translation_matrix, quaternion_matrix
 from tf.transformations import quaternion_from_matrix, translation_from_matrix
 from ...utils.tf_bridge import TfBridge
@@ -47,7 +49,7 @@ class InternalSimulator(object):
         self.nodes_map = {}
 
         self.my_id = None
-
+        self.marker_publisher = MarkerPublisher("adream",lifetime=999999)
         self.update_robot_at_each_step=update_robot_at_each_step
 
         self.entity_id_map = {}
@@ -108,6 +110,10 @@ class InternalSimulator(object):
                                                           label=entity["label"],
                                                           description=entity["description"],
                                                           static=True)
+                    header=rospy.Header()
+                    header.frame_id="/map"
+                    header.stamp=rospy.Time()
+                    self.marker_publisher.publish([static_node],header)
                     if not success:
                         rospy.logwarn("[simulator] Unable to load {} node, skip it.".format(entity["id"]))
 
@@ -739,12 +745,15 @@ class InternalSimulator(object):
     def joint_states_callback(self, joint_states_msg):
         """
         """
+        # print "jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
         if not self.load_robot:
             return
 
         success, pose = self.tf_bridge.get_pose_from_tf(self.global_frame_id, self.base_frame_id)
-
+        # if not success:
+        #     print "hhhhhhhhhhhhhhhhhhhhppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp"
         if success is True:
+            # print "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
             if self.robot_loaded is False:
                 try:
                     # curframe = inspect.currentframe()
