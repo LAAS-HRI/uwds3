@@ -41,7 +41,7 @@ import pybullet as p
 
 INF = 10e3
 #Ray >1
-N_RAY = 5
+N_RAY = 8
 ALPHA_THRESHOLD = 0.6
 
 PICK_DIST=5
@@ -121,7 +121,7 @@ class GraphicMonitor(Monitor):
         self.agent_map={}
 
         #view of robot and human
-        self._publisher = ViewPublisher(name+"_view")
+        self._publisher = ViewPublisher(name+"_view42")
         self._publisher2=ViewPublisher("human_view")
 
         #tf subscription
@@ -196,6 +196,7 @@ class GraphicMonitor(Monitor):
         time = rospy.Time.now().to_sec()
         header = rospy.Header()
         header.frame_id ='map'
+
         if time-self.time_view >1./(self.n_frame_view):
             #if needed : >7166666 work
 
@@ -207,7 +208,9 @@ class GraphicMonitor(Monitor):
                 for obj_id in self.agent_monitor_map.keys():
                     view_pose=self.mocap_obj[obj_id].pose + Vector6DStable(0.15,0,0,0,np.pi/2)
 
-                    _, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera)
+                    img, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera)
+                    if obj_id == "Helmet_2":
+                        self._publisher2.publish(img,[],rospy.Time.now())
                     node_to_keep=[self.mocap_obj[obj_id]]
                     if obj_id + "_body" in self.mocap_body:
                         node_to_keep.append(self.mocap_body[obj_id+"_body"])
@@ -237,12 +240,7 @@ class GraphicMonitor(Monitor):
             # self.internal_simulator.step_simulation()
         # # print self.internal_simulator.entity_id_map
         # self.frame_count %= self.n_frame
-        # if time-self.time > 7166666:
-        #     # hpose=self.get_head_pose()
-        #     # print hpose
-        #     #
-        #     # image,_,_,_ =  self.simulator.get_camera_view(hpose, self.camera)
-        #     # self._publisher.publish(image,[],rospy.Time.now())
+
         #     # self.time=time
         #     # self.head.pose.rot.x+=0.03
         #     # print self.head.pose.rot.x
@@ -305,15 +303,17 @@ class GraphicMonitor(Monitor):
 
         """
         #place all object of the tracks in the simulator
-        self.cleanup_relations()
+        # self.cleanup_relations()
         time = header.stamp
         check_missing_object = False
         node_seen = []
-        print time.to_sec()
-        print self.time_monitor
+        # print time.to_sec()
+        # print self.time_monitor
         self.time_max=+time.to_sec()-self.time_monitor
         self.number_iteration+=1.0
-        print self.name + " : " + str(self.time_max/self.number_iteration)
+        if self.agent_type== AgentType.ROBOT:
+            print self.name + " : " + str(self.time_max/self.number_iteration)
+
         if self.agent_type== AgentType.ROBOT and abs(time.to_sec()-self.time_monitor) >1./(self.n_frame_monitor):
             hpose=self.get_head_pose(time)
             # print hpose
@@ -362,8 +362,9 @@ class GraphicMonitor(Monitor):
 
 
         #compute the facts
+        # if rospy.Time().now().to_sec()<1607675257.84:
         self.compute_allocentric_relations(object_tracks, time)
-        self.compute_egocentric_relations(object_tracks, time)
+        # self.compute_egocentric_relations(object_tracks+self.agent_map.values(), time)
 
         # self.pick(object_tracks,time,node_seen)
         # print ("robot")
@@ -603,7 +604,9 @@ class GraphicMonitor(Monitor):
         self.agent_map[self.name]=self.myself
         for agent in self.agent_map.values():
             for obj1 in objects:
-                if obj1.is_located() and obj1.has_shape() and obj1.label!="robot":
+                if obj1.is_located() and obj1.has_shape() and obj1.label!="robot" and obj1.id != agent.id:
+                    if agent.id == "Helmet_2" and "able" in obj1.id:
+                        print self.canSee(agent.pose,obj1)
                     if self.canSee(agent.pose,obj1):
                         self.start_fact(agent, "canSee",object=obj1, time=time)
                     else:
@@ -673,7 +676,7 @@ class GraphicMonitor(Monitor):
         included_map={}
         #included_map[a] = [b,c,d] <=> a is in b in c and in d
         for obj1 in objects:
-            if obj1.is_located() and obj1.has_shape() and obj1.label!="human":
+            if obj1.is_located() and obj1.has_shape() and obj1.label!="human" :
                 included_map[obj1.id]=[]
                 for obj2 in objects:
                     if obj1.id != obj2.id:
@@ -685,10 +688,10 @@ class GraphicMonitor(Monitor):
                             if success1  and success2 :
                                 if (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
                                     if obj1.id+"in"+obj2.id in self.relations_index:
-                                        hyst=2
+                                        hyst=0
                                     else:
                                         hyst=0
-                                    if is_included(aabb1, aabb2,hyst) :
+                                    if is_included(aabb1, aabb2,hyst) and obj1.id!="cube_GBTB":
                                         self.start_fact(obj1, "in", object=obj2, time=time)
                                         included_map[obj1.id].append(obj2.id)
                                     else:
@@ -707,7 +710,7 @@ class GraphicMonitor(Monitor):
                             if success1  and success2 :
                                 if included_map[obj1.id]==included_map[obj2.id] and (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
                                     if obj1.id+"on"+obj2.id in self.relations_index:
-                                        hyst=2
+                                        hyst=0
                                     else:
                                         hyst=0
 

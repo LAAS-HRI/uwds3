@@ -74,7 +74,7 @@ class MocapHumanLocalization(object):
 
                     new_id=key+"_body"
                     new_body=SceneNode(pose = Vector6D(x=0,y=0,z=0,rx=0,ry=0,rz=0),label="human")
-                    body_shape = Cylinder(0.3,1.7, "shp1",x=0,y=-0.02,z=-1.1,a=1,r=1,g=1,b=1)
+                    body_shape = Cylinder(0.3,1.7, "shp1",x=0,y=-0.4,z=-1.1,a=1,r=1,g=1,b=1)
                     new_body.id=new_id
                     new_body.shapes.append(body_shape)
                     self.tfOptitrack2Humans_[new_id]=new_body
@@ -126,7 +126,7 @@ class MocapHumanLocalization(object):
             self.header.stamp.secs=msg.ts.sec
             self.header.stamp.nsecs=msg.ts.nsec
             self.tfOptitrack2Humans_[humanId].time = self.header.stamp
-            
+
             if str(key)+"_body" in self.tfOptitrack2Humans_ :
                 self.tfOptitrack2Humans_[str(key)+"_body"].pose.pos.x=pose_received.pos.x
                 self.tfOptitrack2Humans_[str(key)+"_body"].pose.pos.y=pose_received.pos.y
