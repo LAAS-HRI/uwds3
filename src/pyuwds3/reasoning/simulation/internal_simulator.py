@@ -5,6 +5,8 @@ import os.path
 import numpy as np
 from sensor_msgs.msg import JointState
 from ...types.scene_node import SceneNode, SceneNodeType
+
+from pyuwds3.utils.marker_publisher import MarkerPublisher
 from tf.transformations import translation_matrix, quaternion_matrix
 from tf.transformations import quaternion_from_matrix, translation_from_matrix
 from ...utils.tf_bridge import TfBridge
@@ -32,20 +34,23 @@ class InternalSimulator(object):
                  robot_urdf_file_path,
                  global_frame_id,
                  base_frame_id,
-                 load_robot=True):
+                 load_robot=True,
+                 update_robot_at_each_step=True):
         """ Internal simulator constructor
         """
-        if simulation_config_filename != "":
-            with open(simulation_config_filename, 'r') as config:
-                self.simulator_config = yaml.safe_load(config)
-        else:
-            self.load_robot = False
+        # if simulation_config_filename != "":
+        #     with open(simulation_config_filename, 'r') as config:
+        #         self.simulator_config = yaml.safe_load(config)
+        # else:
+        #     self.load_robot = False
 
         self.tf_bridge = TfBridge()
         self.joint_map_reset = {}
         self.nodes_map = {}
 
         self.my_id = None
+        self.marker_publisher = MarkerPublisher("adream",lifetime=999999)
+        self.update_robot_at_each_step=update_robot_at_each_step
 
         self.entity_id_map = {}
         self.reverse_entity_id_map = {}
@@ -59,12 +64,12 @@ class InternalSimulator(object):
 
         self.robot_joints_command = []
         self.robot_joints_command_indices = []
-        self.position_tolerance = self.simulator_config["base_config"]["position_tolerance"]
+        # self.position_tolerance = self.simulator_config["base_config"]["position_tolerance"]
 
-        if "controller_config" in self.simulator_config:
-            self.use_controller = True
-        else:
-            self.use_controller = False
+        # if "controller_config" in self.simulator_config:
+        #     self.use_controller = True
+        # else:
+        #     self.use_controller = False
 
         self.global_frame_id = global_frame_id
         self.base_frame_id = base_frame_id
@@ -105,21 +110,25 @@ class InternalSimulator(object):
                                                           label=entity["label"],
                                                           description=entity["description"],
                                                           static=True)
+                    header=rospy.Header()
+                    header.frame_id="/map"
+                    header.stamp=rospy.Time()
+                    self.marker_publisher.publish([static_node],header)
                     if not success:
                         rospy.logwarn("[simulator] Unable to load {} node, skip it.".format(entity["id"]))
 
-        p.setGravity(0, 0, 0)
-        p.setRealTimeSimulation(0)
+        p.setGravity(0, 0, 0, physicsClientId=self.client_simulator_id)
+        p.setRealTimeSimulation(0, physicsClientId=self.client_simulator_id)
 
         self.robot_loaded = False
         self.joint_states_last_update = None
-
+        self.load_robot = load_robot
         if load_robot is True:
             self.joint_state_subscriber = rospy.Subscriber("/joint_states", JointState, self.joint_states_callback, queue_size=1)
 
-        if self.use_controller is True:
-            pass
-            # TODO add controller to play arm traj, only PD is available in bullet, it is sufficient ?
+        # if self.use_controller is True:
+        #     pass
+        #     # TODO add controller to play arm traj, only PD is available in bullet, it is sufficient ?
 
     def load_urdf(self,
                   filename,
@@ -143,11 +152,13 @@ class InternalSimulator(object):
             flags = p.URDF_ENABLE_SLEEPING or p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES or p.URDF_MERGE_FIXED_LINKS
             if is_urdf:
                 print filename
-                base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base)
+                base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base, physicsClientId=self.client_simulator_id)
             else:
 
                 use_fixed_base = 0 if static is True else 1
 
+                if "file://" in filename:
+                    filename = filename.split("file://")[-1]
                 if "package://" in filename:
 
                     a=filename.split("package://")[-1]
@@ -156,16 +167,16 @@ class InternalSimulator(object):
                     for i in k[1:]:
                         path+='/'+i
                     filename=path
-                collision_shape_id = p.createCollisionShape(p.GEOM_MESH,fileName=filename,flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
+                collision_shape_id = p.createCollisionShape(p.GEOM_MESH,fileName=filename,flags=p.GEOM_FORCE_CONCAVE_TRIMESH, physicsClientId=self.client_simulator_id)
                 if not color is None:
-                    visual_shape_id = p.createVisualShape(p.GEOM_MESH,fileName=filename,rgbaColor=color)
+                    visual_shape_id = p.createVisualShape(p.GEOM_MESH,fileName=filename,rgbaColor=color, physicsClientId=self.client_simulator_id)
                 else:
-                    visual_shape_id = p.createVisualShape(p.GEOM_MESH,fileName=filename)
+                    visual_shape_id = p.createVisualShape(p.GEOM_MESH,fileName=filename, physicsClientId=self.client_simulator_id)
                 base_link_sim_id = p.createMultiBody(
                                             use_fixed_base,
                                             collision_shape_id,visual_shape_id,
                                             start_pose.position().to_array(),
-                                            start_pose.quaternion(),flags = flags)
+                                            start_pose.quaternion(),flags = flags, physicsClientId=self.client_simulator_id)
                 # base_link_sim_id = p.createMultiBody(
                 #                             use_fixed_base,
                 #                             collision_shape_id,visual_shape_id,
@@ -176,8 +187,8 @@ class InternalSimulator(object):
             self.reverse_entity_id_map[base_link_sim_id] = scene_node.id
             self.joint_id_map[base_link_sim_id] = {}
             self.reverse_joint_id_map[base_link_sim_id] = {}
-            for i in range(0, p.getNumJoints(base_link_sim_id)):
-                info = p.getJointInfo(base_link_sim_id, i)
+            for i in range(0, p.getNumJoints(base_link_sim_id, physicsClientId=self.client_simulator_id)):
+                info = p.getJointInfo(base_link_sim_id, i, physicsClientId=self.client_simulator_id)
                 self.joint_id_map[base_link_sim_id][info[1]] = info[0]
                 self.reverse_joint_id_map[base_link_sim_id][info[0]] = info[1]
                 p.changeDynamics(base_link_sim_id, info[0], frictionAnchor=1)
@@ -186,7 +197,7 @@ class InternalSimulator(object):
                 raise RuntimeError("Invalid URDF provided: {}".format(filename))
 
             sim_id = self.entity_id_map[scene_node.id]
-            visual_shapes = p.getVisualShapeData(sim_id)
+            visual_shapes = p.getVisualShapeData(sim_id, physicsClientId=self.client_simulator_id)
             for shape in visual_shapes:
                 link_id = shape[1]
                 type = shape[2]
@@ -197,7 +208,7 @@ class InternalSimulator(object):
                 rgba_color = shape[7]
 
                 if link_id != -1:
-                    link_state = p.getLinkState(sim_id, link_id)
+                    link_state = p.getLinkState(sim_id, link_id, physicsClientId=self.client_simulator_id)
                     t_link = link_state[0]
                     q_link = link_state[1]
                     t_inertial = link_state[2]
@@ -207,7 +218,7 @@ class InternalSimulator(object):
                     tf_inertial_link = np.dot(translation_matrix(t_inertial), quaternion_matrix(q_inertial))
                     world_transform = np.dot(tf_world_link, np.linalg.inv(tf_inertial_link))
                 else:
-                    t_link, q_link = p.getBasePositionAndOrientation(sim_id)
+                    t_link, q_link = p.getBasePositionAndOrientation(sim_id, physicsClientId=self.client_simulator_id)
                     world_transform = np.dot(translation_matrix(t_link), quaternion_matrix(q_link))
 
                 if type == p.GEOM_SPHERE:
@@ -272,7 +283,7 @@ class InternalSimulator(object):
         """
         ray_start = start_position.to_array().flatten()
         ray_end = end_position.to_array().flatten()
-        result = p.rayTest(ray_start, ray_end)
+        result = p.rayTest(ray_start, ray_end, physicsClientId=self.client_simulator_id)
         if result is not None:
             distance = ray_start[2] * result[0][2]
             sim_id = result[0][0]
@@ -284,7 +295,7 @@ class InternalSimulator(object):
     def get_aabb(self, scene_node):
         if scene_node.id in self.nodes_map:
             sim_id = self.entity_id_map[scene_node.id]
-            aabb = p.getAABB(sim_id)
+            aabb = p.getAABB(sim_id, physicsClientId=self.client_simulator_id)
             return True, aabb
         return False, None
 
@@ -292,8 +303,8 @@ class InternalSimulator(object):
         if scene_node.id in self.nodes_map:
             nodes_overlapping = []
             sim_id = self.entity_id_map[scene_node.id]
-            aabb = p.getAABB(sim_id)
-            sim_ids_overlapping = p.getOverlappingObjects(aabb[0], aabb[1])
+            aabb = p.getAABB(sim_id, physicsClientId=self.client_simulator_id)
+            sim_ids_overlapping = p.getOverlappingObjects(aabb[0], aabb[1], physicsClientId=self.client_simulator_id)
             for sim_id in sim_ids_overlapping:
                 object_id = self.reverse_entity_id_map[sim_id]
                 nodes_overlapping.append(self.nodes_map[object_id])
@@ -321,12 +332,12 @@ class InternalSimulator(object):
                         collision_shape_id = p.createCollisionShape(shape_type, radius=radius,
                                                                     height=height,
                                                                     collisionFramePosition=t,
-                                                                    collisionFrameOrientation=q)
+                                                                    collisionFrameOrientation=q, physicsClientId=self.client_simulator_id)
                         visual_shape_id = p.createVisualShape(shape_type, radius=radius,
                                                               length=height,
                                                               visualFramePosition=t,
                                                               visualFrameOrientation=q,
-                                                              rgbaColor=shape.color)
+                                                              rgbaColor=shape.color, physicsClientId=self.client_simulator_id)
                         if visual_shape_id >= 0 and collision_shape_id >= 0:
                             mass = DEFAULT_DENSITY * shape.volume()
                             shape_masses.append(mass)
@@ -339,11 +350,11 @@ class InternalSimulator(object):
 
                         collision_shape_id = p.createCollisionShape(shape_type, radius=radius,
                                                                     collisionFramePosition=t,
-                                                                    collisionFrameOrientation=q)
+                                                                    collisionFrameOrientation=q, physicsClientId=self.client_simulator_id)
                         visual_shape_id = p.createVisualShape(shape_type, radius=radius,
                                                               visualFramePosition=t,
                                                               visualFrameOrientation=q,
-                                                              rgbaColor=shape.color)
+                                                              rgbaColor=shape.color, physicsClientId=self.client_simulator_id)
                         if visual_shape_id >= 0 and collision_shape_id >= 0:
                             mass = DEFAULT_DENSITY * shape.volume()
                             shape_masses.append(mass)
@@ -371,11 +382,11 @@ class InternalSimulator(object):
                         dim = [shape.x/2.0, shape.y/2.0, shape.z/2.0]
                         collision_shape_id = p.createCollisionShape(shape_type, halfExtents=dim,
                                                                     collisionFramePosition=t,
-                                                                    collisionFrameOrientation=q)
+                                                                    collisionFrameOrientation=q, physicsClientId=self.client_simulator_id)
                         visual_shape_id = p.createVisualShape(shape_type, halfExtents=dim,
                                                               visualFramePosition=t,
                                                               visualFrameOrientation=q,
-                                                              rgbaColor=shape.color)
+                                                              rgbaColor=shape.color, physicsClientId=self.client_simulator_id)
                         if visual_shape_id >= 0 and collision_shape_id >= 0:
                             mass = DEFAULT_DENSITY * shape.volume()
                             shape_masses.append(mass)
@@ -422,9 +433,9 @@ class InternalSimulator(object):
                                                basePosition=t,
                                                baseOrientation=q,
                                                baseCollisionShapeIndex=c_id,
-                                               baseVisualShapeIndex=visual_shape_ids[0])
+                                               baseVisualShapeIndex=visual_shape_ids[0], physicsClientId=self.client_simulator_id)
 
-                    p.changeDynamics(sim_id, -1, frictionAnchor=1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
+                    p.changeDynamics(sim_id, -1, frictionAnchor=1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING, physicsClientId=self.client_simulator_id)
                     self.entity_id_map[scene_node.id] = sim_id
                     self.reverse_entity_id_map[sim_id] = scene_node.id
                     self.nodes_map[scene_node.id] = scene_node
@@ -462,7 +473,7 @@ class InternalSimulator(object):
             raise ValueError("Invalid id provided : '{}'".format(id))
         scene_node = self.nodes_map[id]
         sim_id = self.entity_id_map[id]
-        visual_shapes = p.getVisualShapeData(sim_id)
+        visual_shapes = p.getVisualShapeData(sim_id, physicsClientId=self.client_simulator_id)
         for idx, shape in enumerate(visual_shapes):
             primitive_shape = scene_node.shapes[idx]
             link_id = shape[1]
@@ -470,7 +481,7 @@ class InternalSimulator(object):
             orientation = shape[6]
 
             if link_id != -1:
-                link_state = p.getLinkState(sim_id, link_id)
+                link_state = p.getLinkState(sim_id, link_id, physicsClientId=self.client_simulator_id)
                 t_link = link_state[0]
                 q_link = link_state[1]
                 t_inertial = link_state[2]
@@ -481,7 +492,7 @@ class InternalSimulator(object):
                 world_transform = np.dot(tf_world_link, np.linalg.inv(tf_inertial_link))
 
             else:
-                t_link, q_link = p.getBasePositionAndOrientation(sim_id)
+                t_link, q_link = p.getBasePositionAndOrientation(sim_id, physicsClientId=self.client_simulator_id)
                 world_transform = np.dot(translation_matrix(t_link), quaternion_matrix(q_link))
 
             if link_id != -1:
@@ -520,7 +531,7 @@ class InternalSimulator(object):
             target = translation_from_matrix(np.dot(np.dot(trans, rot), target))
         else:
             target = target_position.position().to_array()
-        view_matrix = p.computeViewMatrix(camera_pose.position().to_array(), target, [0, 0, 1])
+        view_matrix = p.computeViewMatrix(camera_pose.position().to_array(), target, [0, 0, 1], physicsClientId=self.client_simulator_id)
 
         width = camera.width
         height = camera.height
@@ -531,20 +542,20 @@ class InternalSimulator(object):
         projection_matrix = p.computeProjectionMatrixFOV(camera.fov(),
                                                          float(rendered_width)/rendered_height,
                                                          camera.clipnear,
-                                                         camera.clipfar)
+                                                         camera.clipfar, physicsClientId=self.client_simulator_id)
 
         if self.use_gui is True:
             camera_image = p.getCameraImage(rendered_width,
                                             rendered_height,
                                             viewMatrix=view_matrix,
                                             renderer=p.ER_BULLET_HARDWARE_OPENGL,
-                                            projectionMatrix=projection_matrix)
+                                            projectionMatrix=projection_matrix, physicsClientId=self.client_simulator_id)
         else:
             camera_image = p.getCameraImage(rendered_width,
                                             rendered_height,
                                             viewMatrix=view_matrix,
                                             renderer=p.ER_TINY_RENDERER,
-                                            projectionMatrix=projection_matrix)
+                                            projectionMatrix=projection_matrix, physicsClientId=self.client_simulator_id)
 
         rgb_image = np.array(camera_image[2])[:, :, :3]
         rgb_image_resized = cv2.resize(rgb_image, (width, height))
@@ -615,7 +626,7 @@ class InternalSimulator(object):
     def test_overlap(self, xmin, ymin, zmin, xmax, ymax, zmax):
         """ Return True if the aabb is in contact with an other object
         """
-        contacts = p.getOverlappingObjects([xmin, ymin, zmin], [xmax, ymax, zmax])
+        contacts = p.getOverlappingObjects([xmin, ymin, zmin], [xmax, ymax, zmax], physicsClientId=self.client_simulator_id)
         if contacts is not None:
             if len(contacts) > 0:
                 return True
@@ -633,16 +644,16 @@ class InternalSimulator(object):
         t = pose.position().to_array()
         q = pose.quaternion()
         p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_DISABLE_SLEEPING)
-        p.changeConstraint(constraint_id, jointChildPivot=t, jointChildFrameOrientation=q, maxForce=INF)
+        p.changeConstraint(constraint_id, jointChildPivot=t, jointChildFrameOrientation=q, maxForce=INF, physicsClientId=self.client_simulator_id)
 
     def remove_constraint(self, id):
         """ Remove a constraint
         """
         if id in self.constraint_id_map:
-            p.removeConstraint(self.constraint_id_map[id])
+            p.removeConstraint(self.constraint_id_map[id], physicsClientId=self.client_simulator_id)
             del self.constraint_id_map[id]
             base_link_sim_id = self.entity_id_map[id]
-            p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING)
+            p.changeDynamics(base_link_sim_id, -1, activationState=p.ACTIVATION_STATE_ENABLE_SLEEPING, physicsClientId=self.client_simulator_id)
 
     def reset_entity_pose(self, id, pose):
         """ Reset the pose and the simulation for the given entity
@@ -673,7 +684,7 @@ class InternalSimulator(object):
         return self.robot_moving
 
     def step_simulation(self):
-        p.stepSimulation()
+        p.stepSimulation( physicsClientId=self.client_simulator_id)
 
     # def joint_states_callback(self, joint_states_msg):
     #     """
@@ -727,16 +738,22 @@ class InternalSimulator(object):
 
     def change_joint(self,main_id,joint_id,joint_position):
         base_link_sim_id = self.entity_id_map[main_id]
-        print p.getNumJoints(base_link_sim_id)
-        p.resetJointState(base_link_sim_id,joint_id,0)
+        print p.getNumJoints(base_link_sim_id, physicsClientId=self.client_simulator_id)
+        p.resetJointState(base_link_sim_id,joint_id,0, physicsClientId=self.client_simulator_id)
 
 
     def joint_states_callback(self, joint_states_msg):
         """
         """
-        success, pose = self.tf_bridge.get_pose_from_tf(self.global_frame_id, self.base_frame_id)
+        # print "jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
+        if not self.load_robot:
+            return
 
+        success, pose = self.tf_bridge.get_pose_from_tf(self.global_frame_id, self.base_frame_id)
+        # if not success:
+        #     print "hhhhhhhhhhhhhhhhhhhhppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp"
         if success is True:
+            # print "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
             if self.robot_loaded is False:
                 try:
                     # curframe = inspect.currentframe()
@@ -758,7 +775,7 @@ class InternalSimulator(object):
             # else:
             #     self.update_constraint(self.my_id, pose)
         if self.robot_loaded is True:
-            self.reset_entity_pose(self.my_id,pose)
+
             joint_indices = []
             target_positions = []
             base_link_sim_id = self.entity_id_map[self.my_id]
@@ -769,12 +786,14 @@ class InternalSimulator(object):
                 # joint_index = info[0]
                 assert(joint_name == joint_name_sim)
                 joint_position = joint_states_msg.position[joint_state_index]
-                state = p.getJointState(base_link_sim_id, joint_sim_index)
+                state = p.getJointState(base_link_sim_id, joint_sim_index, physicsClientId=self.client_simulator_id)
                 current_position = state[0]
                 if not joint_sim_index in self.joint_map_reset:
                     self.joint_map_reset[joint_sim_index]=joint_position
-                    p.resetJointState(base_link_sim_id,joint_sim_index,joint_position)
+                    p.resetJointState(base_link_sim_id,joint_sim_index,joint_position, physicsClientId=self.client_simulator_id)
                 else:
                     if self.joint_map_reset[joint_sim_index]!=joint_position:
                         self.joint_map_reset[joint_sim_index]=joint_position
-                        p.resetJointState(base_link_sim_id,joint_sim_index,joint_position)
+                        p.resetJointState(base_link_sim_id,joint_sim_index,joint_position, physicsClientId=self.client_simulator_id)
+
+        self.load_robot = self.update_robot_at_each_step
