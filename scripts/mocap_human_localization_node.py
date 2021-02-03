@@ -21,6 +21,10 @@ HUMAN_SUB_PARAM_NAME = "optitrack_human_topic_names"
 HUMAN_SUB_PREPEND = "/optitrack/bodies/"
 TF_FRAME_PREPEND = "mocap_human-"
 TIMER_CALLBACK = 0.2
+
+# A human head localization need to be named : Helmet_smth
+# A hman hand localization need to be name smth pick smth
+
 class MocapHumanLocalization(object):
     """ Mocap Huamn localisation class"""
     def __init__(self):
@@ -29,7 +33,6 @@ class MocapHumanLocalization(object):
         self.tf_bridge = TfBridge()
         self.tfOptitrack2Humans_ ={}
         self.subscribedNodeNames =rospy.get_param("~optitrack_human_topic_names",None)
-        print self.subscribedNodeNames
         # self.subscribedNodeNames={"Neophasia": 1}
 
         self.personSubs =[]
@@ -52,26 +55,33 @@ class MocapHumanLocalization(object):
                         fullTopicName,
                         or_pose_estimator_state,
                         self.updateMocapPersonPose_callback,
-                        self.subscribedNodeNames[key]))
-                new_node =SceneNode(label="human")
-                shape = Mesh("package://uwds3/models/cad_models/human/cylinder_man.urdf",
-                         x=0, y=-0.4, z=0,
-                         rx=0, ry=0, rz=0)
-                r,g,b=0,0,0
-                shape.color[0] = r
-                shape.color[1] = g
-                shape.color[2] = b
-                shape.color[3] = 1
-                new_node.id=key
-                new_node.shapes.append(shape)
-                self.tfOptitrack2Humans_[self.subscribedNodeNames[key]]=new_node
+                        (self.subscribedNodeNames[key],key)  ))
 
-                new_id=str(self.subscribedNodeNames[key])+"_body"
-                new_body=SceneNode(pose = Vector6D(x=0,y=0,z=0,rx=0,ry=0,rz=0),label="human")
-                body_shape = Cylinder(0.3,1.7, "shp1",x=0,y=-0.15,z=-1.1,a=1,r=1,g=1,b=1)
-                new_body.id=new_id
-                new_body.shapes.append(body_shape)
-                self.tfOptitrack2Humans_[new_id]=new_body
+                new_node =SceneNode(label="human")
+
+                if "Helmet" in key:
+                    shape = Mesh("package://uwds3/models/cad_models/human/human_head1.stl",
+                             x=0, y=-0.4, z=0,
+                             rx=0, ry=0, rz=0)
+                    r,g,b=1,1,1
+                    shape.color[0] = r
+                    shape.color[1] = g
+                    shape.color[2] = b
+                    shape.color[3] = 1
+                    new_node.id=key
+                    new_node.shapes.append(shape)
+                    self.tfOptitrack2Humans_[self.subscribedNodeNames[key]]=new_node
+
+                    new_id=key+"_body"
+                    new_body=SceneNode(pose = Vector6D(x=0,y=0,z=0,rx=0,ry=0,rz=0),label="human")
+                    body_shape = Cylinder(0.3,1.7, "shp1",x=0,y=-0.4,z=-1.1,a=1,r=1,g=1,b=1)
+                    new_body.id=new_id
+                    new_body.shapes.append(body_shape)
+                    self.tfOptitrack2Humans_[new_id]=new_body
+                else:
+                    new_node.id=key
+                    self.tfOptitrack2Humans_[self.subscribedNodeNames[key]]=new_node
+
         self.timer = rospy.Timer(rospy.Duration(TIMER_CALLBACK), self.world_publisher_timer_callback)
         self.header = rospy.Header()
         self.header.frame_id ='map'
@@ -96,7 +106,8 @@ class MocapHumanLocalization(object):
         self.marker_publisher.publish(self.tfOptitrack2Humans_.values(),self.header)
         # #print self.tfOptitrack2Humans_.values()[0].pose
 
-    def updateMocapPersonPose_callback(self,msg,humanId):
+    def updateMocapPersonPose_callback(self,msg,args):
+        humanId,key = args
         # print(len(msg.pos))
         if len(msg.pos) >0:
             pose_received = Vector6DStable( msg.pos[0].x,msg.pos[0].y,msg.pos[0].z)
@@ -115,11 +126,12 @@ class MocapHumanLocalization(object):
             self.header.stamp.secs=msg.ts.sec
             self.header.stamp.nsecs=msg.ts.nsec
             self.tfOptitrack2Humans_[humanId].time = self.header.stamp
-            if str(humanId)+"_body" in self.tfOptitrack2Humans_ :
-                self.tfOptitrack2Humans_[str(humanId)+"_body"].pose.pos.x=pose_received.pos.x
-                self.tfOptitrack2Humans_[str(humanId)+"_body"].pose.pos.y=pose_received.pos.y
-                self.tfOptitrack2Humans_[str(humanId)+"_body"].pose.pos.z=pose_received.pos.z
-                self.tfOptitrack2Humans_[str(humanId)+"_body"].pose.rot.z=pose_received.rot.z
+
+            if str(key)+"_body" in self.tfOptitrack2Humans_ :
+                self.tfOptitrack2Humans_[str(key)+"_body"].pose.pos.x=pose_received.pos.x
+                self.tfOptitrack2Humans_[str(key)+"_body"].pose.pos.y=pose_received.pos.y
+                self.tfOptitrack2Humans_[str(key)+"_body"].pose.pos.z=pose_received.pos.z
+                self.tfOptitrack2Humans_[str(key)+"_body"].pose.rot.z=pose_received.rot.z
 
     def run(self):
 
