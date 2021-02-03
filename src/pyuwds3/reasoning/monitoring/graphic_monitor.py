@@ -229,8 +229,8 @@ class GraphicMonitor(Monitor):
         self.cleanup_relations()
         self.time_max=+time.to_sec()-self.time_monitor
         self.number_iteration+=1.0
-        if self.agent_type== AgentType.ROBOT:
-            print self.name + " : " + str(self.time_max/self.number_iteration)
+        # if self.agent_type== AgentType.ROBOT:
+        #     print self.name + " : " + str(self.time_max/self.number_iteration)
         # print "pbublish dixt" + str(len(self.publish_dic))
         # print "agent map " + str(len(self.agent_map))
         # print "pick map " + str(len(self.pick_map ))
@@ -249,7 +249,7 @@ class GraphicMonitor(Monitor):
             # self.marker_publisher.publish(object_tracks,header)
 
         #publish the head view
-        if time.to_sec()-self.time_monitor >1./(self.n_frame_monitor):
+        if  abs(time.to_sec()-self.time_monitor) >1./(self.n_frame_monitor):
             hpose=self.get_head_pose(time)
             # print hpose
             image,_,_,_ =  self.simulator.get_camera_view(hpose, self.camera)

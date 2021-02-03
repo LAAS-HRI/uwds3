@@ -6,7 +6,7 @@
 import math
 
 INSIDE_EPSILON = 0.025 # 2.5cm
-ONTOP_EPSILON = 0.02   # 2cm
+ONTOP_EPSILON = 0.04   # 2cm
 ISABOVE_EPSILON = 0.06 # 6cm
 
 def bb_center(bb):
