@@ -60,7 +60,7 @@ class GraphicMonitor(Monitor):
        position_tolerance=0.04,name="robot"): #beliefs_base=None,
 
         super(GraphicMonitor, self).__init__(internal_simulator=internal_simulator)#, beliefs_base=beliefs_base)
-
+        self.name=name
         #init of the simulator and ontology
         self.internal_simulator = internal_simulator
         self.ontologies_manip = OntologiesManipulator()
@@ -92,7 +92,8 @@ class GraphicMonitor(Monitor):
         self.head  = head
         self.human_pose = None
         self.headpose = None
-
+        self.time_max=0
+        self.number_iteration=0
         #A map of graphic monitor class, one/agent
         self.agent_map={}
 
@@ -226,7 +227,10 @@ class GraphicMonitor(Monitor):
         #place all object of the tracks in the simulator
         time = header.stamp
         self.cleanup_relations()
-
+        self.time_max=+time.to_sec()-self.time_monitor
+        self.number_iteration+=1.0
+        if self.agent_type== AgentType.ROBOT:
+            print self.name + " : " + str(self.time_max/self.number_iteration)
         # print "pbublish dixt" + str(len(self.publish_dic))
         # print "agent map " + str(len(self.agent_map))
         # print "pick map " + str(len(self.pick_map ))
