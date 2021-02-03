@@ -5,8 +5,9 @@ from geometry_msgs.msg import Vector3
 
 
 class MarkerPublisher(object):
-    def __init__(self, topic_name, queue_size=1, alpha=1.0):
+    def __init__(self, topic_name, queue_size=1, alpha=1.0,lifetime=20.0):
         self.publisher = rospy.Publisher(topic_name, MarkerArray, queue_size=1)
+        self.lifetime=lifetime
         self.alpha = alpha
         self.marker_id_map = {}
         self.last_marker_id = 0
@@ -82,6 +83,6 @@ class MarkerPublisher(object):
                         else:
                             raise NotImplementedError("Shape not implemented")
 
-                        marker.lifetime = rospy.Duration(3.)
+                        marker.lifetime = rospy.Duration(self.lifetime)
                         markers_msg.markers.append(marker)
         self.publisher.publish(markers_msg)
