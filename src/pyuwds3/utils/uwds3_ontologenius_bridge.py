@@ -18,7 +18,7 @@ class OntologeniusReaderNode(object):
         self.ontologies_manip.add(self.onto_name)
         self.ontologenius_client =self.ontologies_manip.get(self.onto_name)
         self.ontologenius_client.close()
-        rospy.loginfo("[ontologenius_reader] Connected to Ontologenius !")
+        rospy.loginfo(self.onto_name + " : "+"[ontologenius_reader] Connected to Ontologenius !")
 
         self.created_nodes = {}
         self.scene_nodes = {}
@@ -36,10 +36,10 @@ class OntologeniusReaderNode(object):
 
         # self.query_service = rospy.Service("uwds3/query_knowledge_base", Query, self.handle_query)
 
-        input_world_topic = rospy.get_param("~input_world_topic", "corrected_tracks")
-        rospy.loginfo("[ontologenius_reader] Connecting to '" + input_world_topic +  "'...")
+        input_world_topic = "corrected_tracks_"+self.onto_name
+        rospy.loginfo(self.onto_name + " : "+"[ontologenius_reader] Connecting to '" + input_world_topic +  "'...")
         self.world_subscriber = rospy.Subscriber(input_world_topic, WorldStamped, self.callback, queue_size=1)
-        rospy.loginfo("[ontologenius_reader] Connected to Underworlds !")
+        rospy.loginfo(self.onto_name + " : "+"[ontologenius_reader] Connected to Underworlds !")
 
     def handle_query(self, req, agent="myself"):
         """ Handle the query """
@@ -98,9 +98,9 @@ class OntologeniusReaderNode(object):
                 types.append("PartiallyTangibleThing")
 
         for type in types:
-            rospy.loginfo("add: "+scene_node.id+" isA "+type)
+            rospy.loginfo(self.onto_name + " : "+"add: "+scene_node.id+" isA "+type)
             self.ontologenius_client.feeder.addObjectProperty(scene_node.id, "isA", type)
-        rospy.loginfo("add: "+scene_node.id+" hasName "+scene_node.description)
+        rospy.loginfo(self.onto_name + " : "+"add: "+scene_node.id+" hasName "+scene_node.description)
         self.ontologenius_client.feeder.addObjectProperty(scene_node.id, "hasName", scene_node.description)
 
     def update_situation(self, situation, agent="myself"):
@@ -122,56 +122,56 @@ class OntologeniusReaderNode(object):
 
             if not situation.is_finished():
                 if situation.subject+"isInside"+situation.object not in self.relations:
-                    rospy.loginfo("add: "+situation.subject+" isInside "+situation.object)
+                    rospy.loginfo(self.onto_name + " : "+"add: "+situation.subject+" isInside "+situation.object)
                     self.ontologenius_client.feeder.addObjectProperty(situation.subject, "isInContainer", situation.object,situation.start_time)
                     self.relations[situation.subject+"isInside"+situation.object] = True
             else:
                 if situation.subject+"isInside"+situation.object in self.relations:
-                    rospy.loginfo("remove: "+situation.subject+" isInside "+situation.object)
+                    rospy.loginfo(self.onto_name + " : "+"remove: "+situation.subject+" isInside "+situation.object)
                     self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "isInContainer", situation.object,situation.end_time)
                     del self.relations[situation.subject+"isInside"+situation.object]
         elif situation.predicate == "on":
             if not situation.is_finished():
                 if situation.subject+"isOnTop"+situation.object not in self.relations:
-                    rospy.loginfo("add: "+situation.subject+" isOnTop "+situation.object)
+                    rospy.loginfo(self.onto_name + " : "+"add: "+situation.subject+" isOnTop "+situation.object)
                     self.ontologenius_client.feeder.addObjectProperty(situation.subject, "isOnTopOf", situation.object,situation.start_time)
                     self.relations[situation.subject+"isOnTop"+situation.object] = True
             else:
                 if situation.subject+"isOnTop"+situation.object in self.relations:
-                    rospy.loginfo("remove: "+situation.subject+" isOnTop "+situation.object)
+                    rospy.loginfo(self.onto_name + " : "+"remove: "+situation.subject+" isOnTop "+situation.object)
                     self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "isOnTopOf", situation.object,situation.end_time)
                     del self.relations[situation.subject+"isOnTop"+situation.object]
         elif situation.predicate == "canSee":
             if not situation.is_finished():
                 if situation.subject+"canSee"+situation.object not in self.relations:
-                    rospy.loginfo("add: "+situation.subject+" canSee "+situation.object)
+                    rospy.loginfo(self.onto_name + " : "+"add: "+situation.subject+" canSee "+situation.object)
                     self.ontologenius_client.feeder.addObjectProperty(situation.subject, "canSee", situation.object,situation.start_time)
                     self.relations[situation.subject+"canSee"+situation.object] = True
             else:
                 if situation.subject+"canSee"+situation.object in self.relations:
-                    rospy.loginfo("remove: "+situation.subject+" canSee "+situation.object)
+                    rospy.loginfo(self.onto_name + " : "+"remove: "+situation.subject+" canSee "+situation.object)
                     self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "canSee",situation.object, situation.end_time)
                     del self.relations[situation.subject+"canSee"+situation.object]
         elif situation.predicate == "CanReach":
             if not situation.is_finished():
                 if situation.subject+"CanReach"+situation.object not in self.relations:
-                    rospy.loginfo("add: "+situation.subject+" CanReach "+situation.object)
+                    rospy.loginfo(self.onto_name + " : "+"add: "+situation.subject+" CanReach "+situation.object)
                     self.ontologenius_client.feeder.addObjectProperty(situation.subject, "CanReach",situation.object, situation.start_time)
                     self.relations[situation.subject+"CanReach"+situation.object] = True
             else:
                 if situation.subject+"CanReach"+situation.object in self.relations:
-                    rospy.loginfo("remove: "+situation.subject+" CanReach "+situation.object)
+                    rospy.loginfo(self.onto_name + " : "+"remove: "+situation.subject+" CanReach "+situation.object)
                     self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "CanReach",situation.object, situation.end_time)
                     del self.relations[situation.subject+"CanReach"+situation.object]
     # elif situation.predicate == "close":
     #     if not situation.is_finished():
     #         if situation.subject+"isCloseTo"+situation.object not in self.relations:
-    #             rospy.loginfo("add: "+situation.subject+" isCloseTo "+situation.object)
+    #             rospy.loginfo(self.onto_name + " : "+"add: "+situation.subject+" isCloseTo "+situation.object)
     #             self.ontologenius_client.feeder.addObjectProperty(situation.subject, "isCloseTo", situation.object_time)
     #             self.relations[situation.subject+"isCloseTo"+situation.object] = True
     #     else:
     #         if situation.subject+"isCloseTo"+situation.object in self.relations:
-    #             rospy.loginfo("remove: "+situation.subject+" isCloseTo "+situation.object)
+    #             rospy.loginfo(self.onto_name + " : "+"remove: "+situation.subject+" isCloseTo "+situation.object)
     #             self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "isCloseTo", situation.object_time)
     #             del self.relations[situation.subject+"isCloseTo"+situation.object]
         else:
@@ -181,17 +181,17 @@ class OntologeniusReaderNode(object):
     #     """ Learn the affordances from the physical reasoner """
     #     if situation.predicate == "pick":
     #         if situation.object not in self.graspable:
-    #             rospy.loginfo("add: "+situation.object+" isA "+"GraspableObject")
+    #             rospy.loginfo(self.onto_name + " : "+"add: "+situation.object+" isA "+"GraspableObject")
     #             self.ontologenius_client.feeder.addObjectProperty(situation.subject, "isA", "GraspableObject")
     #             self.graspable[situation.object] = True
     #     elif situation.predicate == "on":
     #         if situation.object not in self.support:
-    #             rospy.loginfo("add: "+situation.object+" isA "+"SupportObject")
+    #             rospy.loginfo(self.onto_name + " : "+"add: "+situation.object+" isA "+"SupportObject")
     #             self.ontologenius_client.feeder.addObjectProperty(situation.object, "isA", "SupportObject")
     #             self.support[situation.object] = True
     #     elif situation.predicate == "in":
     #         if situation.object not in self.container:
-    #             rospy.loginfo("add: "+situation.object+" isA "+"ContainerObject")
+    #             rospy.loginfo(self.onto_name + " : "+"add: "+situation.object+" isA "+"ContainerObject")
     #             self.ontologenius_client.feeder.addObjectProperty(situation.object, "isA", "ContainerObject")
     #             self.container[situation.object] = True
 
