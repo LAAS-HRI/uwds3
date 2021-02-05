@@ -151,7 +151,7 @@ class InternalSimulator(object):
             use_fixed_base = 1 if static is True else 0
             flags = p.URDF_ENABLE_SLEEPING or p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES or p.URDF_MERGE_FIXED_LINKS
             if is_urdf:
-                print filename
+                # print filename
                 base_link_sim_id = p.loadURDF(filename, start_pose.position().to_array(), start_pose.quaternion(), useFixedBase=use_fixed_base, physicsClientId=self.client_simulator_id)
             else:
 
@@ -407,7 +407,7 @@ class InternalSimulator(object):
                         mesh_resource_u = mesh_resource_u.replace("dae","urdf")
                         mesh_resource_u = mesh_resource_u.replace("stl","urdf")
                         mesh_resource_u = mesh_resource_u.replace("file://", "")
-                        print mesh_resource
+                        # print mesh_resource
                         is_urdf = os.path.isfile(mesh_resource_u)
                         if is_urdf:
                             mesh_resource = mesh_resource_u
