@@ -83,7 +83,7 @@ class GraphicMonitor(Monitor):
         self.ontologies_manip = OntologiesManipulator()
         self.global_frame_id = rospy.get_param("~global_frame_id")
         self.base_frame_id = rospy.get_param("~base_frame_id", "odom")
-        self.world_publisher = WorldPublisher("corrected_tracks", self.global_frame_id)
+        self.world_publisher = WorldPublisher("corrected_tracks_"+self.name, self.global_frame_id)
         self.marker_publisher = MarkerPublisher("ar_perception_marker")
 
         self.onto_bridge = OntologeniusReaderNode(name)
@@ -121,9 +121,8 @@ class GraphicMonitor(Monitor):
         self.agent_map={}
 
         #view of robot and human
-        self._publisher = ViewPublisher(name+"_view42")
-        self._publisher2=ViewPublisher("human_view")
-
+        self._publisher = ViewPublisher(name+"_view")
+        self.publisher_map={}
         #tf subscription
 
 
@@ -199,7 +198,7 @@ class GraphicMonitor(Monitor):
 
         if time-self.time_view >1./(self.n_frame_view):
             #if needed : >7166666 work
-
+            print time-self.time_view
             self.time_view=time
             if self.agent_type== AgentType.ROBOT:
                 for obj_id in self.mocap_obj.keys():
@@ -208,9 +207,14 @@ class GraphicMonitor(Monitor):
                 for obj_id in self.agent_monitor_map.keys():
                     view_pose=self.mocap_obj[obj_id].pose + Vector6DStable(0.15,0,0,0,np.pi/2)
 
-                    img, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera)
-                    if obj_id == "Helmet_2":
-                        self._publisher2.publish(img,[],rospy.Time.now())
+                    img, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera,occlusion_threshold=0.01 )
+                    # if obj_id == "Helmet_2":
+                    # for i in nodes:
+                    #     print i.id
+                    if obj_id in self.publisher_map:
+                        self.publisher_map[obj_id].publish(img,[],rospy.Time.now())
+                    else:
+                        self.publisher_map[obj_id] = ViewPublisher(obj_id+"_view")
                     node_to_keep=[self.mocap_obj[obj_id]]
                     if obj_id + "_body" in self.mocap_body:
                         node_to_keep.append(self.mocap_body[obj_id+"_body"])
@@ -309,21 +313,25 @@ class GraphicMonitor(Monitor):
         node_seen = []
         # print time.to_sec()
         # print self.time_monitor
-        self.time_max=+time.to_sec()-self.time_monitor
-        self.number_iteration+=1.0
-        if self.agent_type== AgentType.ROBOT:
-            print self.name + " : " + str(self.time_max/self.number_iteration)
+        # self.time_max=+time.to_sec()-self.time_monitor
+        # self.number_iteration+=1.0
+        # if self.agent_type== AgentType.ROBOT:
+        #     print self.name + " : " + str(self.time_max/self.number_iteration)
 
         if self.agent_type== AgentType.ROBOT and abs(time.to_sec()-self.time_monitor) >1./(self.n_frame_monitor):
             hpose=self.get_head_pose(time)
             # print hpose
-            image,_,_,nodes =  self.simulator.get_camera_view(hpose, self.camera)
+            image,_,_,nodes =  self.simulator.get_camera_view(hpose, self.camera,occlusion_threshold=0.001)
             self._publisher.publish(image,[],time)
-
+            # print "ooooooo"
+            # for i in nodes:
+            #     print i.id
+            # print "pppppppp"
             self.time_monitor=time.to_sec()
             check_missing_object = True
             for node in nodes:
                 node_seen.append(node.id)
+
 
 
         if pose != None:
@@ -378,6 +386,11 @@ class GraphicMonitor(Monitor):
         #     # print self.headpose
         #     print ("_________________________")
 
+        # if self.name!= "robot":
+        #     print "oooooooooooo"
+        #     for i in object_tracks:
+        #         print i.id
+        #     print "ppppppppppppp"
 
         self.world_publisher.publish([],self.relations,header)
 
@@ -687,11 +700,18 @@ class GraphicMonitor(Monitor):
                             success2, aabb2 = self.simulator.get_aabb(obj2)
                             if success1  and success2 :
                                 if (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
+
                                     if obj1.id+"in"+obj2.id in self.relations_index:
                                         hyst=0
                                     else:
+                                        # print self.name +": "+ obj1.id+"in"+obj2.id
                                         hyst=0
-                                    if is_included(aabb1, aabb2,hyst) and obj1.id!="cube_GBTB":
+                                    # if obj1.id=="cube_BGTG" and obj2.id=="box_C4":
+                                    #     print self.name
+                                    #     print is_included(aabb1,aabb2,0)
+                                    #     print " "
+                                    #     print "==========================================================="
+                                    if is_included(aabb1, aabb2,hyst):
                                         self.start_fact(obj1, "in", object=obj2, time=time)
                                         included_map[obj1.id].append(obj2.id)
                                     else:
