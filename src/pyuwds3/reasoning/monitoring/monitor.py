@@ -9,13 +9,13 @@ class Monitor(object):
         self.relations_index = {}
         self.simulator = internal_simulator
 
-    def cleanup_relations(self):
+    def cleanup_relations(self,time=None):
         """ Cleanup the relations buffer
         """
         to_keep = []
         index = {}
         for r in self.relations:
-            if not r.to_delete():
+            if not r.to_delete(time=time):
                 to_keep.append(r)
                 index[r.subject+r.predicate+r.object] = len(to_keep) - 1
         self.relations = to_keep
@@ -40,7 +40,7 @@ class Monitor(object):
         if object is not None:
             if subject.id+str(predicate)+object.id not in self.relations_index:
                 description = subject.description+"("+subject.id[:6]+") is "+predicate+" "+object.description+"("+object.id[:6]+")"
-                relation = Fact(subject.id, description, predicate=predicate, object=object.id)
+                relation = Fact(subject.id, description, predicate=predicate, object=object.id,expiration=5)
                 relation.start(time=time)
                 self.relations.append(relation)
                 self.relations_index[subject.id+str(predicate)+object.id] = len(self.relations)-1

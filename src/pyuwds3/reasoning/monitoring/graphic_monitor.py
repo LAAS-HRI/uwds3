@@ -83,7 +83,7 @@ class GraphicMonitor(Monitor):
         self.ontologies_manip = OntologiesManipulator()
         self.global_frame_id = rospy.get_param("~global_frame_id")
         self.base_frame_id = rospy.get_param("~base_frame_id", "odom")
-        self.world_publisher = WorldPublisher("corrected_tracks_"+self.name, self.global_frame_id)
+        self.world_publisher = WorldPublisher("corrected_tracks42_"+self.name, self.global_frame_id)
         self.marker_publisher = MarkerPublisher("ar_perception_marker")
 
         self.onto_bridge = OntologeniusReaderNode(name)
@@ -198,7 +198,7 @@ class GraphicMonitor(Monitor):
 
         if time-self.time_view >1./(self.n_frame_view):
             #if needed : >7166666 work
-            print time-self.time_view
+            # print time-self.time_view
             self.time_view=time
             if self.agent_type== AgentType.ROBOT:
                 for obj_id in self.mocap_obj.keys():
@@ -307,14 +307,18 @@ class GraphicMonitor(Monitor):
 
         """
         #place all object of the tracks in the simulator
-        # self.cleanup_relations()
+        # print "=================="
+        # print self.relations
+        # print self.relations
+        # print "=============="
         time = header.stamp
+        self.cleanup_relations(time)
         check_missing_object = False
         node_seen = []
         # print time.to_sec()
         # print self.time_monitor
-        # self.time_max=+time.to_sec()-self.time_monitor
-        # self.number_iteration+=1.0
+        self.time_max=+time.to_sec()-self.time_monitor
+        self.number_iteration+=1.0
         # if self.agent_type== AgentType.ROBOT:
         #     print self.name + " : " + str(self.time_max/self.number_iteration)
 
@@ -372,6 +376,8 @@ class GraphicMonitor(Monitor):
         #compute the facts
         # if rospy.Time().now().to_sec()<1607675257.84:
         self.compute_allocentric_relations(object_tracks, time)
+
+        # print self.relations_index
         # self.compute_egocentric_relations(object_tracks+self.agent_map.values(), time)
 
         # self.pick(object_tracks,time,node_seen)
@@ -714,6 +720,7 @@ class GraphicMonitor(Monitor):
                                     if is_included(aabb1, aabb2,hyst):
                                         self.start_fact(obj1, "in", object=obj2, time=time)
                                         included_map[obj1.id].append(obj2.id)
+
                                     else:
                                         self.end_fact(obj1, "in", object=obj2, time=time)
         for obj1 in objects:

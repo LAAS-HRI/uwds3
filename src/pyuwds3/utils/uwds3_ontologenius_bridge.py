@@ -36,7 +36,7 @@ class OntologeniusReaderNode(object):
 
         # self.query_service = rospy.Service("uwds3/query_knowledge_base", Query, self.handle_query)
 
-        input_world_topic = "corrected_tracks_"+self.onto_name
+        input_world_topic = "corrected_tracks42_"+self.onto_name
         rospy.loginfo(self.onto_name + " : "+"[ontologenius_reader] Connecting to '" + input_world_topic +  "'...")
         self.world_subscriber = rospy.Subscriber(input_world_topic, WorldStamped, self.callback, queue_size=1)
         rospy.loginfo(self.onto_name + " : "+"[ontologenius_reader] Connected to Underworlds !")
@@ -73,10 +73,11 @@ class OntologeniusReaderNode(object):
             if node.id not in self.created_nodes:
                 self.add_scene_node(node)
                 self.created_nodes[node.id] = True
-
         for situation_msg in world_msg.world.timeline:
+            # print situation_msg
             situation = Fact().from_msg(situation_msg)
             # self.learn_affordance(situation)
+
             self.update_situation(situation)
 
         self.scene_nodes = scene_nodes
@@ -105,6 +106,16 @@ class OntologeniusReaderNode(object):
 
     def update_situation(self, situation, agent="myself"):
         """ Updates the given situations """
+        # print "bEGIIIIIIIIIIIIN"
+        # print situation.subject
+        # print situation.predicate
+        # print situation.object
+        # print situation.is_finished()
+        # print situation.start_time
+        # print situation.end_time
+        # if situation.end_time is not None:
+        #     print situation.start_time>situation.end_time
+        # print "eNNNNNNNNNNND"
         if situation.predicate == "pick":
             if situation.object not in self.held_by:
                 self.ontologenius_client.feeder.addObjectProperty(situation.object, "isHeldBy", situation.subject)
@@ -127,9 +138,18 @@ class OntologeniusReaderNode(object):
                     self.relations[situation.subject+"isInside"+situation.object] = True
             else:
                 if situation.subject+"isInside"+situation.object in self.relations:
+                    # print "IIIIIIIIIIN dELLLLLLLLLLLLLLLL"
                     rospy.loginfo(self.onto_name + " : "+"remove: "+situation.subject+" isInside "+situation.object)
                     self.ontologenius_client.feeder.removeObjectProperty(situation.subject, "isInContainer", situation.object,situation.end_time)
+                    # print self.relations
+                    # try:
                     del self.relations[situation.subject+"isInside"+situation.object]
+                        # print self.relations
+                        # print "ENNNNNNNNNNNDEEEEEEEEEEELLLLLLLLLLLLLlllll"
+                    # except:
+                        # print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                        # print self.relations
+
         elif situation.predicate == "on":
             if not situation.is_finished():
                 if situation.subject+"isOnTop"+situation.object not in self.relations:
