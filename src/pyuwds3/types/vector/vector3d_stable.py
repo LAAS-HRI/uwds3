@@ -113,7 +113,7 @@ class Vector3DStable(Vector3D):
         self.filter.correct(measurement)
         self.from_array(self.filter.statePost)
 
-        def update_no_kalmann(self, x, y, z, time=None):
+    def update_no_kalmann(self, x, y, z, time=None):
         """Updates/Filter the 3D vector"""
         self.__update_time(time=time)
         self.x=x
