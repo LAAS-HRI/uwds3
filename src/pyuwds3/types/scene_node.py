@@ -310,6 +310,8 @@ class SceneNode(object):
         self.type = msg.type
         self.state = msg.state
         self.description = msg.description
+        # for i in msg.last_seen_position:
+        #     self.last_seen_position.append(i)
 
         if msg.is_perceived is True:
             self.bbox = BoundingBoxStable().from_msg(msg.bbox)
@@ -364,7 +366,7 @@ class SceneNode(object):
                                             clipfar=msg.camera.clipfar)
         else:
             self.camera = None
-
+        self.last_update = msg.last_update
         return self
 
     def to_msg(self, header):
@@ -427,7 +429,7 @@ class SceneNode(object):
             for shape in self.shapes:
                 msg.shapes.append(shape.to_msg())
 
-        msg.last_update = header.stamp
+        msg.last_update = self.last_update
         msg.expiration_duration = rospy.Duration(self.expiration_duration)
         return msg
 

@@ -15,7 +15,7 @@ from .physics_monitor import ActionStates
 from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
-
+from pyuwds3.utils.tf_bridge import TfBridge
 from pyuwds3.utils.uwds3_ontologenius_bridge import OntologeniusReaderNode
 
 import math
@@ -33,10 +33,12 @@ from ontologenius import OntologyManipulator
 
 from  pr2_motion_tasks_msgs.msg import RobotAction
 
-
-
 import pybullet as p
 
+
+
+FILTERING_Y = 15
+FILTERING_Z = 20
 INF = 10e3
 #Ray >1
 N_RAY = 5
@@ -61,6 +63,9 @@ class GraphicMonitor(Monitor):
 
         super(GraphicMonitor, self).__init__(internal_simulator=internal_simulator)#, beliefs_base=beliefs_base)
 
+        self.tf_bridge = TfBridge()
+        self.filtering_y_axis = rospy.get_param("~filtering_y_axis", FILTERING_Y)
+        self.filtering_z_axis = rospy.get_param("~filtering_z_axis", FILTERING_Z)
         #init of the simulator and ontology
         self.internal_simulator = internal_simulator
         self.ontologies_manip = OntologiesManipulator()
@@ -142,7 +147,7 @@ class GraphicMonitor(Monitor):
         """
             #get the head pose in simulator, so in the global_frame_id (often map)
         """
-        s,hpose=self.simulator.tf_bridge.get_pose_from_tf(self.simulator.global_frame_id,
+        s,hpose=self.tf_bridge.get_pose_from_tf(self.simulator.global_frame_id,
                                                         self.head,time)
         return hpose
 
@@ -168,8 +173,8 @@ class GraphicMonitor(Monitor):
                     view_pose=self.mocap_obj[obj_id].pose + Vector6DStable(0.15,0,0,0,np.pi/2)
 
                     _, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera)
-                    for node in nodes:
-                        node.last_update = self.mocap_obj[obj_id].last_update
+                    # for node in nodes:
+                    #     node.last_update = self.mocap_obj[obj_id].last_update
                     header.stamp=self.mocap_obj[obj_id].last_update
                     self.publish_dic[obj_id].publish(nodes,[],header)
 
@@ -242,6 +247,7 @@ class GraphicMonitor(Monitor):
                         self.simulator.load_node(object)
                     base_link_sim_id = self.simulator.entity_id_map[object.id]
                     self.simulator.reset_entity_pose(object.id, object.pose)
+                    self.disapearing_object(object,header)
             # self.marker_publisher.publish(object_tracks,header)
 
         #publish the head view
@@ -361,6 +367,7 @@ class GraphicMonitor(Monitor):
         we go through transparent object (the recursive part)
         """
         r=p.rayTestBatch([start_pose],[end_pose],reportHitNumber = hitnumber)
+        print r[0][0]
         # print r[0]
         # print end_id
         if r[0][0] == end_id:
@@ -483,7 +490,42 @@ class GraphicMonitor(Monitor):
     #                         success2, aabb2 = self.simulator.get_aabb(obj2)
 
 
+    def disapearing_object(self,node,header):
+        # if node.id=="table_1":
+        #     print node.last_update.to_sec()
+        #     print  header.stamp.to_sec()
+        #     print node.last_update.to_sec() - header.stamp.to_sec()
+        if node.last_update.to_sec() +1< header.stamp.to_sec():
+            if self.pos_validityv2(node.pose,header):
+                start_pose = self.get_head_pose(header.stamp).pos.to_array()[:3]
+                start_pose=[start_pose[0][0],start_pose[1][0],start_pose[2][0]]
+                end_id=self.simulator.entity_id_map[node.id]
+                print node.last_seen_position.values()
+                for end_pose_v6 in node.last_seen_position.values():
+                    end_pose =end_pose_v6.to_array()[:3]
+                    end_pose=[end_pose[0][0],end_pose[1][0],end_pose[2][0]]
 
+                    if self.canSeeRec(start_pose,end_pose,end_id,0):
+                        print "here"
+                        node.pose.pos.z-=50
+                        return
+
+    def pos_validityv2(self,mpose,header):
+        # mpose = Vector6DStable(mvect[0],mvect[1],mvect[2])
+        frame_id = header.frame_id
+        if frame_id[0]=='/':
+            frame_id = frame_id[1:]
+        bool_,head_pose = self.tf_bridge.get_pose_from_tf("head_mount_kinect2_rgb_link" ,
+                                          frame_id,header.stamp)
+        mpose.from_transform(np.dot(head_pose.transform(),mpose.transform()))
+        #mpose is now in the head frame
+        if mpose.pos.x==0:
+            return False
+        xy_angle = np.degrees(np.arctan(mpose.pos.y/mpose.pos.x))
+        xz_angle = np.degrees(np.arctan(mpose.pos.z/mpose.pos.x))
+
+        return (abs(xy_angle)<self.filtering_y_axis and
+               abs(xz_angle)<self.filtering_z_axis)
     def compute_egocentric_relations(self,pose,objects,time):
         """ compute the egocentric relations (can see can reach)"""
         for obj1 in objects:
