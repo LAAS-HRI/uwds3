@@ -10,11 +10,11 @@ from .shape.cylinder import Cylinder
 from .shape.sphere import Sphere
 from .shape.mesh import Mesh
 from .shape.box import Box
-
 from .vector.vector6d_stable import Vector6DStable
 from .bbox_stable import BoundingBoxStable
 from .vector.vector6d import Vector6D
 from ..reasoning.tracking.medianflow_tracker import MedianFlowTracker
+from geometry_msgs.msg import Pose
 
 
 class SceneNodeType(object):
@@ -310,8 +310,18 @@ class SceneNode(object):
         self.type = msg.type
         self.state = msg.state
         self.description = msg.description
-        # for i in msg.last_seen_position:
-        #     self.last_seen_position.append(i)
+        for i in range(len(msg.last_seen_position_keys)):
+            key = msg.last_seen_position_keys[i]
+            value_msg = Vector6DStable().from_msg(msg.last_seen_position_values[i])
+            # x=value.position.x
+            # y=value.position.y
+            # z=value.position.z
+            # qx=value.orientation.x
+            # qy=value.orientation.y
+            # qz=value.orientation.z
+            # qw=value.orientation.w
+            # self.last_seen_position[key]=Vector6DStable(x=x,y=y,z=z).from_quaternion(qx,qy,qz,qw)
+            self.last_seen_position[key]=value_msg
 
         if msg.is_perceived is True:
             self.bbox = BoundingBoxStable().from_msg(msg.bbox)
@@ -373,6 +383,11 @@ class SceneNode(object):
         """ Convert to ROS message
         """
         msg = uwds3_msgs.msg.SceneNode()
+        msg.last_seen_position_keys = self.last_seen_position.keys()
+        last_seen_pos_to_send=[]
+        for v in self.last_seen_position.values():
+            last_seen_pos_to_send.append(v.to_msg())
+        msg.last_seen_position_values = last_seen_pos_to_send
 
         msg.state = self.state
 

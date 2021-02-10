@@ -124,6 +124,7 @@ class GraphicMonitor(Monitor):
         self.n_frame_monitor=15
         self.n_frame_view = 15
 
+        self.gone_map={}
 
 
     def pick_callback(self, msg):
@@ -242,12 +243,18 @@ class GraphicMonitor(Monitor):
         if pose != None:
             for object in object_tracks:
                 if object.is_located() and object.has_shape():
+
                     # object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
                     if not self.simulator.is_entity_loaded(object.id):
                         self.simulator.load_node(object)
+                    self.disapearing_object(object,header)
+                    if object.id in self.gone_map:
+                        if object.last_update.to_sec() +1< header.stamp.to_sec():
+                            object.pose.pos.z -=42
+                        else:
+                            del self.gone_map[object.id]
                     base_link_sim_id = self.simulator.entity_id_map[object.id]
                     self.simulator.reset_entity_pose(object.id, object.pose)
-                    self.disapearing_object(object,header)
             # self.marker_publisher.publish(object_tracks,header)
 
         #publish the head view
@@ -367,7 +374,7 @@ class GraphicMonitor(Monitor):
         we go through transparent object (the recursive part)
         """
         r=p.rayTestBatch([start_pose],[end_pose],reportHitNumber = hitnumber)
-        print r[0][0]
+
         # print r[0]
         # print end_id
         if r[0][0] == end_id:
@@ -497,21 +504,24 @@ class GraphicMonitor(Monitor):
         #     print node.last_update.to_sec() - header.stamp.to_sec()
         if node.last_update.to_sec() +1< header.stamp.to_sec():
             if self.pos_validityv2(node.pose,header):
-                start_pose = self.get_head_pose(header.stamp).pos.to_array()[:3]
+                # print "here2"
+                start_pose = (self.get_head_pose(header.stamp)+Vector6DStable(z=0.1)).pos.to_array()[:3]
                 start_pose=[start_pose[0][0],start_pose[1][0],start_pose[2][0]]
                 end_id=self.simulator.entity_id_map[node.id]
-                print node.last_seen_position.values()
+                # print node.last_seen_position.values()
                 for end_pose_v6 in node.last_seen_position.values():
-                    end_pose =end_pose_v6.to_array()[:3]
-                    end_pose=[end_pose[0][0],end_pose[1][0],end_pose[2][0]]
+                    end_pose =end_pose_v6.pos.to_array()
+                    # print end_pose
 
+                    end_pose=[end_pose[0][0],end_pose[1][0],end_pose[2][0]]
+                    # print "end_id"
                     if self.canSeeRec(start_pose,end_pose,end_id,0):
-                        print "here"
-                        node.pose.pos.z-=50
+                        # print "here"
+                        self.gone_map[node.id]=True
                         return
 
-    def pos_validityv2(self,mpose,header):
-        # mpose = Vector6DStable(mvect[0],mvect[1],mvect[2])
+    def pos_validityv2(self,mvect,header):
+        mpose = Vector6DStable(mvect.pos.x,mvect.pos.y,mvect.pos.z)
         frame_id = header.frame_id
         if frame_id[0]=='/':
             frame_id = frame_id[1:]
