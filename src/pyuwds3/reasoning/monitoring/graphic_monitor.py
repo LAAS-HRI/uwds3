@@ -151,6 +151,13 @@ class GraphicMonitor(Monitor):
         s,hpose=self.tf_bridge.get_pose_from_tf(self.simulator.global_frame_id,
                                                         self.head,time)
         return hpose
+    def get_delta_head_pose(self,time,deltax=0,deltay=0,deltaz=0):
+        s,hpose=self.tf_bridge.get_pose_from_tf(self.simulator.global_frame_id,
+                                                        self.head,time)
+        # s,pose_map =self.tf_bridge.get_pose_from_tf(self.global_frame_id, header.frame_id[1:],header.stamp)
+        vect = Vector6DStable(deltax,deltay,deltaz)
+        vect.from_transform(np.dot(hpose.transform(),vect.transform()))
+        return vect
 
 
 
@@ -243,12 +250,17 @@ class GraphicMonitor(Monitor):
         if pose != None:
             for object in object_tracks:
                 if object.is_located() and object.has_shape():
-
+                    print object.id
+                    print object.last_update.to_sec()
                     # object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
                     if not self.simulator.is_entity_loaded(object.id):
                         self.simulator.load_node(object)
                     self.disapearing_object(object,header)
+                    print self.gone_map
                     if object.id in self.gone_map:
+                        # print "=================="
+                        # print object.id
+                        # print object.last_update.to_sec()-header.stamp.to_sec()
                         if object.last_update.to_sec() +1< header.stamp.to_sec():
                             object.pose.pos.z -=42
                         else:
@@ -263,6 +275,7 @@ class GraphicMonitor(Monitor):
             hpose=self.get_head_pose(time)
             # print hpose
             image,_,_,_ =  self.simulator.get_camera_view(hpose, self.camera)
+
             self._publisher.publish(image,[],time)
 
             self.time_monitor=time.to_sec()
@@ -377,6 +390,7 @@ class GraphicMonitor(Monitor):
 
         # print r[0]
         # print end_id
+        print r[0][0]
         if r[0][0] == end_id:
             return True
         if r[0][0]==-1:
@@ -502,10 +516,18 @@ class GraphicMonitor(Monitor):
         #     print node.last_update.to_sec()
         #     print  header.stamp.to_sec()
         #     print node.last_update.to_sec() - header.stamp.to_sec()
+        if "ube"in node.id:
+            print "BEGIN"
+            print node.id
+            print node.last_update.to_sec()
+            print  header.stamp.to_sec()
+            print  header.stamp.to_sec() - node.last_update.to_sec()
+            print self.pos_validityv2(node.pose,header)
+            print "END"
         if node.last_update.to_sec() +1< header.stamp.to_sec():
             if self.pos_validityv2(node.pose,header):
-                # print "here2"
-                start_pose = (self.get_head_pose(header.stamp)+Vector6DStable(z=0.1)).pos.to_array()[:3]
+                print "if2"
+                start_pose = (self.get_head_pose(header.stamp)).pos.to_array()[:3]
                 start_pose=[start_pose[0][0],start_pose[1][0],start_pose[2][0]]
                 end_id=self.simulator.entity_id_map[node.id]
                 # print node.last_seen_position.values()
@@ -515,6 +537,7 @@ class GraphicMonitor(Monitor):
 
                     end_pose=[end_pose[0][0],end_pose[1][0],end_pose[2][0]]
                     # print "end_id"
+                    # print node.id
                     if self.canSeeRec(start_pose,end_pose,end_id,0):
                         # print "here"
                         self.gone_map[node.id]=True
@@ -530,12 +553,12 @@ class GraphicMonitor(Monitor):
         mpose.from_transform(np.dot(head_pose.transform(),mpose.transform()))
         #mpose is now in the head frame
         if mpose.pos.x==0:
-            return False
+            return False,None
         xy_angle = np.degrees(np.arctan(mpose.pos.y/mpose.pos.x))
         xz_angle = np.degrees(np.arctan(mpose.pos.z/mpose.pos.x))
 
         return (abs(xy_angle)<self.filtering_y_axis and
-               abs(xz_angle)<self.filtering_z_axis)
+               abs(xz_angle)<self.filtering_z_axis),
     def compute_egocentric_relations(self,pose,objects,time):
         """ compute the egocentric relations (can see can reach)"""
         for obj1 in objects:
