@@ -15,6 +15,7 @@ from .physics_monitor import ActionStates
 from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
+from pyuwds3.utils.heatmap import Heatmap
 
 from pyuwds3.utils.uwds3_ontologenius_bridge import OntologeniusReaderNode
 
@@ -125,8 +126,9 @@ class GraphicMonitor(Monitor):
         self.publisher_map={}
         #tf subscription
 
-
-
+        #heatmap
+        self.heatmap={}
+        self.heatmap[self.name]=Heatmap()
 
         # dictionnary of the picked objects by the robot
         self.pick_map = {}
@@ -185,7 +187,11 @@ class GraphicMonitor(Monitor):
             hpose = self.simulator.get_entity(self.head).pose
         return hpose
 
-
+    def update_heatmap(self,nodes,agent_id,time):
+        if not agent_id in self.heatmap:
+            self.heatmap[agent_id]=Heatmap()
+        for n in nodes:
+            
 
     def publish_view(self,tfm):
         """
@@ -207,10 +213,11 @@ class GraphicMonitor(Monitor):
                 for obj_id in self.agent_monitor_map.keys():
                     view_pose=self.mocap_obj[obj_id].pose + Vector6DStable(0.15,0,0,0,np.pi/2)
 
-                    img, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera,occlusion_threshold=0.01 )
+                    img, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera,occlusion_threshold=0.001 )
                     # if obj_id == "Helmet_2":
                     # for i in nodes:
                     #     print i.id
+                    self.update_heatmap(nodes,obj_id,time)
                     if obj_id in self.publisher_map:
                         self.publisher_map[obj_id].publish(img,[],rospy.Time.now())
                     else:
