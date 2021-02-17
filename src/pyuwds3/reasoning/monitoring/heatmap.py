@@ -9,7 +9,7 @@ import pybullet as p
 MAX_VALUE = 666.
 
 
-class Heatmap(Monitor):
+class Heatmap_Monitor(Monitor):
     """ Special monitor for heatmap
     """
     def __init__(self, internal_simulator=None, beliefs_base=None):
