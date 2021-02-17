@@ -16,6 +16,7 @@ from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
 from pyuwds3.utils.heatmap import Heatmap
+from std_msgs.msg import Int8
 
 from pyuwds3.utils.uwds3_ontologenius_bridge import OntologeniusReaderNode
 
@@ -50,7 +51,8 @@ DELTA_TIME=0.5
 
 FILTERING_Y = 15
 FILTERING_Z = 20
-
+MIN_VEL = 0.001
+MIN_ANG = 0.001
 
 def centroid_cost(track_a, track_b):
     """Returns the centroid cost"""
@@ -74,7 +76,8 @@ class GraphicMonitor(Monitor):
         # filteringvalue
         self.filtering_y_axis = rospy.get_param("~filtering_y_axis", FILTERING_Y)
         self.filtering_z_axis = rospy.get_param("~filtering_z_axis", FILTERING_Z)
-
+        self.minimum_velocity = rospy.get_param("~minimum_velocity", MIN_VEL)
+        self.minimum_angular_velocity = rospy.get_param("~minimum_angular_velocity", MIN_ANG)
         self.name = name
         self.myself = SceneNode(agent = True,label=agent_type)
         self.myself.id = name
@@ -120,6 +123,12 @@ class GraphicMonitor(Monitor):
         #A map of graphic monitor class, one/agent
         self.agent_monitor_map={}
         self.agent_map={}
+        self.marker_pub={}
+        self.movement_pub={}
+        if self.agent_type==AgentType.ROBOT:
+            self.marker_pub[name]=MarkerPublisher("ar_perception_markers"+str(name))
+            self.movement_pub[name]=rospy.Publisher('movement_pub_robot', Int8, queue_size=10)
+
 
         #view of robot and human
         self._publisher = ViewPublisher(name+"_view")
@@ -129,10 +138,10 @@ class GraphicMonitor(Monitor):
         #heatmap
         self.heatmap={}
         self.heatmap[self.name]=Heatmap()
-
         # dictionnary of the picked objects by the robot
         self.pick_map = {}
-
+        self.last_head_pose = {}
+        self.last_time_head_pose={}
 
         self.time_max=0
         self.number_iteration=0
@@ -187,11 +196,39 @@ class GraphicMonitor(Monitor):
             hpose = self.simulator.get_entity(self.head).pose
         return hpose
 
-    def update_heatmap(self,nodes,agent_id,time):
+    def pos_validityv2(self,mvect,header,pos=None):
+        mpose = Vector6DStable(mvect.pos.x,mvect.pos.y,mvect.pos.z)
+        frame_id = header.frame_id
+        if frame_id[0]=='/':
+            frame_id = frame_id[1:]
+        if pos ==None:
+            bool_,head_pose = self.tf_bridge.get_pose_from_tf("head_mount_kinect2_rgb_link" ,
+                                          frame_id,header.stamp)
+        else:
+            head_pose=pos
+        mpose.from_transform(np.dot(head_pose.transform(),mpose.transform()))
+        #mpose is now in the head frame
+        if mpose.pos.x==0:
+            return False,None
+        xy_angle = np.degrees(np.arctan(mpose.pos.y/mpose.pos.x))
+        xz_angle = np.degrees(np.arctan(mpose.pos.z/mpose.pos.x))
+
+        return (abs(xy_angle)<self.filtering_y_axis and
+               abs(xz_angle)<self.filtering_z_axis),
+
+    def update_heatmap(self,nodes,agent_id,time,view_pose=None):
         if not agent_id in self.heatmap:
             self.heatmap[agent_id]=Heatmap()
+        to_send=[]
         for n in nodes:
-            
+            h=rospy.Header()
+            h.frame_id='map'
+            if self.pos_validityv2(n.pose,h,view_pose):
+                to_send.append(n)
+        self.heatmap[agent_id].heat(to_send,time)
+
+
+
 
     def publish_view(self,tfm):
         """
@@ -210,6 +247,9 @@ class GraphicMonitor(Monitor):
                 for obj_id in self.mocap_obj.keys():
                     if not obj_id in self.publish_dic:
                         self.publish_dic[obj_id]=WorldPublisher(str(obj_id)+"_tracks", self.global_frame_id)
+                    if not obj_id in self.marker_pub:
+                        self.marker_pub[obj_id]=MarkerPublisher("ar_perception_markers"+str(obj_id))
+
                 for obj_id in self.agent_monitor_map.keys():
                     view_pose=self.mocap_obj[obj_id].pose + Vector6DStable(0.15,0,0,0,np.pi/2)
 
@@ -217,7 +257,8 @@ class GraphicMonitor(Monitor):
                     # if obj_id == "Helmet_2":
                     # for i in nodes:
                     #     print i.id
-                    self.update_heatmap(nodes,obj_id,time)
+                    self.update_heatmap(nodes,obj_id,time,view_pose)
+
                     if obj_id in self.publisher_map:
                         self.publisher_map[obj_id].publish(img,[],rospy.Time.now())
                     else:
@@ -226,7 +267,7 @@ class GraphicMonitor(Monitor):
                     if obj_id + "_body" in self.mocap_body:
                         node_to_keep.append(self.mocap_body[obj_id+"_body"])
                     for node in nodes:
-                        if node.label !="appartment" and node.label!= "robot":
+                        if node.label !="appartment" and node.label!= "robot" and not "elmet" in node.label:
                             #we remove the background
                             node.last_update = self.mocap_obj[obj_id].last_update
                             node_to_keep.append(node)
@@ -246,6 +287,7 @@ class GraphicMonitor(Monitor):
                     header.stamp=self.mocap_obj[obj_id].last_update
                     # self.publish_dic[obj_id].publish(nodes,[],header)
                     self.agent_monitor_map[obj_id].monitor(node_to_keep,Vector6DStable(),header)
+                    self.marker_pub[obj_id].publish(node_to_keep,header)
 
 
             # self.internal_simulator.step_simulation()
@@ -333,6 +375,10 @@ class GraphicMonitor(Monitor):
             hpose=self.get_head_pose(time)
             # print hpose
             image,_,_,nodes =  self.simulator.get_camera_view(hpose, self.camera,occlusion_threshold=0.001)
+            self.update_heatmap(nodes,self.name,time.to_sec(),hpose)
+            for k in object_tracks:
+                self.heatmap[self.name].color_node(k)
+            self.marker_pub[self.name].publish(object_tracks,header)
             self._publisher.publish(image,[],time)
             # print "ooooooo"
             # for i in nodes:
@@ -383,7 +429,20 @@ class GraphicMonitor(Monitor):
         #compute the facts
         # if rospy.Time().now().to_sec()<1607675257.84:
         self.compute_allocentric_relations(object_tracks, time)
+        if self.agent_type== AgentType.ROBOT:
+            for obj_id in self.mocap_obj.keys():
+                if not obj_id in self.movement_pub:
+                    self.movement_pub[obj_id]=rospy.Publisher('movement_pub_'+str(obj_id), Int8, queue_size=10)
+                mv=self.movement_validity(obj_id,self.mocap_obj[obj_id].pose,header)
+                result=Int8()
+                result.data=int(mv)
+                self.movement_pub[obj_id].publish(result)
 
+
+            mv=self.movement_validity(self.name,self.get_head_pose(time),header)
+            result=Int8()
+            result.data=int(mv)
+            self.movement_pub[self.name].publish(result)
         # print self.relations_index
         # self.compute_egocentric_relations(object_tracks+self.agent_map.values(), time)
 
@@ -406,6 +465,7 @@ class GraphicMonitor(Monitor):
         #     print "ppppppppppppp"
 
         self.world_publisher.publish([],self.relations,header)
+
 
         # print self.relations_index
         return object_tracks, self.relations
@@ -466,6 +526,30 @@ class GraphicMonitor(Monitor):
             if r[0][0]== end_id:
                 return True
         return False
+    def movement_validity(self,name,head_pose,header):
+
+        if not name in self.last_head_pose:
+            self.last_head_pose[name] = head_pose
+            self.last_time_head_pose[name] = header.stamp
+        vel_movement = 0
+        ang_movement = 0
+        delta= header.stamp-self.last_time_head_pose[name]
+        #If we are on a different time frame : (the head might have moved)
+        if header.stamp != self.last_time_head_pose[name]:
+            vel_movement = np.linalg.norm(
+                                    head_pose.pos.to_array() -
+                                    self.last_head_pose[name].pos.to_array() )/delta.to_sec()
+            ang_movement = np.linalg.norm(
+                                    head_pose.rot.to_array() -
+                                    self.last_head_pose[name].rot.to_array() )/delta.to_sec()
+
+
+
+            self.last_time_head_pose[name] = header.stamp
+            self.last_head_pose[name] = head_pose
+        return ((vel_movement> self.minimum_velocity) or
+          ang_movement> self.minimum_angular_velocity)
+
 
     def canSee(self,start_pose_vector6,obj):
         """ compute if obj can be seen from start pose"""
@@ -623,7 +707,6 @@ class GraphicMonitor(Monitor):
     #                         success2, aabb2 = self.simulator.get_aabb(obj2)
 
 
-
     def compute_egocentric_relations(self,objects,time):
         """ compute the egocentric relations (can see can reach)"""
         self.myself.pose = self.get_head_pose(time)
@@ -724,7 +807,15 @@ class GraphicMonitor(Monitor):
                                     #     print is_included(aabb1,aabb2,0)
                                     #     print " "
                                     #     print "==========================================================="
-                                    if is_included(aabb1, aabb2,hyst):
+                                    is_hm=False
+                                    if self.name in self.heatmap:
+                                        hm=self.heatmap[self.name].heatm
+                                        if obj1.id in hm and obj2.id in hm:
+                                            if hm[obj2.id]!=0:
+                                                k=hm[obj1.id]/hm[obj2.id]
+                                                if k>0.9 and k<1.1:
+                                                    is_hm=True
+                                    if is_hm and is_included(aabb1, aabb2,hyst):
                                         self.start_fact(obj1, "in", object=obj2, time=time)
                                         included_map[obj1.id].append(obj2.id)
 
@@ -742,7 +833,15 @@ class GraphicMonitor(Monitor):
                             success1, aabb1 = self.simulator.get_aabb(obj1)
                             success2, aabb2 = self.simulator.get_aabb(obj2)
                             if success1  and success2 :
-                                if included_map[obj1.id]==included_map[obj2.id] and (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
+                                is_hm=False
+                                if self.name in self.heatmap:
+                                    hm=self.heatmap[self.name].heatm
+                                    if obj1.id in hm and obj2.id in hm:
+                                        if hm[obj2.id]!=0:
+                                            k=hm[obj1.id]/hm[obj2.id]
+                                            if k>0.9 and k<1.1:
+                                                is_hm=True
+                                if is_hm and included_map[obj1.id]==included_map[obj2.id] and (not (obj1.id in self.pick_map)) and (not (obj2.id in self.pick_map)):
                                     if obj1.id+"on"+obj2.id in self.relations_index:
                                         hyst=0
                                     else:

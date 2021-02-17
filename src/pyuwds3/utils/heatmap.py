@@ -1,10 +1,10 @@
 import numpy as np
-from ..assignment.linear_assignment import LinearAssignment
-from ...utils.bbox_metrics import overlap, centroid
-from .monitor import Monitor
-from scipy.spatial.distance import euclidean
-from pyuwds3.utils.view_publisher import ViewPublisher
-
+import rospy
+# from ..assignment.linear_assignment import LinearAssignment
+# from ...utils.bbox_metrics import overlap, centroid
+# from .monitor import Monitor
+# from scipy.spatial.distance import euclidean
+# from pyuwds3.utils.view_publisher import ViewPublisher
 MAX_VALUE = 1000.
 #I want the heating function to be  f(t)=MAX_VALUE(1-exp((t0-t)/3))
 # It scale up to max_Value, and get at ~80% of it in 5sec
@@ -32,10 +32,10 @@ class Heatmap(object):
 
     def heat(self,nodes,time):
         if self.first_time==0:
-            self.first_time=time.to_sec()
-            self.last_time=time.to_sec()
+            self.first_time=time
+            self.last_time=time
         node_list = []
-        delta_t=time.to_sec-self.last_time
+        delta_t=time-self.last_time
         #creation of the list of id
         for node in nodes:
             node_list.append(node.id)
@@ -55,18 +55,29 @@ class Heatmap(object):
         #computation of heatmap
         for key in self.heatm.keys():
             if key in node_list:
-                self.heat_time[key]=time.to_sec()
-                add_value = ((MAX_VALUE/3.0)*np.exp((self.first_time-t)/3.))*delta_t
+                self.heat_time[key]=time
+                add_value = ((MAX_VALUE/3.0)*np.exp((self.first_time-time)/3.))*delta_t
                 self.heatm[key]=min(MAX_VALUE,self.heatm[key]+add_value)
                 self.total_time[key]+=delta_t
             else:
-                self.heatm[key]=max(0,self.heatm[key]-80*delta_t)
+                self.heatm[key]=max(0,self.heatm[key]-160*delta_t)
             #compution of max heatmap
             if self.heatm[key]>self.heatmax[key]:
                 self.heatmax[key] = self.heatm[key]
+        for node in nodes:
+            self.color_node(node)
 
 
-        self.last_time=time.to_sec()
+        self.last_time=time
+    def color_node(self,node):
+        if node.id in self.heatm:
+            r=node.shapes[0].color[0]
+            g=node.shapes[0].color[1]
+            b=node.shapes[0].color[2]
+            hm=self.heatm[node.id]
+            node.shapes[0].color[0]=r+hm*(1-r)/MAX_VALUE
+            node.shapes[0].color[1]= g*(1-hm/MAX_VALUE)
+            node.shapes[0].color[2]=b*(1-hm/MAX_VALUE)
     # def show_heatmap(self,view_pose,camera,stamp,fps):
     #     for id in self.heatm.keys():
     #         c = self.init_color[id]
