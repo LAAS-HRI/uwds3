@@ -11,6 +11,8 @@ from scipy.spatial.distance import euclidean
 from pyuwds3.types.vector.vector6d_stable import Vector6DStable
 from pyuwds3.types.scene_node import SceneNode
 from pyuwds3.types.shape.mesh import Mesh
+from pyuwds3.types.shape.shape import Shape, ShapeType
+from pyuwds3.types.shape.box import Box
 from .physics_monitor import ActionStates
 from pyuwds3.utils.view_publisher import ViewPublisher
 from pyuwds3.utils.world_publisher import WorldPublisher
@@ -34,7 +36,6 @@ from ontologenius import OntologyManipulator
 from  pr2_motion_tasks_msgs.msg import RobotAction
 
 import pybullet as p
-
 
 
 FILTERING_Y = 15
@@ -62,7 +63,7 @@ class GraphicMonitor(Monitor):
        position_tolerance=0.04,name="robot"): #beliefs_base=None,
 
         super(GraphicMonitor, self).__init__(internal_simulator=internal_simulator)#, beliefs_base=beliefs_base)
-
+        self.marker_publisher_debug = MarkerPublisher("debug_tag")
         self.tf_bridge = TfBridge()
         self.filtering_y_axis = rospy.get_param("~filtering_y_axis", FILTERING_Y)
         self.filtering_z_axis = rospy.get_param("~filtering_z_axis", FILTERING_Z)
@@ -72,6 +73,10 @@ class GraphicMonitor(Monitor):
         self.global_frame_id = rospy.get_param("~global_frame_id")
         self.world_publisher = WorldPublisher("corrected_tracks", self.global_frame_id)
         self.marker_publisher = MarkerPublisher("ar_perception_marker")
+        shp1 = Box(0.15,0.15,0.15, "shp1",x=0,y=0,z=0,b=1.,g=1.,a=1)
+        self.debug_node=SceneNode(pose = Vector6D(x=0,y=0,z=0,rx=0,ry=0,rz=0),label="deb")
+        self.debug_node.shapes=[shp1]
+        self.debug_node.id="debug_node"
 
         self.onto_bridge = OntologeniusReaderNode(name)
         self.ontologies_manip.add("robot")
@@ -246,17 +251,16 @@ class GraphicMonitor(Monitor):
         # print "mocap obj " + str(len(self.mocap_obj))
         # print "rel ind " + str(len(self.relations_index))
         # print "relations  " + str(len(self.relations))
-
+        self.marker_publisher_debug.publish([self.debug_node],header)
+        # object_tracks.append(self.debug_node)
         if pose != None:
             for object in object_tracks:
                 if object.is_located() and object.has_shape():
-                    print object.id
-                    print object.last_update.to_sec()
+
                     # object.pose.from_transform(np.dot(pose.transform(),object.pose.transform()))
                     if not self.simulator.is_entity_loaded(object.id):
                         self.simulator.load_node(object)
                     self.disapearing_object(object,header)
-                    print self.gone_map
                     if object.id in self.gone_map:
                         # print "=================="
                         # print object.id
@@ -388,8 +392,7 @@ class GraphicMonitor(Monitor):
         """
         r=p.rayTestBatch([start_pose],[end_pose],reportHitNumber = hitnumber)
 
-        # print r[0]
-        # print end_id
+
         print r[0][0]
         if r[0][0] == end_id:
             return True
@@ -406,6 +409,7 @@ class GraphicMonitor(Monitor):
 
         if self.alpha_dic[(r[0][0],r[0][1])] >ALPHA_THRESHOLD:
             return False
+
         return self.canSeeRec(r[0][3],end_pose,end_id,hitnumber+1)
 
     # def hasInView(self,start_pose,end_id,camera):
@@ -512,35 +516,47 @@ class GraphicMonitor(Monitor):
 
 
     def disapearing_object(self,node,header):
+        if "ebug" in node.id:
+            return
         # if node.id=="table_1":
         #     print node.last_update.to_sec()
         #     print  header.stamp.to_sec()
         #     print node.last_update.to_sec() - header.stamp.to_sec()
-        if "ube"in node.id:
-            print "BEGIN"
-            print node.id
-            print node.last_update.to_sec()
-            print  header.stamp.to_sec()
-            print  header.stamp.to_sec() - node.last_update.to_sec()
-            print self.pos_validityv2(node.pose,header)
-            print "END"
+        # if "ube"in node.id:
+        #     print "BEGIN"
+        #     print node.id
+        #     print node.last_update.to_sec()
+        #     print  header.stamp.to_sec()
+        #     print  header.stamp.to_sec() - node.last_update.to_sec()
+        #     print self.pos_validityv2(node.pose,header)
+        #     print "END"
+        if len( node.last_seen_position.values()) >0:
+            self.debug_node.pose=node.last_seen_position.values()[0]
         if node.last_update.to_sec() +1< header.stamp.to_sec():
             if self.pos_validityv2(node.pose,header):
-                print "if2"
+                # print "if2"
                 start_pose = (self.get_head_pose(header.stamp)).pos.to_array()[:3]
                 start_pose=[start_pose[0][0],start_pose[1][0],start_pose[2][0]]
                 end_id=self.simulator.entity_id_map[node.id]
+                print "__________________________________"
+                # print end_id
+                # end_id=self.simulator.entity_id_map[self.debug_node.id]
+                # print end_id
                 # print node.last_seen_position.values()
                 for end_pose_v6 in node.last_seen_position.values():
                     end_pose =end_pose_v6.pos.to_array()
                     # print end_pose
-
-                    end_pose=[end_pose[0][0],end_pose[1][0],end_pose[2][0]]
+                    x=end_pose[0][0]
+                    y=end_pose[1][0]
+                    z=end_pose[2][0]
+                    end_pose=[x,y,z]
                     # print "end_id"
                     # print node.id
-                    if self.canSeeRec(start_pose,end_pose,end_id,0):
-                        # print "here"
-                        self.gone_map[node.id]=True
+                    print " here"
+                    print p.getAABB(end_id)
+                    if self.canSeeRec(start_pose,end_pose,end_id,0)  :
+                        print "GOOOOOOOOOOOOOONEEEEEEEEEEEEEEEEE"
+                        # self.gone_map[node.id]=True
                         return
 
     def pos_validityv2(self,mvect,header):

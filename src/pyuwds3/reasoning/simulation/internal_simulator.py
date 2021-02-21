@@ -157,6 +157,7 @@ class InternalSimulator(object):
                         path+='/'+i
                     filename=path
                 collision_shape_id = p.createCollisionShape(p.GEOM_MESH,fileName=filename,flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
+                print "CREATED COOLISION SHAPE WITH FILENAME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 if not color is None:
                     visual_shape_id = p.createVisualShape(p.GEOM_MESH,fileName=filename,rgbaColor=color)
                 else:
