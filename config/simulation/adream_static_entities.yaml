@@ -180,3 +180,180 @@
     x: 0.0
     y: 0.0
     z: 0.0
+- id: "hanger"
+  label: "hanger"
+  description: "hanger"
+  file: "urdf/hanger.urdf"
+  position:
+    x: 5.5
+    y: 6
+    z: 0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+- id: "hat"
+  label: "hat"
+  description: "hat"
+  file: "urdf/hat.urdf"
+  position:
+    x: 5.5
+    y: 6
+    z: 0.52
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+- id: "table1"
+  label: "table"
+  description: "table1"
+  file: "urdf/table.urdf"
+  position:
+    x: 3.5
+    y: 7.2
+    z: 0.4
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+- id: "teapot"
+  label: "teapot"
+  description: "teapot"
+  file: "urdf/teapot.urdf"
+  position:
+    x: 3.5
+    y: 7.2
+    z: 0.78
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+- id: "milk"
+  label: "milk"
+  description: "milk"
+  file: "urdf/milk.urdf"
+  position:
+    x: 3.5
+    y: 7.4
+    z: 0.78
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+- id: "mug"
+  label: "mug"
+  description: "mug"
+  file: "urdf/mug.urdf"
+  position:
+    x: 3.7
+    y: 7.4
+    z: 0.78
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+
+- id: "mug2"
+  label: "mug"
+  description: "mug"
+  file: "urdf/mug.urdf"
+  position:
+    x: 3.9
+    y: 7.2
+    z: 0.78
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+
+- id: "mug3"
+  label: "mug"
+  description: "mug"
+  file: "urdf/mug.urdf"
+  position:
+    x: 3.4
+    y: 7.6
+    z: 0.78
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+- id: "mug4"
+  label: "mug"
+  description: "mug"
+  file: "urdf/mug.urdf"
+  position:
+    x: 3
+    y: 7
+    z: 0.78
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+
+- id: "book"
+  label: "book"
+  description: "book"
+  file: "urdf/book.urdf"
+  position:
+    x: 2.7
+    y: 5.55
+    z: 0.78
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+
+
+- id: "table2"
+  label: "table"
+  description: "table1"
+  file: "urdf/table.urdf"
+  position:
+    x: 2.90
+    y: 5.75
+    z: 0.4
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 1.570
+
+
+- id: "laptop"
+  label: "laptop"
+  description: "laptop"
+  file: "urdf/laptop.urdf"
+  position:
+    x: 3.2
+    y: 6.1
+    z: 0.82
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0
+
+- id: "shelf"
+  label: "shelf"
+  description: "shelf"
+  file: "urdf/shelf.urdf"
+  position:
+    x: 1.6
+    y: 6.1
+    z: 0.38
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 1.57
+
+- id: "clock"
+  label: "clock"
+  description: "clock"
+  file: "urdf/clock.urdf"
+  position:
+    x: 2.9
+    y: 9
+    z: 1.7
+  orientation:
+    x: 0
+    y: 0
+    z: 0
