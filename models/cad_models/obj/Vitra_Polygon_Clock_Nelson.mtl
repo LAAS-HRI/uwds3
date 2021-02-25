@@ -1,0 +1,84 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# File Created: 31.10.2017 14:54:10
+
+newmtl Vitra_Polygon_Clock_Nelson_mtl_1
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.0000 0.0000 0.0000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka dcmap_Vitra_Polygon Clock Nelson_diff.jpg
+	map_Kd dcmap_Vitra_Polygon Clock Nelson_diff.jpg
+	map_bump dcmap_Vitra_Polygon Clock Nelson_bump.jpg
+	bump dcmap_Vitra_Polygon Clock Nelson_bump.jpg
+
+newmtl Vitra_Polygon_Clock_Nelson_mtl_2
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.9216 0.5882 0.1333
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+
+newmtl Vitra_Polygon_Clock_Nelson_mtl_3
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.9804 0.9804 0.9804
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+
+newmtl Vitra_Polygon_Clock_Nelson_mtl_4
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.0000 0.0000 0.0000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+
+newmtl Vitra_Polygon_Clock_Nelson_mtl_5
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.1333 0.0941 0.0275
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka dcmap_Vitra_Polygon Clock Nelson_diff(1).jpg
+	map_Kd dcmap_Vitra_Polygon Clock Nelson_diff(1).jpg
+	map_bump dcmap_Vitra_Polygon Clock Nelson_bump(1).jpg
+	bump dcmap_Vitra_Polygon Clock Nelson_bump(1).jpg
+
+newmtl Vitra_Polygon_Clock_Nelson_mtl_6
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.6902 0.5176 0.3020
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_bump dcmap_Vitra_Polygon Clock Nelson_bump(2).jpg
+	bump dcmap_Vitra_Polygon Clock Nelson_bump(2).jpg
