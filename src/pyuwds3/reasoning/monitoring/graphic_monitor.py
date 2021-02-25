@@ -17,7 +17,7 @@ from pyuwds3.utils.world_publisher import WorldPublisher
 from pyuwds3.utils.marker_publisher import MarkerPublisher
 from pyuwds3.utils.heatmap import Heatmap
 from std_msgs.msg import Int8
-
+from visualization_msgs.msg import Marker, MarkerArray
 from pyuwds3.utils.uwds3_ontologenius_bridge import OntologeniusReaderNode
 
 import math
@@ -137,7 +137,7 @@ class GraphicMonitor(Monitor):
 
         #heatmap
         self.heatmap={}
-        self.heatmap[self.name]=Heatmap()
+        self.heatmap[self.name]=Heatmap(self.name,self.name)
         # dictionnary of the picked objects by the robot
         self.pick_map = {}
         self.last_head_pose = {}
@@ -167,6 +167,8 @@ class GraphicMonitor(Monitor):
         self.hand_close_map={}
         self.may_be_picked_map={}
         self.picked_map={}
+
+        self.heatmap_publisher = rospy.Publisher("heatmap_of_"+ str(self.name),MarkerArray,queue_size=1)
 
     def pick_callback(self, msg):
         """
@@ -218,7 +220,7 @@ class GraphicMonitor(Monitor):
 
     def update_heatmap(self,nodes,agent_id,time,view_pose=None):
         if not agent_id in self.heatmap:
-            self.heatmap[agent_id]=Heatmap()
+            self.heatmap[agent_id]=Heatmap(self.name,agent_id)
         to_send=[]
         for n in nodes:
             h=rospy.Header()
@@ -228,6 +230,54 @@ class GraphicMonitor(Monitor):
         self.heatmap[agent_id].heat(to_send,time)
 
 
+
+    def publish_heatmap(self,nodes):
+        m_array=MarkerArray()
+        for n in nodes:
+            b,aabb=self.simulator.get_aabb(n)
+            # print "AABB"
+            if b:
+                z=aabb[1][2] +0.2
+            else:
+                z=n.pose.pos.z
+            # print n.id
+            # print b
+            # print aabb
+            x=n.pose.pos.x
+            y=n.pose.pos.y
+
+            for i,id in enumerate(self.heatmap.keys()):
+                hm=self.heatmap[id]
+                keys=hm.heatm.keys()
+                # print n.id
+                # if self.name =="robot" and i==0 and "box_C5" in hm.heatm:
+                #     print hm.heatm["box_C5"]
+                if n.id in hm.heatm and n.label!="appartment":
+                    m = Marker()
+                    m.header.frame_id="map"
+                    m.id=keys.index(n.id)*10+i +10000
+                    #we need an id that is an int
+                    #so the id is the position of the obj in the heatmap
+                    #the unit digit is the id of the agent (same things, pos in the heamapmap)
+                    m.action=0
+                    m.pose.position.x=x -0.07 +0.07*i
+                    m.pose.position.y=y
+                    m.pose.position.z=z
+                    if i==0:
+                        m.color.r=1
+                    if i==1:
+                        m.color.g=1
+                    if i==2:
+                        m.color.b=1
+                    m.color.a=1
+                    m.type=2
+                    scale=0.01+0.06*hm.heatm[n.id]/(hm.max_v*1.0)
+                    # scale = 0.05
+                    m.scale.x=scale
+                    m.scale.y=scale
+                    m.scale.z=scale
+                    m_array.markers.append(m)
+        self.heatmap_publisher.publish(m_array)
 
 
     def publish_view(self,tfm):
@@ -242,6 +292,7 @@ class GraphicMonitor(Monitor):
         if time-self.time_view >1./(self.n_frame_view):
             #if needed : >7166666 work
             # print time-self.time_view
+
             self.time_view=time
             if self.agent_type== AgentType.ROBOT:
                 for obj_id in self.mocap_obj.keys():
@@ -249,21 +300,20 @@ class GraphicMonitor(Monitor):
                         self.publish_dic[obj_id]=WorldPublisher(str(obj_id)+"_tracks", self.global_frame_id)
                     if not obj_id in self.marker_pub:
                         self.marker_pub[obj_id]=MarkerPublisher("ar_perception_markers"+str(obj_id))
-
                 for obj_id in self.agent_monitor_map.keys():
                     view_pose=self.mocap_obj[obj_id].pose + Vector6DStable(0.15,0,0,0,np.pi/2)
 
                     img, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera,occlusion_threshold=0.001 )
                     # if obj_id == "Helmet_2":
-                    # for i in nodes:
-                    #     print i.id
                     self.update_heatmap(nodes,obj_id,time,view_pose)
+                    self.publish_heatmap(nodes)
 
                     if obj_id in self.publisher_map:
                         self.publisher_map[obj_id].publish(img,[],rospy.Time.now())
                     else:
                         self.publisher_map[obj_id] = ViewPublisher(obj_id+"_view")
                     node_to_keep=[self.mocap_obj[obj_id]]
+
                     if obj_id + "_body" in self.mocap_body:
                         node_to_keep.append(self.mocap_body[obj_id+"_body"])
                     for node in nodes:
@@ -376,8 +426,9 @@ class GraphicMonitor(Monitor):
             # print hpose
             image,_,_,nodes =  self.simulator.get_camera_view(hpose, self.camera,occlusion_threshold=0.001)
             self.update_heatmap(nodes,self.name,time.to_sec(),hpose)
-            for k in object_tracks:
-                self.heatmap[self.name].color_node(k)
+            self.publish_heatmap(nodes)
+            # for k in object_tracks:
+            #     self.heatmap[self.name].color_node(k)
             self.marker_pub[self.name].publish(object_tracks,header)
             self._publisher.publish(image,[],time)
             # print "ooooooo"
