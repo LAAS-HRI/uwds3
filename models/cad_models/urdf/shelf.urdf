@@ -1,0 +1,39 @@
+<?xml version="0.0" ?>
+<robot name="shelf">
+
+  <link name="base_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".0"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <link name="obj">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".0"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.57 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://uwds3/models/cad_models/obj/raf2.obj" scale="0.01 0.01 0.01"/>
+      </geometry>
+
+
+    </visual>
+  </link>
+
+  <joint name="base_to_obj" type="revolute">
+    <parent link="base_link"/>
+    <child link="obj"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="1000.0" lower="0.0" upper="1.57" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+  </joint>
+
+
+
+
+</robot>
