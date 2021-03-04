@@ -132,6 +132,7 @@ class GraphicMonitor(Monitor):
 
         #view of robot and human
         self._publisher = ViewPublisher(name+"_view")
+        self._publisher2 = ViewPublisher(name+"_view2E2")
         self.publisher_map={}
         #tf subscription
 
@@ -229,9 +230,34 @@ class GraphicMonitor(Monitor):
                 to_send.append(n)
         self.heatmap[agent_id].heat(to_send,time)
 
+    def update_all_heatmaps(self,time):
+
+            agent_list = self.agent_map.keys()
+            viewp=[]
+            for i in agent_list:
+                if i!= "robot":
+                    viewp.append(self.agent_map[i].pose+ Vector6DStable(0.15,0,0,0,np.pi/2))
+                else:
+                    _,vvp=self.simulator.tf_bridge.get_pose_from_tf(self.simulator.global_frame_id,
+                                                                                "head_mount_kinect2_rgb_optical_frame")
+                    viewp.append(vvp)
+            if self.name=="robot":
+                agent_list.append("robot")
+                viewp.append(self.get_head_pose(time))
+            for i in range(len(agent_list)):
+                # view_pose=self.mocap_obj[obj_id].pose + Vector6DStable(0.15,0,0,0,np.pi/2)
+
+                img, _, _, nodes = self.simulator.get_camera_view(viewp[i], self.camera,occlusion_threshold=0.001 )
+                if self.name =="Helmet_2" and agent_list[i] =="robot" :
+                    self._publisher2.publish(img,[],rospy.Time.now())
+
+                self.update_heatmap(nodes,agent_list[i],time,viewp[i])
 
 
-    def publish_heatmap(self,nodes):
+
+
+    def publish_heatmap(self):
+        nodes =self.simulator.nodes_map.values()
         m_array=MarkerArray()
         for n in nodes:
             b,aabb=self.simulator.get_aabb(n)
@@ -263,11 +289,11 @@ class GraphicMonitor(Monitor):
                     m.pose.position.x=x -0.07 +0.07*i
                     m.pose.position.y=y
                     m.pose.position.z=z
-                    if i==0:
+                    if id=="robot":
                         m.color.r=1
-                    if i==1:
+                    if id=="Helmet_2":
                         m.color.g=1
-                    if i==2:
+                    if id=="Helmet_4":
                         m.color.b=1
                     m.color.a=1
                     m.type=2
@@ -305,8 +331,6 @@ class GraphicMonitor(Monitor):
 
                     img, _, _, nodes = self.simulator.get_camera_view(view_pose, self.camera,occlusion_threshold=0.001 )
                     # if obj_id == "Helmet_2":
-                    self.update_heatmap(nodes,obj_id,time,view_pose)
-                    self.publish_heatmap(nodes)
 
                     if obj_id in self.publisher_map:
                         self.publisher_map[obj_id].publish(img,[],rospy.Time.now())
@@ -332,6 +356,7 @@ class GraphicMonitor(Monitor):
                             scene_node = self.internal_simulator.get_entity(self.internal_simulator.my_id)
                             scene_node.agent=True
                             scene_node.id="robot"
+                            scene_node.pose = self.get_head_pose(time)
                             scene_node.last_update = self.mocap_obj[obj_id].last_update
                             node_to_keep.append(scene_node)
                     header.stamp=self.mocap_obj[obj_id].last_update
@@ -379,6 +404,7 @@ class GraphicMonitor(Monitor):
                     self.simulator.load_node(object)
                 self.simulator.reset_entity_pose(object.id, object.pose)
                 if not "_body" in object.id and not "pick" in object.id:
+                    object.agent=True
                     self.agent_map[object.id]=object
                     if not object.id in self.agent_monitor_map:
                         self.onto.feeder.addConcept(object.id)
@@ -421,12 +447,14 @@ class GraphicMonitor(Monitor):
         # if self.agent_type== AgentType.ROBOT:
         #     print self.name + " : " + str(self.time_max/self.number_iteration)
 
-        if self.agent_type== AgentType.ROBOT and abs(time.to_sec()-self.time_monitor) >1./(self.n_frame_monitor):
+
+
+        if  abs(time.to_sec()-self.time_monitor) >1./(self.n_frame_monitor) and self.agent_type== AgentType.ROBOT:
+
             hpose=self.get_head_pose(time)
             # print hpose
             image,_,_,nodes =  self.simulator.get_camera_view(hpose, self.camera,occlusion_threshold=0.001)
-            self.update_heatmap(nodes,self.name,time.to_sec(),hpose)
-            self.publish_heatmap(nodes)
+
             # for k in object_tracks:
             #     self.heatmap[self.name].color_node(k)
             self.marker_pub[self.name].publish(object_tracks,header)
@@ -435,10 +463,16 @@ class GraphicMonitor(Monitor):
             # for i in nodes:
             #     print i.id
             # print "pppppppp"
-            self.time_monitor=time.to_sec()
             check_missing_object = True
             for node in nodes:
                 node_seen.append(node.id)
+            self.time_monitor=time.to_sec()
+            self.update_all_heatmaps(time.to_sec())
+            self.publish_heatmap()
+            for k in self.agent_monitor_map.values():
+                k.update_all_heatmaps(time.to_sec())
+                k.publish_heatmap()
+
 
 
 
@@ -464,7 +498,7 @@ class GraphicMonitor(Monitor):
                     self.simulator.reset_entity_pose(object.id, object.pose)
                 if object.label=="robot":
                     self.simulator.load_robot=True
-                if object.agent:
+                if object.agent :
                     self.agent_map[object.id]=object
             # self.marker_publisher.publish(object_tracks,header)
 

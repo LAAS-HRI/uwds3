@@ -49,7 +49,7 @@ class InternalSimulator(object):
         self.nodes_map = {}
 
         self.my_id = None
-        self.marker_publisher = MarkerPublisher("adream",lifetime=999999)
+        self.marker_publisher = MarkerPublisher("adream1",lifetime=999999)
         self.update_robot_at_each_step=update_robot_at_each_step
 
         self.entity_id_map = {}
