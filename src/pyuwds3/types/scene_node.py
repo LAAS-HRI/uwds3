@@ -310,6 +310,7 @@ class SceneNode(object):
         self.state = msg.state
         self.description = msg.description
         self.last_update = msg.last_update
+        self.agent=msg.agent
         if msg.is_perceived is True:
             self.bbox = BoundingBoxStable().from_msg(msg.bbox)
         else:
@@ -370,7 +371,7 @@ class SceneNode(object):
         """ Convert to ROS message
         """
         msg = uwds3_msgs.msg.SceneNode()
-
+        msg.agent=self.agent
         msg.state = self.state
 
         if self.is_perceived():
