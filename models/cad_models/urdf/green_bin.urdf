@@ -5,7 +5,7 @@
       <geometry>
         <mesh filename="package://uwds3/models/cad_models/obj/green_bin.obj"/>
       </geometry>
-      <origin rpy="1.57075 0 0" xyz="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <material name="green">
         <color rgba="0 .8 0 1"/>
       </material>
@@ -21,28 +21,28 @@
       <geometry>
       <box size="0.27 0.36 0.02"/> <!-- left -->
       </geometry>
-      <origin rpy="1.57075 0 0" xyz="0 0.175 0"/>
+      <origin rpy="0 0 0" xyz="0 0.175 0"/>
       <contact_coefficients mu="1000.0" kp="0.00" kd="0.0"/>
     </collision>
     <collision>
       <geometry>
       <box size="0.27 0.36 0.02"/> <!-- right -->
       </geometry>
-      <origin rpy="1.57075 0 0" xyz="0 -0.175 0"/>
+      <origin rpy="0 0 0" xyz="0 -0.175 0"/>
       <contact_coefficients mu="1000.0" kp="0.00" kd="0.0"/>
     </collision>
     <collision>
       <geometry>
       <box size="0.365 0.36 0.02"/> <!-- front -->
       </geometry>
-      <origin rpy="0 1.57075 0" xyz="-0.13 0 0"/>
+      <origin rpy="0 0" xyz="-0.13 0 0"/>
       <contact_coefficients mu="1000.0" kp="0.00" kd="0.0"/>
     </collision>
     <collision>
       <geometry>
       <box size="0.365 0.36 0.02"/> <!-- back -->
       </geometry>
-      <origin rpy="0 1.57075 0" xyz="0.13 0 0"/>
+      <origin rpy="0 0" xyz="0.13 0 0"/>
       <contact_coefficients mu="1000.0" kp="0.00" kd="0.0"/>
     </collision>
     <inertial>

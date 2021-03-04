@@ -5,7 +5,7 @@
       <geometry>
         <mesh filename="package://uwds3/models/cad_models/obj/table.obj"/>
       </geometry>
-      <origin rpy="1.57075 0 0" xyz="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <material name="black">
         <color rgba="0 0 0 1"/>
       </material>
