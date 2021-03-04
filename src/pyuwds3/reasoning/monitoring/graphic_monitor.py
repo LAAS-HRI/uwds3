@@ -97,12 +97,19 @@ class GraphicMonitor(Monitor):
 
         #init of the camera (kinect fov)
         self.camera = Camera(640)
-        self.camera.setfov(84.1,53.8)
+        self.camera.setfov(84.1)
+
+
+
+
+
+        self.camera2 = Camera(100,50)
+        self.camera2.setfov(40)
 
 
         #init of the camera (fileterd fov)
         self.filtered_camera = Camera(640)
-        self.filtered_camera.setfov(2*self.filtering_y_axis,2*self.filtering_y_axis)
+        self.filtered_camera.setfov(2*self.filtering_y_axis)
 
         #link between the physics simlatro and the reality
         #not used for now
@@ -247,9 +254,8 @@ class GraphicMonitor(Monitor):
             for i in range(len(agent_list)):
                 # view_pose=self.mocap_obj[obj_id].pose + Vector6DStable(0.15,0,0,0,np.pi/2)
 
-                img, _, _, nodes = self.simulator.get_camera_view(viewp[i], self.camera,occlusion_threshold=0.001 )
-                if self.name =="Helmet_2" and agent_list[i] =="robot" :
-                    self._publisher2.publish(img,[],rospy.Time.now())
+                _, _, _, nodes = self.simulator.get_camera_view(viewp[i], self.camera2,occlusion_threshold=0.001 )
+
 
                 self.update_heatmap(nodes,agent_list[i],time,viewp[i])
 
@@ -466,12 +472,13 @@ class GraphicMonitor(Monitor):
             check_missing_object = True
             for node in nodes:
                 node_seen.append(node.id)
+            print abs(time.to_sec()-self.time_monitor)
             self.time_monitor=time.to_sec()
-            self.update_all_heatmaps(time.to_sec())
-            self.publish_heatmap()
-            for k in self.agent_monitor_map.values():
-                k.update_all_heatmaps(time.to_sec())
-                k.publish_heatmap()
+            # self.update_all_heatmaps(time.to_sec())
+            # self.publish_heatmap()
+            # for k in self.agent_monitor_map.values():
+            #     k.update_all_heatmaps(time.to_sec())
+            #     k.publish_heatmap()
 
 
 
@@ -513,7 +520,7 @@ class GraphicMonitor(Monitor):
 
         #compute the facts
         # if rospy.Time().now().to_sec()<1607675257.84:
-        self.compute_allocentric_relations(object_tracks, time)
+        # self.compute_allocentric_relations(object_tracks, time)
         if self.agent_type== AgentType.ROBOT:
             for obj_id in self.mocap_obj.keys():
                 if not obj_id in self.movement_pub:

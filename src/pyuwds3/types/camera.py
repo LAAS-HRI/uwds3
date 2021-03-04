@@ -19,24 +19,26 @@ class Camera(object):
         self.clipfar = clipfar
         self.dist_coeffs = np.zeros((4, 1))
         self.center = Vector2D(self.width/2.0, self.height/2.0)
-        self.focal_length = Vector2D(self.width, self.height)
+        self.focal_length = self.width
 
     def fov(self):
         """ Returns the diagonal field of view (used in openGL rendering)
         """
         d = math.sqrt(pow(self.width, 2) + pow(self.height, 2))
-        return math.degrees(2 * math.atan2(d/2.0, self.width))
+        # return math.degrees(2 * math.atan2(d,2.0 * self.focal_length.x))
+        return math.degrees(2 * math.atan2(d,2.0 * self.focal_length))
+        # return self.hfov()*self.vfov()
     def hfov(self):
         """ Returns the horizontal field of view
         """
-        return math.degrees(2 * math.atan2(self.width,self.focal_length[0]))
+        return math.degrees(2 * math.atan2(self.width,2.0 * self.focal_length))
     def vfov(self):
         """ Returns the vertical field of view
         """
-        return math.degrees(2 * math.atan2(self.height,self.focal_length[1]))
-    def setfov(self,hfov,vfov):
-        self.focal_length.x = self.width/(1.0*math.tan(2*math.radians(hfov)))
-        self.focal_length.y = self.height/(1.0*math.tan(2*math.radians(vfov)))
+        return math.degrees(2 * math.atan2(self.height,2.0 * self.focal_length))
+    def setfov(self,hfov,):
+        self.focal_length = self.width/(2.0*math.tan(math.radians(hfov)/2.0))
+        # self.focal_length.y = self.height/(2.0*math.tan(math.radians(vfov)/2.0))
     def center(self):
         """ Returns the camera's center
         """
