@@ -464,7 +464,7 @@ class GraphicMonitor(Monitor):
             # for k in object_tracks:
             #     self.heatmap[self.name].color_node(k)
             self.marker_pub[self.name].publish(object_tracks,header)
-            self._publisher.publish(image,[],time)
+            # self._publisher.publish(image,[],time)
             # print "ooooooo"
             # for i in nodes:
             #     print i.id
